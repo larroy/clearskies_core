@@ -1,0 +1,253 @@
+/* BEGIN_HEADER */
+#include <polarssl/x509_crt.h>
+#include <polarssl/x509_crl.h>
+#include <polarssl/pem.h>
+#include <polarssl/oid.h>
+
+int verify_none( void *data, x509_crt *crt, int certificate_depth, int *flags )
+{
+    ((void) data);
+    ((void) crt);
+    ((void) certificate_depth);
+    *flags |= BADCERT_OTHER;
+
+    return 0;
+}
+
+int verify_all( void *data, x509_crt *crt, int certificate_depth, int *flags )
+{
+    ((void) data);
+    ((void) crt);
+    ((void) certificate_depth);
+    *flags = 0;
+
+    return 0;
+}
+
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:POLARSSL_BIGNUM_C
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_CRT_PARSE_C */
+void x509_cert_info( char *crt_file, char *result_str )
+{
+    x509_crt   crt;
+    char buf[2000];
+    int res;
+
+    x509_crt_init( &crt );
+    memset( buf, 0, 2000 );
+
+    TEST_ASSERT( x509_crt_parse_file( &crt, crt_file ) == 0 );
+    res = x509_crt_info( buf, 2000, "", &crt );
+
+    x509_crt_free( &crt );
+
+    TEST_ASSERT( res != -1 );
+    TEST_ASSERT( res != -2 );
+
+    TEST_ASSERT( strcmp( buf, result_str ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_CRL_PARSE_C */
+void x509_crl_info( char *crl_file, char *result_str )
+{
+    x509_crl   crl;
+    char buf[2000];
+    int res;
+
+    x509_crl_init( &crl );
+    memset( buf, 0, 2000 );
+
+    TEST_ASSERT( x509_crl_parse_file( &crl, crl_file ) == 0 );
+    res = x509_crl_info( buf, 2000, "", &crl );
+
+    x509_crl_free( &crl );
+
+    TEST_ASSERT( res != -1 );
+    TEST_ASSERT( res != -2 );
+
+    TEST_ASSERT( strcmp( buf, result_str ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_CRT_PARSE_C:POLARSSL_X509_CRL_PARSE_C */
+void x509_verify( char *crt_file, char *ca_file, char *crl_file,
+                  char *cn_name_str, int result, int flags_result,
+                  char *verify_callback )
+{
+    x509_crt   crt;
+    x509_crt   ca;
+    x509_crl    crl;
+    int         flags = 0;
+    int         res;
+    int (*f_vrfy)(void *, x509_crt *, int, int *) = NULL;
+    char *      cn_name = NULL;
+
+    x509_crt_init( &crt );
+    x509_crt_init( &ca );
+    x509_crl_init( &crl );
+
+    if( strcmp( cn_name_str, "NULL" ) != 0 )
+        cn_name = cn_name_str;
+
+    if( strcmp( verify_callback, "NULL" ) == 0 )
+        f_vrfy = NULL;
+    else if( strcmp( verify_callback, "verify_none" ) == 0 )
+        f_vrfy = verify_none;
+    else if( strcmp( verify_callback, "verify_all" ) == 0 )
+        f_vrfy = verify_all;
+    else
+        TEST_ASSERT( "No known verify callback selected" == 0 );
+
+    TEST_ASSERT( x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( x509_crt_parse_file( &ca, ca_file ) == 0 );
+    TEST_ASSERT( x509_crl_parse_file( &crl, crl_file ) == 0 );
+
+    res = x509_crt_verify( &crt, &ca, &crl, cn_name, &flags, f_vrfy, NULL );
+
+    x509_crt_free( &crt );
+    x509_crt_free( &ca );
+    x509_crl_free( &crl );
+
+    TEST_ASSERT( res == ( result ) );
+    TEST_ASSERT( flags == ( flags_result ) );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_USE_C */
+void x509_dn_gets( char *crt_file, char *entity, char *result_str )
+{
+    x509_crt   crt;
+    char buf[2000];
+    int res = 0;
+
+    x509_crt_init( &crt );
+    memset( buf, 0, 2000 );
+
+    TEST_ASSERT( x509_crt_parse_file( &crt, crt_file ) == 0 );
+    if( strcmp( entity, "subject" ) == 0 )
+        res =  x509_dn_gets( buf, 2000, &crt.subject );
+    else if( strcmp( entity, "issuer" ) == 0 )
+        res =  x509_dn_gets( buf, 2000, &crt.issuer );
+    else
+        TEST_ASSERT( "Unknown entity" == 0 );
+
+    x509_crt_free( &crt );
+
+    TEST_ASSERT( res != -1 );
+    TEST_ASSERT( res != -2 );
+
+    TEST_ASSERT( strcmp( buf, result_str ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_USE_C */
+void x509_time_expired( char *crt_file, char *entity, int result )
+{
+    x509_crt   crt;
+
+    x509_crt_init( &crt );
+
+    TEST_ASSERT( x509_crt_parse_file( &crt, crt_file ) == 0 );
+
+    if( strcmp( entity, "valid_from" ) == 0 )
+        TEST_ASSERT( x509_time_expired( &crt.valid_from ) == result );
+    else if( strcmp( entity, "valid_to" ) == 0 )
+        TEST_ASSERT( x509_time_expired( &crt.valid_to ) == result );
+    else
+        TEST_ASSERT( "Unknown entity" == 0 );
+
+    x509_crt_free( &crt );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_X509_CRT_PARSE_C */
+void x509parse_crt( char *crt_data, char *result_str, int result )
+{
+    x509_crt   crt;
+    unsigned char buf[2000];
+    unsigned char output[2000];
+    int data_len, res;
+
+    x509_crt_init( &crt );
+    memset( buf, 0, 2000 );
+    memset( output, 0, 2000 );
+
+    data_len = unhexify( buf, crt_data );
+
+    TEST_ASSERT( x509_crt_parse( &crt, buf, data_len ) == ( result ) );
+    if( ( result ) == 0 )
+    {
+        res = x509_crt_info( (char *) output, 2000, "", &crt );
+
+        TEST_ASSERT( res != -1 );
+        TEST_ASSERT( res != -2 );
+
+        TEST_ASSERT( strcmp( (char *) output, result_str ) == 0 );
+    }
+
+    x509_crt_free( &crt );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_X509_CRL_PARSE_C */
+void x509parse_crl( char *crl_data, char *result_str, int result )
+{
+    x509_crl   crl;
+    unsigned char buf[2000];
+    unsigned char output[2000];
+    int data_len, res;
+
+    x509_crl_init( &crl );
+    memset( buf, 0, 2000 );
+    memset( output, 0, 2000 );
+
+    data_len = unhexify( buf, crl_data );
+
+    TEST_ASSERT( x509_crl_parse( &crl, buf, data_len ) == ( result ) );
+    if( ( result ) == 0 )
+    {
+        res = x509_crl_info( (char *) output, 2000, "", &crl );
+
+        TEST_ASSERT( res != -1 );
+        TEST_ASSERT( res != -2 );
+
+        TEST_ASSERT( strcmp( (char *) output, result_str ) == 0 );
+    }
+
+    x509_crl_free( &crl );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_FS_IO:POLARSSL_X509_CRT_PARSE_C */
+void x509_crt_parse_path( char *crt_path, int ret, int nb_crt )
+{
+    x509_crt chain, *cur;
+    int i;
+
+    x509_crt_init( &chain );
+
+    TEST_ASSERT( x509_crt_parse_path( &chain, crt_path ) == ret );
+
+    /* Check how many certs we got */
+    for( i = 0, cur = &chain; cur != NULL; cur = cur->next )
+        if( cur->raw.p != NULL )
+            i++;
+
+    TEST_ASSERT( i == nb_crt );
+
+    x509_crt_free( &chain );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:POLARSSL_X509_CRT_PARSE_C:POLARSSL_SELF_TEST */
+void x509_selftest()
+{
+    TEST_ASSERT( x509_self_test( 0 ) == 0 );
+}
+/* END_CASE */
