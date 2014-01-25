@@ -1,5 +1,6 @@
 /*
- *  This file is part of clearskies_core.
+ *  This file is part of clearskies_core file synchronization program
+ *  Copyright (C) 2014 Pedro Larroy
 
  *  clearskies_core is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
