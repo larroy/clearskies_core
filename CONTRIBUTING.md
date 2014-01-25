@@ -12,7 +12,7 @@ $ cd clearskies_core
 $ git remote add upstream https://github.com/larroy/clearskies_core.git
 ```
 
-master is our development branch, we branch for features with the prefix feature_<feature_name>
+master is our development branch, create a branch for your feature with the name **feat_<feature_name>**
 
 Bug fixes can go directly on the master branch, more complex features should go in a feature branch
 
