@@ -13,6 +13,7 @@
             "type": "executable",
             "sources": [
                 "main.cpp",
+                "message.cpp",
             ],
             'link_settings': {
               'libraries': [
