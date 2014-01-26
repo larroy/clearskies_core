@@ -1,2 +1,2 @@
-* Improve build with debug and release
-
+* Fix tests for Message
+* Design the protocol state
