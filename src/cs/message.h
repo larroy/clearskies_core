@@ -17,6 +17,8 @@
 
 #pragma once
 
+namespace cs
+{
 namespace message
 {
 
@@ -33,18 +35,27 @@ enum class MType
     CANNOT_START,
     STARTTLS,
     IDENTITY,
+    /// key content
     KEYS,
+    /// response to keys
     KEYS_ACKNOWLEDGMENT,
+    /// file listing
     MANIFEST,
+    /// request for manifest
     GET_MANIFEST,
+    /// response to GET_MANIFEST when revision matches
     MANIFEST_CURRENT,
+    /// request to retrieve contents of a file
     GET,
+    /// response with contents of a file
     FILE_DATA,
+    /// notification of changed file
     UPDATE,
+    /// notification of moved file
     MOVE,
 
     MAX,
-}
+};
 
 class Message
 {
@@ -90,4 +101,5 @@ public:
 };
 
 
+} // end ns
 } // end ns
