@@ -15,33 +15,37 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs/message.h"
+#include "cs/message.hpp"
+#include <boost/test/unit_test.hpp>
 
 using namespace std;
-using namespace message;
+using namespace cs::message;
 namespace 
 {
-    const ping_message = R"({"type": "ping"})";
+    const string ping_message = R"({"type": "ping"})";
 
-    const invalid_message = R"({"type": "blashdaksdjkal"})";
+    const string unk_message = R"({"type": "blashdaksdjkal"})";
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_01)
 {
     // Given a json string we can create a message
-    Message m(ping_message);
-    BOOST_CHECK_EQUAL(m.type() == MType::PING);
+    Message mp(ping_message);
+    BOOST_CHECK(mp.type() == MType::PING);
 
-    // Given a json string with an unrecognized message we can create a message of INVALID type
-    Message m(invalid_message);
-    BOOST_CHECK_EQUAL(m.type() == MType::INVALID);
+    // Given a json string with an unrecognized message we can create a message of UNKNOWN type
+    Message mi(unk_message);
+    BOOST_CHECK(mi.type() == MType::UNKNOWN);
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_refine)
 {
     Message m(ping_message);
     BOOST_CHECK(m.valid());
-    BOOST_CHECK(ping.valid());
+    BOOST_CHECK(m.type() == MType::PING);
+
     Ping ping = m.refine<Ping>();
-    BOOST_CHECK_EQUAL(ping.type() == MType::PING);
+    BOOST_CHECK(ping.valid());
+    BOOST_CHECK(ping.type() == MType::PING);
+ 
 }
