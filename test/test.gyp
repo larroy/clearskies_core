@@ -15,6 +15,9 @@
                 "main.cpp",
                 "message.cpp",
             ],
+            "include_dirs": [
+                "../src",
+            ],
             'link_settings': {
               'libraries': [
                 '-lboost_unit_test_framework',

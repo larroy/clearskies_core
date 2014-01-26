@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "jsoncons/json.hpp"
 
 namespace cs
 {
