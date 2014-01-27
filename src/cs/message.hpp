@@ -87,7 +87,9 @@ public:
      */
     Message(const std::string& json);
 protected:
-    /// Message with specific type only to be used from derived clases
+    /**
+     * Message with specific type only to be used from derived clases
+     */
     Message(MType type):
           m_type(type)
         , m_payload()

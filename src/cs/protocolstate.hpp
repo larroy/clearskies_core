@@ -17,40 +17,30 @@
  */
 #pragma once
 
-
-/*
- *
- *
- * State transition table
- *
- *
- *
- *
- *
- */
+#include "int_types.h"
+#include "message.hpp"
 
 namespace cs
 {
-
 namespace protocol
 {
-
-enum class State
-{
-    INVALID = 0
-
-    INITIAL,
-};
-
 /**
- * @brief protocol state
+ * @brief Base protocol state class for all protocols
  * @author plarroy
+ *
+ * Input data is fed and when messages are assembled handle_message is called which implementes the
+ * message dispatching logic
  */
 class ProtocolState 
 {
-
-
-
+public:
+    /**
+     * feed input data, for example from socket IO
+     * Once a full message is read, handle_message is called
+     */
+    virtual ~ProtocolState() = default;
+    void input(const char* data, size_t len);
+    virtual void handle_message(const Message&) = 0;
 };
 
 } // end ns
