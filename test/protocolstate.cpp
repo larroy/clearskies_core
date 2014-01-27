@@ -43,6 +43,21 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(! found.prefix);
     BOOST_CHECK_EQUAL(&*found.end, &buff[13]);
 
+    buff = "";
+    found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK(found.json.empty());
+    BOOST_CHECK(! found.prefix);
+    BOOST_CHECK_EQUAL(&*found.end, &buff[0]);
+
+    buff = "\n\n";
+    found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(found.garbage);
+    BOOST_CHECK(found.json.empty());
+    BOOST_CHECK(! found.prefix);
+    BOOST_CHECK_EQUAL(&*found.end, &buff[1]);
 
     buff = "{}\n";
     found = find_message(buff);
@@ -51,7 +66,6 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.json, "{}");
     BOOST_CHECK(! found.prefix);
     BOOST_CHECK_EQUAL(&*found.end, &buff[3]);
-
 
     buff = "!{}\n";
     found = find_message(buff);
@@ -69,7 +83,6 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(found.prefix == '$');
     BOOST_CHECK_EQUAL(&*found.end, &buff[4]);
 
-
     buff = R"({"type": "ping"})" "\n";
     found = find_message(buff);
     BOOST_CHECK(found.found);
@@ -77,7 +90,6 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
     BOOST_CHECK(found.prefix == '\0');
     BOOST_CHECK_EQUAL(&*found.end, &buff[17]);
-
 
     buff = R"(!{"type": "ping"})" "\n";
     found = find_message(buff);
@@ -92,7 +104,8 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
 BOOST_AUTO_TEST_CASE(ProtocolStateTest_01)
 {
     ProtocolTest proto;
-    proto.input(R"({"type": "ping"})");
+    string ping = R"({"type": "ping"})" "\n";
+    proto.input(ping);
     BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
     const Message& m = proto.m_messages.at(0);
     BOOST_CHECK(m.type() == MType::PING);
@@ -105,6 +118,7 @@ BOOST_AUTO_TEST_CASE(ProtocolStateTest_02)
     proto.input(R"({"typ)");
     proto.input(R"(e": "pi)");
     proto.input(R"(ng"})");
+    proto.input("\n");
     BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
     const Message& m = proto.m_messages[0];
     BOOST_CHECK(m.type() == MType::PING);

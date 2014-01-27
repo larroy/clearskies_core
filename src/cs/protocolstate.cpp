@@ -16,6 +16,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "protocolstate.hpp"     
+#include "message.hpp"
 
 using namespace std;
 
@@ -29,6 +30,7 @@ namespace protocol
 MsgFound find_message(const std::string& buff)
 {
     MsgFound result;
+    result.end = buff.begin();
     const size_t newline_pos = buff.find('\n');
 
     /// minimum message: {}\n
@@ -64,6 +66,13 @@ MsgFound find_message(const std::string& buff)
 void ProtocolState::input(const char* data, size_t len)
 {
     m_input_buff.append(data, len);
+    MsgFound found = find_message(m_input_buff);
+    if (found.found)
+    {
+        message::Message msg(found.json);
+        handle_message(msg);
+    }
+    m_input_buff.assign(found.end, cend(m_input_buff));
 }
 
 
