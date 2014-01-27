@@ -11,8 +11,10 @@
                 "int_types.h",
                 "message.cpp", 
                 "message.hpp", 
-                "protocol.hpp",
+                "protocolstate.hpp",
+                "protocolstate.cpp",
                 "utils.hpp",
+                "protocolstatecore.hpp",
             ],                                                                        
             "include_dirs": [
                 "../",

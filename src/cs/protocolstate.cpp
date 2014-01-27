@@ -15,39 +15,18 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-
-#include "int_types.h"
-#include "message.hpp"
-#include <stddef.h>
-
-
+#include "protocolstate.hpp"     
 namespace cs
 {
 namespace protocol
 {
-/**
- * @brief Base protocol state class for all protocols
- * @author plarroy
- *
- * Input data is fed and when messages are assembled handle_message is called which implementes the
- * message dispatching logic
- */
-class ProtocolState 
-{
-public:
-    /**
-     * feed input data, for example from socket IO
-     * Once a full message is read, handle_message is called
-     */
-    virtual ~ProtocolState() = default;
-    void input(const std::string& s)
-    {
-        input(s.c_str(), s.size()); 
-    }
-    void input(const char* data, size_t len);
-    virtual void handle_message(const message::Message&) = 0;
-};
 
-} // end ns
-} // end ns
+   
+void ProtocolState::input(const char* data, size_t len)
+{
+}
+
+
+} // end ns 
+} // end ns 
+

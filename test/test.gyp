@@ -13,6 +13,7 @@
             "sources": [
                 "main.cpp",
                 "message.cpp",
+                "protocolstate.cpp",
             ],
             "include_dirs": [
                 "../src",

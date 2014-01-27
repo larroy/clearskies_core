@@ -21,6 +21,7 @@
 
 using namespace std;
 using namespace cs::message;
+using namespace cs::protocol;
 
 class ProtocolTest: public ProtocolState
 {
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(ProtocolStateTest_01)
     ProtocolTest proto;
     proto.input(R"({"type": "ping"})");
     BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
-    const Message& m = proto.m_messages[0];
+    const Message& m = proto.m_messages.at(0);
     BOOST_CHECK(m.type() == MType::PING);
 }
 
