@@ -40,14 +40,51 @@ public:
      * feed input data, for example from socket IO
      * Once a full message is read, handle_message is called
      */
+    ProtocolState():
+        m_input_buff()
+    {
+        m_input_buff.reserve(4096);
+    }
+
+    //ProtocolState(const ProtocolState&) = delete;
+    //ProtocolState& operator=(const ProtocolState&) = delete;
+
     virtual ~ProtocolState() = default;
     void input(const std::string& s)
     {
         input(s.c_str(), s.size()); 
     }
     void input(const char* data, size_t len);
+
     virtual void handle_message(const message::Message&) = 0;
+
+private:
+    /// FIXME: using a deque would be more efficient for appending data
+    std::string m_input_buff;
+    
 };
+
+struct MsgFound
+{
+    MsgFound():
+        found(false),
+        garbage(false),
+        json(),
+        prefix(),
+        end()
+    {}
+    bool found;
+    bool garbage;
+    /// json part
+    std::string json;
+    /// prefix ! or $
+    char prefix;
+    /// position where json part ends
+    std::string::const_iterator end;
+};
+
+MsgFound find_message(const std::string& buff);
+
 
 } // end ns
 } // end ns

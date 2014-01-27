@@ -33,6 +33,56 @@ public:
     vector<Message> m_messages;
 };
 
+BOOST_AUTO_TEST_CASE(find_messsage_test)
+{
+    string buff = "some garbage\n";
+    MsgFound found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(found.garbage);
+    BOOST_CHECK(found.json.empty());
+    BOOST_CHECK(! found.prefix);
+
+
+    buff = "{}\n";
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK(! found.prefix);
+
+
+    buff = "!{}\n";
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK(found.prefix == '!');
+
+    buff = "${}\n";
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK(found.prefix == '$');
+
+
+    buff = R"({"type": "ping"})" "\n";
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
+    BOOST_CHECK(found.prefix == '\0');
+
+
+    buff = R"({"type": "ping"})" "\n";
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
+    BOOST_CHECK(found.prefix == 0);
+
+}
+
 BOOST_AUTO_TEST_CASE(ProtocolStateTest_01)
 {
     ProtocolTest proto;
