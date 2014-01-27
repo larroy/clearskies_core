@@ -41,6 +41,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(found.garbage);
     BOOST_CHECK(found.json.empty());
     BOOST_CHECK(! found.prefix);
+    BOOST_CHECK_EQUAL(&*found.end, &buff[13]);
 
 
     buff = "{}\n";
@@ -49,6 +50,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "{}");
     BOOST_CHECK(! found.prefix);
+    BOOST_CHECK_EQUAL(&*found.end, &buff[3]);
 
 
     buff = "!{}\n";
@@ -57,6 +59,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "{}");
     BOOST_CHECK(found.prefix == '!');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[4]);
 
     buff = "${}\n";
     found = find_message(buff);
@@ -64,6 +67,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "{}");
     BOOST_CHECK(found.prefix == '$');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[4]);
 
 
     buff = R"({"type": "ping"})" "\n";
@@ -72,14 +76,16 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
     BOOST_CHECK(found.prefix == '\0');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[17]);
 
 
-    buff = R"({"type": "ping"})" "\n";
+    buff = R"(!{"type": "ping"})" "\n";
     found = find_message(buff);
     BOOST_CHECK(found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
-    BOOST_CHECK(found.prefix == 0);
+    BOOST_CHECK(found.prefix == '!');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[18]);
 
 }
 

@@ -39,6 +39,7 @@ MsgFound find_message(const std::string& buff)
     if (buff.size() < 3)
     {
         result.garbage = true;
+        ++result.end;
         return result;
     }
 
@@ -48,6 +49,7 @@ MsgFound find_message(const std::string& buff)
         if (*(buff_i+1) != '{')
         {
             result.garbage = true;
+            ++result.end;
             return result;
         }
         result.prefix = *buff_i;
@@ -55,6 +57,7 @@ MsgFound find_message(const std::string& buff)
     }
     result.json.assign(buff_i, result.end);
     result.found = true;
+    ++result.end;
     return result;
 }
    
