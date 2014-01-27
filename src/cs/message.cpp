@@ -90,6 +90,27 @@ MType mtype_from_string(const std::string& type)
     return MType::UNKNOWN;
 }
 
+Message::Message(const std::string& json):
+    m_type(MType::UNKNOWN),
+    m_payload(),
+    m_signed(),
+    m_json()
+{
+    // translate jsoncons::json_parse_exception to MessageError
+    try
+    {
+        m_json = jsoncons::json::parse_string(json);
+    }
+    catch(const jsoncons::json_parse_exception& e)
+    {
+        throw MessageError(fs("json parse error:" << e.what()));
+    }
+    // set type from json
+    if (m_json.has_member("type"))
+        m_type = mtype_from_string(m_json["type"].as_string());
+}
+
+
 
 
 } // end ns

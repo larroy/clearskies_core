@@ -23,19 +23,33 @@ using namespace cs::message;
 namespace 
 {
     const string ping_message = R"({"type": "ping"})";
-
     const string unk_message = R"({"type": "blashdaksdjkal"})";
+    const string notype_message = R"({"blah": 1234, "c": "ahj"})";
+    const string empty_message = "";
+    const string badjson1_message = R"({"what)";
+    const string badjson2_message = R"(1235})";
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_01)
 {
     // Given a json string we can create a message
-    Message mp(ping_message);
-    BOOST_CHECK(mp.type() == MType::PING);
-
+    BOOST_CHECK(Message(ping_message).type() == MType::PING);
     // Given a json string with an unrecognized message we can create a message of UNKNOWN type
-    Message mi(unk_message);
-    BOOST_CHECK(mi.type() == MType::UNKNOWN);
+    BOOST_CHECK(Message(unk_message).type() == MType::UNKNOWN);
+    BOOST_CHECK(! Message(unk_message).valid());
+    // Given a json string without "type", we can create a message of UNKNOWN type
+    BOOST_CHECK(Message(notype_message).type() == MType::UNKNOWN);
+    BOOST_CHECK(! Message(notype_message).valid());
+
+    BOOST_CHECK(Message(unk_message).type() == MType::UNKNOWN);
+    BOOST_CHECK(! Message(unk_message).valid());
+
+    BOOST_CHECK(Message(empty_message).type() == MType::UNKNOWN);
+    BOOST_CHECK(! Message(empty_message).valid());
+
+    BOOST_CHECK_THROW(Message x(badjson1_message), MessageError);
+    // this is not interpreted as json
+    // BOOST_CHECK_THROW(Message x(badjson2_message), MessageError);
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_refine)

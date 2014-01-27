@@ -81,31 +81,11 @@ public:
     Message& operator=(Message&&) & = default;
 
     /**
-     * @throws MessageError on failing to parse message or unknown message type
+     * Construct a message from a json string
+     * @throws MessageError on failing to parse message
+     * if the type field is not known or pressent type() is UNKNOWN
      */
-    Message(const std::string& json):
-        m_type(MType::EMPTY),
-        m_payload(),
-        m_signed(),
-        m_json()
-    {
-        // translate jsoncons::json_parse_exception to MessageError
-        try
-        {
-            m_json = jsoncons::json::parse_string(json);
-        }
-        catch(const jsoncons::json_parse_exception& e)
-        {
-            throw MessageError(fs("json parse error:" << e.what()));
-        }
-        // set type from json
-
-        const auto type_s = m_json["type"].as_string();
-        m_type = mtype_from_string(type_s);
-        if (m_type == MType::UNKNOWN)
-            throw MessageError(fe("message type: \"" << type_s << "\" is unknown"));
-    }
-
+    Message(const std::string& json);
 protected:
     /// Message with specific type only to be used from derived clases
     Message(MType type):
@@ -131,6 +111,11 @@ public:
         return ConcreteMessageType(m_json);
     }
 
+    bool is_known() const
+    {
+        return m_type != MType::UNKNOWN;
+    }
+
     /// @return type of message
     MType type() const
     {
@@ -140,7 +125,7 @@ public:
     /// @return true if the message has the structure that we expect
     virtual bool valid() const
     {
-        return m_type == MType::EMPTY;
+        return m_type != MType::UNKNOWN;
     }
 
     MType m_type;
