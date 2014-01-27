@@ -72,7 +72,8 @@ void ProtocolState::input(const char* data, size_t len)
         message::Message msg(found.json);
         handle_message(msg);
     }
-    m_input_buff.assign(found.end, cend(m_input_buff));
+    if (found.end != cbegin(m_input_buff))
+        m_input_buff.assign(found.end, cend(m_input_buff));
 }
 
 
