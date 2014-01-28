@@ -12,6 +12,7 @@
                     '-std=c++11',
                     '-Wnon-virtual-dtor',
                     '-Wno-deprecated',
+                    '-D_GLIBCXX_DEBUG',
                 ],
                 "xcode_settings": {
                     "OTHER_CFLAGS": [
