@@ -67,8 +67,10 @@ PayLoadFound find_payload(const std::string& buff);
  *
  * Input data is fed and when messages are assembled handle_message is called which implementes the
  * message dispatching logic
+ *
+ * Implements the low level message reading and assembling plus message serialization and writing
  */
-class ProtocolState 
+class ProtocolState
 {
 public:
     /// initial size of the input buffer
@@ -91,7 +93,7 @@ public:
     virtual ~ProtocolState() = default;
     void input(const std::string& s)
     {
-        input(s.c_str(), s.size()); 
+        input(s.c_str(), s.size());
     }
     void input(const char* data, size_t len);
 

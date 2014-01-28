@@ -9,12 +9,13 @@
             "type": "static_library",
             "sources": [                                                              
                 "int_types.h",
+                "utils.hpp",
                 "message.cpp", 
                 "message.hpp", 
                 "protocolstate.hpp",
                 "protocolstate.cpp",
-                "utils.hpp",
-                "protocolstatecore.hpp",
+                "clearskiesprotocol.hpp",
+                "clearskiesprotocol.cpp",
             ],                                                                        
             "include_dirs": [
                 "../",

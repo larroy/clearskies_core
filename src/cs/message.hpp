@@ -33,6 +33,10 @@ enum class MType: unsigned
 
     EMPTY,
 
+    // Internal messages
+    INTERNAL_START,
+
+
     PING,
     GREETING,
     START,
@@ -102,12 +106,10 @@ public:
 
     virtual ~Message() {}
 
-
-    template<class ConcreteMessageType>
-
     /**
      * @throws MessageError if the message is invalid
      */
+    template<class ConcreteMessageType>
     ConcreteMessageType refine()
     {
         return ConcreteMessageType(m_json);
@@ -136,12 +138,28 @@ public:
     std::string m_signature;
 };
 
+
+/**
+ * Internal message to start the ClearSkiesProtocol and send a greeting
+ */
+class InternalStart: public Message
+{
+    InternalStart():
+        Message(MType::INTERNAL_START)
+    {}
+
+    bool valid() const override
+    {
+        return m_type == MType::INTERNAL_START;
+    }
+};
+
 class Ping: public Message
 {
 public:
     Ping():
           Message(MType::PING)
-        , m_timeout()
+        , m_timeout(60)
     {
     }
 
@@ -150,20 +168,116 @@ public:
      */
     Ping(const jsoncons::json& json):
           Message(MType::PING)
-        , m_timeout()
+        , m_timeout(60)
     {
-        // get timeout
+    }
+
+    bool valid() const override
+    {
+        return m_type == MType::PING;
+    }
+    /// timeout in seconds
+    u32 m_timeout;
+};
+
+class Greeting: public Message
+{
+public:
+    Greeting():
+          Message(MType::GREETING)
+        , m_software()
+        , m_protocol()
+        , m_features()
+    {
+    }
+
+    /**
+     * @throws MessageError if the message is invalid
+     */
+    Greeting(const jsoncons::json& json):
+          Message(MType::GREETING)
+        , m_software()
+        , m_protocol()
+        , m_features()
+    {
 
     }
 
     bool valid() const override
     {
-        if (m_type == MType::PING)
-            return true;
-        return false;
+        return m_type == MType::GREETING;
     }
-    u32 m_timeout;
+
+    std::string m_software;
+    std::vector<int> m_protocol;
+    std::vector<std::string> m_features;
 };
+
+
+class Start: public Message
+{
+public:
+    Start():
+          Message(MType::START)
+        , m_software()
+        , m_protocol()
+        , m_features()
+        , m_id()
+        , m_access()
+        , m_peer()
+    {
+    }
+
+    /**
+     * @throws MessageError if the message is invalid
+     */
+    Start(const jsoncons::json& json):
+          Message(MType::START)
+        , m_software()
+        , m_protocol()
+        , m_features()
+        , m_id()
+        , m_access()
+        , m_peer()
+    {
+
+    }
+
+    bool valid() const override
+    {
+        return m_type == MType::START;
+    }
+
+    std::string m_software;
+    std::vector<int> m_protocol;
+    std::vector<std::string> m_features;
+    std::string m_id;
+    std::string m_access;
+    std::string m_peer;
+};
+
+class CannotStart: public Message
+{
+public:
+    CannotStart():
+          Message(MType::CANNOT_START)
+    {
+    }
+
+    /**
+     * @throws MessageError if the message is invalid
+     */
+    CannotStart(const jsoncons::json& json):
+          Message(MType::CANNOT_START)
+    {
+    }
+
+    bool valid() const override
+    {
+        return m_type == MType::CANNOT_START;
+    }
+};
+
 
 
 } // end ns
