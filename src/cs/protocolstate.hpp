@@ -69,17 +69,18 @@ struct MsgFound
     MsgFound():
         found(false),
         garbage(false),
-        json(),
         prefix(),
+        json(),
+        signature(),
         end()
     {}
     bool found;
     bool garbage;
-    /// json part
-    std::string json;
-    /// prefix ! or $
+    /// prefix !: payload $: signed &: signed payload
     char prefix;
-    /// position where json part ends
+    std::string json;
+    std::string signature;
+    /// pos where msg ends, data is processed and destroyed until this pos
     std::string::const_iterator end;
 };
 

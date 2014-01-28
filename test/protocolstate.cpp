@@ -77,11 +77,71 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
 
     buff = "${}\n";
     found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "");
+    BOOST_CHECK(found.prefix == '$');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[0]);
+
+    buff.append("=123\n");
+    found = find_message(buff);
     BOOST_CHECK(found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK_EQUAL(found.signature, "=123");
     BOOST_CHECK(found.prefix == '$');
-    BOOST_CHECK_EQUAL(&*found.end, &buff[4]);
+    BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+
+    /// partial signature read
+    buff = "${}\n";
+    found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "");
+    BOOST_CHECK(found.prefix == '$');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[0]);
+
+    buff.append("=1");
+    found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "");
+    BOOST_CHECK_EQUAL(found.signature, "");
+    BOOST_CHECK(found.prefix == '$');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[0]);
+
+    buff.append("23\n");
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK_EQUAL(found.signature, "=123");
+    BOOST_CHECK(found.prefix == '$');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+
+
+
+
+
+
+    buff = "&{}\n";
+    found = find_message(buff);
+    BOOST_CHECK(! found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "");
+    BOOST_CHECK(found.prefix == '&');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[0]);
+
+    buff.append("=123\n");
+    found = find_message(buff);
+    BOOST_CHECK(found.found);
+    BOOST_CHECK(! found.garbage);
+    BOOST_CHECK_EQUAL(found.json, "{}");
+    BOOST_CHECK_EQUAL(found.signature, "=123");
+    BOOST_CHECK(found.prefix == '&');
+    BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+
+
 
     buff = R"({"type": "ping"})" "\n";
     found = find_message(buff);

@@ -85,16 +85,16 @@ public:
      * @throws MessageError on failing to parse message
      * if the type field is not known or pressent type() is UNKNOWN
      */
-    Message(const std::string& json);
+    Message(const std::string& json, bool payload = false, const std::string& signature = std::string());
 protected:
     /**
      * Message with specific type only to be used from derived clases
      */
     Message(MType type):
           m_type(type)
-        , m_payload()
-        , m_signed()
+        , m_has_payload(false)
         , m_json()
+        , m_signature()
     {
     }
 
@@ -131,13 +131,9 @@ public:
     }
 
     MType m_type;
-
-    /// ! prefix indicates payload
-    bool m_payload;
-
-    /// $ prefix indicates signed message
-    bool m_signed;
+    bool m_has_payload;
     jsoncons::json m_json;
+    std::string m_signature;
 };
 
 class Ping: public Message

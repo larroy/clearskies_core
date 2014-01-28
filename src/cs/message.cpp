@@ -107,11 +107,11 @@ MType mtype_from_string(const std::string& type)
     return MType::UNKNOWN;
 }
 
-Message::Message(const std::string& json):
-    m_type(MType::UNKNOWN),
-    m_payload(),
-    m_signed(),
-    m_json()
+Message::Message(const std::string& json, bool payload,  const std::string& signature):
+      m_type(MType::UNKNOWN)
+    , m_has_payload(payload)
+    , m_json()
+    , m_signature(signature)
 {
     // translate jsoncons::json_parse_exception to MessageError
     try
