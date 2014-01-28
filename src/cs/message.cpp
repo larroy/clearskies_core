@@ -16,6 +16,8 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "message.hpp"
+#include <array>
+
 namespace cs
 {
 namespace message
