@@ -99,6 +99,7 @@ void ProtocolState::input(const char* data, size_t len)
             trim_start = found.end;
             if (trim_start != cbegin(m_input_buff))
             {
+                // shift the unprocessed data in the input buffer left
                 copy(trim_start, cend(m_input_buff), begin(m_input_buff));
                 m_input_buff.resize(distance(trim_start, cend(m_input_buff)));
                 //m_input_buff.assign(trim_start, cend(m_input_buff));
@@ -123,6 +124,7 @@ void ProtocolState::input(const char* data, size_t len)
                     handle_payload_end();
                     m_read_payload = false;
                 }
+                // shift the unprocessed data in the input buffer left
                 trim_start = cbegin(m_input_buff) + m_pl_found.total_size();
                 copy(trim_start, cend(m_input_buff), begin(m_input_buff));
                 m_input_buff.resize(distance(trim_start, cend(m_input_buff)));
