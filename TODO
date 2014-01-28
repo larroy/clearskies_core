@@ -1,2 +1,4 @@
-* Fix tests for Message
-* Design the protocol state
+* Implement CS protocol and test
+* Create tests for two instances of protocol talking to each other
+* Implement file scanner
+* Create a minimal daemon with libuv
