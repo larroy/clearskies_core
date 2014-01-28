@@ -18,6 +18,7 @@
 #include "protocolstate.hpp"
 #include "message.hpp"
 #include <cstdlib>
+#include <cassert>
 
 using namespace std;
 
@@ -40,36 +41,71 @@ inline bool has_payload(const char c)
     return c == '!' || c == '&';
 }
 
-}
-size_t to_base10(const char* b, const char * const e)
+pair<bool, size_t> to_base10(const char* b, const char * const e)
 {
-    size_t res = 0;
+    pair<bool, size_t> res;
+    assert(b <= e);
+    res.first = true;
     while (b != e)
     {
-        res *= 10;
+        res.second *= 10;
         if (*b >= '0' && *b <= '9')
-            res += *b - '0';
+            res.second += *b - '0';
+        else
+        {
+            res.first = false;
+            return res;
+        }
         ++b;
     }
     return res;
 }
 
+/// shift the unprocessed data in the input buffer left
+void trim_buff(std::string& buf, std::string::const_iterator from)
+{
+    assert(from >= cbegin(buf));
+    assert(from <= cend(buf));
+    copy(from, cend(buf), begin(buf));
+    buf.resize(distance(from, cend(buf)));
+}
+
+} // end anon ns
+
 PayLoadFound find_payload(const std::string& buff)
 {
     PayLoadFound result;
     const size_t newline_pos = buff.find('\n');
-    if (newline_pos == string::npos)
+    if (buff.size() > 9 && newline_pos == string::npos) // 9 comes from 16 MB limit in ascii + \n
+    {
+        // ignore all the garbage we recieved
+        result.size_nl_sz = buff.size();
+        result.garbage = true;
         return result;
+    }
+    else if (newline_pos == string::npos)
+        // wait for \n
+        return result;
+
     result.size_nl_sz = newline_pos + 1;
     if (result.size_nl_sz > 9)
     {
+        // got too much stuff before \n
         result.garbage = true;
         return result;
     }
 
-    result.data_sz = to_base10(&buff[0], &buff[newline_pos]);
+    auto b10 = to_base10(&buff[0], &buff[newline_pos]);
+    if (! b10.first)
+    {
+        // something not numeric in base10
+        result.garbage = true;
+        return result;
+    }
+    result.data_sz = b10.second;
     if (result.data_sz > 16777216)
     {
+        // ignore a chunk which is too big
         result.data_sz = 0;
         result.garbage = true;
         return result;
@@ -96,14 +132,12 @@ void ProtocolState::input(const char* data, size_t len)
                 if (msg.m_has_payload)
                     m_read_payload = true;
             }
+            if (found.garbage)
+                handle_msg_garbage(m_input_buff);
+
             trim_start = found.end;
             if (trim_start != cbegin(m_input_buff))
-            {
-                // shift the unprocessed data in the input buffer left
-                copy(trim_start, cend(m_input_buff), begin(m_input_buff));
-                m_input_buff.resize(distance(trim_start, cend(m_input_buff)));
-                //m_input_buff.assign(trim_start, cend(m_input_buff));
-            }
+                trim_buff(m_input_buff, trim_start);
             else
                 break;
         }
@@ -124,11 +158,14 @@ void ProtocolState::input(const char* data, size_t len)
                     handle_payload_end();
                     m_read_payload = false;
                 }
-                // shift the unprocessed data in the input buffer left
-                trim_start = cbegin(m_input_buff) + m_pl_found.total_size();
-                copy(trim_start, cend(m_input_buff), begin(m_input_buff));
-                m_input_buff.resize(distance(trim_start, cend(m_input_buff)));
-                //m_input_buff.assign(trim_start, cend(m_input_buff));
+                trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
+                m_pl_found.reset();
+            }
+            else if (m_pl_found.garbage)
+            {
+                handle_pl_garbage(m_input_buff);
+                trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
+                m_read_payload = false;
                 m_pl_found.reset();
             }
             else

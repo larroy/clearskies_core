@@ -31,6 +31,8 @@ public:
         , m_messages()
         , m_payload()
         , m_payload_end()
+        , m_msg_garbage_cb([](const string&){})
+        , m_pl_garbage_cb([](const string&){})
     {
     }
     void handle_message(const Message& m) override
@@ -47,9 +49,24 @@ public:
     {
         m_payload_end = true;
     }
+
+    void handle_msg_garbage(const std::string& buff) override
+    {
+        m_msg_garbage_cb(buff);
+    }
+
+    void handle_pl_garbage(const std::string& buff) override
+    {
+        m_pl_garbage_cb(buff);
+    }
+
+
+
     vector<Message> m_messages;
     string m_payload;
     bool m_payload_end;
+    std::function<void(const std::string&)> m_msg_garbage_cb;
+    std::function<void(const std::string&)> m_pl_garbage_cb;
 };
 
 BOOST_AUTO_TEST_CASE(find_messsage_test)
@@ -230,4 +247,38 @@ BOOST_AUTO_TEST_CASE(ProtocolStateTest_payload_02)
     proto.input("10\n");
     BOOST_CHECK_EQUAL(proto.m_payload, "012\n1");
     BOOST_CHECK(proto.m_payload_end);
+}
+
+BOOST_AUTO_TEST_CASE(ProtocolStateTest_garbage)
+{
+    ProtocolTest proto;
+    bool called = false;
+    const string* buf;
+    proto.m_pl_garbage_cb = [&](const string& buff)
+    {
+        called = true;
+        buf = &buff;
+    };
+    proto.input("!{}\nasdasda\n");
+    BOOST_CHECK(called);
+    BOOST_CHECK_EQUAL(*buf, "");
+}
+
+BOOST_AUTO_TEST_CASE(ProtocolStateTest_garbage_02)
+{
+    ProtocolTest proto;
+    bool called = false;
+    const string* buf;
+    proto.m_pl_garbage_cb = [&](const string& buff)
+    {
+        called = true;
+        buf = &buff;
+    };
+    proto.input("!{}\nblashblhasblabhalbhablhaomgsoboringandnotnumeric");
+    BOOST_CHECK(called);
+    BOOST_CHECK_EQUAL(*buf, "");
+    proto.input("{}\n");
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 2);
+    BOOST_CHECK(proto.m_messages[0].type() == MType::UNKNOWN);
+    BOOST_CHECK(proto.m_messages[1].type() == MType::UNKNOWN);
 }

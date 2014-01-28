@@ -98,6 +98,9 @@ public:
     virtual void handle_message(const message::Message&) = 0;
     virtual void handle_payload(const char* data, size_t len) = 0;
     virtual void handle_payload_end() = 0;
+    /// in case of garbage we should probably close the connection ASAP
+    virtual void handle_msg_garbage(const std::string& buff) {};
+    virtual void handle_pl_garbage(const std::string& buff) {};
 
 private:
     /// FIXME: using a deque would be more efficient for appending data
