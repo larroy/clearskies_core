@@ -71,6 +71,8 @@ PayLoadFound find_payload(const std::string& buff);
 class ProtocolState 
 {
 public:
+    /// initial size of the input buffer
+    static size_t s_input_buff_size;
     /**
      * feed input data, for example from socket IO
      * Once a full message is read, handle_message is called
@@ -80,7 +82,7 @@ public:
         , m_read_payload(false)
         , m_pl_found()
     {
-        m_input_buff.reserve(4096);
+        m_input_buff.reserve(s_input_buff_size);
     }
 
     //ProtocolState(const ProtocolState&) = delete;
@@ -103,7 +105,6 @@ private:
 
     bool m_read_payload;
     PayLoadFound m_pl_found;
-    
 };
 
 struct MsgFound
