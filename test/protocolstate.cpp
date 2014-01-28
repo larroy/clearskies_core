@@ -26,11 +26,30 @@ using namespace cs::protocol;
 class ProtocolTest: public ProtocolState
 {
 public:
+    ProtocolTest(): 
+        ProtocolState()
+        , m_messages()
+        , m_payload()
+        , m_payload_end()
+    {
+    }
     void handle_message(const Message& m) override
     {
         m_messages.emplace_back(m);
     }
+
+    void handle_payload(const char* data, size_t len) override
+    {
+        m_payload.append(data, len);
+    }
+
+    void handle_payload_end() override
+    {
+        m_payload_end = true;
+    }
     vector<Message> m_messages;
+    string m_payload;
+    bool m_payload_end;
 };
 
 BOOST_AUTO_TEST_CASE(find_messsage_test)
@@ -74,9 +93,13 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.json, "{}");
     BOOST_CHECK(found.prefix == '!');
     BOOST_CHECK_EQUAL(&*found.end, &buff[4]);
+}
 
-    buff = "${}\n";
-    found = find_message(buff);
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_02)
+{
+    string buff = "${}\n";
+    MsgFound found = find_message(buff);
     BOOST_CHECK(! found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "");
@@ -91,10 +114,13 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.signature, "=123");
     BOOST_CHECK(found.prefix == '$');
     BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+}
 
+BOOST_AUTO_TEST_CASE(find_messsage_test_03)
+{
     /// partial signature read
-    buff = "${}\n";
-    found = find_message(buff);
+    string buff = "${}\n";
+    MsgFound found = find_message(buff);
     BOOST_CHECK(! found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "");
@@ -118,14 +144,12 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.signature, "=123");
     BOOST_CHECK(found.prefix == '$');
     BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+}
 
-
-
-
-
-
-    buff = "&{}\n";
-    found = find_message(buff);
+BOOST_AUTO_TEST_CASE(find_messsage_test_04)
+{
+    string buff = "&{}\n";
+    MsgFound found = find_message(buff);
     BOOST_CHECK(! found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, "");
@@ -140,11 +164,13 @@ BOOST_AUTO_TEST_CASE(find_messsage_test)
     BOOST_CHECK_EQUAL(found.signature, "=123");
     BOOST_CHECK(found.prefix == '&');
     BOOST_CHECK_EQUAL(&*found.end, &buff[9]);
+}
 
+BOOST_AUTO_TEST_CASE(find_messsage_test_05)
+{
 
-
-    buff = R"({"type": "ping"})" "\n";
-    found = find_message(buff);
+    string buff = R"({"type": "ping"})" "\n";
+    MsgFound found = find_message(buff);
     BOOST_CHECK(found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK_EQUAL(found.json, R"({"type": "ping"})");
@@ -184,3 +210,24 @@ BOOST_AUTO_TEST_CASE(ProtocolStateTest_02)
     BOOST_CHECK(m.type() == MType::PING);
 }
 
+BOOST_AUTO_TEST_CASE(ProtocolStateTest_payload_01)
+{
+    ProtocolTest proto;
+    proto.input("!{}\n5\n012\n10");
+    BOOST_CHECK_EQUAL(proto.m_payload, "012\n1");
+    BOOST_CHECK(!proto.m_payload_end);
+    proto.input("\n");
+    BOOST_CHECK(proto.m_payload_end);
+}
+
+BOOST_AUTO_TEST_CASE(ProtocolStateTest_payload_02)
+{
+    ProtocolTest proto;
+    proto.input("!{}\n5\n01");
+    BOOST_CHECK(! proto.m_payload_end);
+    proto.input("2\n");
+    BOOST_CHECK(! proto.m_payload_end);
+    proto.input("10\n");
+    BOOST_CHECK_EQUAL(proto.m_payload, "012\n1");
+    BOOST_CHECK(proto.m_payload_end);
+}

@@ -17,6 +17,7 @@
  */
 #include "protocolstate.hpp"
 #include "message.hpp"
+#include <cstdlib>
 
 using namespace std;
 
@@ -96,20 +97,93 @@ MsgFound find_message(const std::string& buff)
     return result;
 }
 
+size_t to_base10(const char* b, const char * const e)
+{
+    size_t res = 0;
+    while (b != e)
+    {
+        res *= 10;
+        if (*b >= '0' && *b <= '9')
+            res += *b - '0';
+        ++b;
+    }
+    return res;
+}
+
+PayLoadFound find_payload(const std::string& buff)
+{
+    PayLoadFound result;
+    const size_t newline_pos = buff.find('\n');
+    if (newline_pos == string::npos)
+        return result;
+    result.size_nl_sz = newline_pos + 1;
+    if (result.size_nl_sz > 9)
+    {
+        result.garbage = true;
+        return result;
+    }
+
+    result.data_sz = to_base10(&buff[0], &buff[newline_pos]);
+    if (result.data_sz > 16777216)
+    {
+        result.data_sz = 0;
+        result.garbage = true;
+        return result;
+    }
+    result.found = true;
+    return result;
+}
+
+
 void ProtocolState::input(const char* data, size_t len)
 {
     m_input_buff.append(data, len);
-    MsgFound found = find_message(m_input_buff);
-    if (found.found)
+    auto trim_start = cbegin(m_input_buff);
+    while (true)
     {
-        message::Message msg(found.json, has_payload(found.prefix), found.signature);
-        handle_message(msg);
+        if (! m_read_payload)
+        {
+            MsgFound found = find_message(m_input_buff);
+            if (found)
+            {
+                message::Message msg(found.json, has_payload(found.prefix), found.signature);
+                handle_message(msg);
+                if (msg.m_has_payload)
+                    m_read_payload = true;
+            }
+            trim_start = found.end;
+            if (trim_start != cbegin(m_input_buff))
+                m_input_buff.assign(trim_start, cend(m_input_buff));
+            else
+                break;
+        }
+        else
+        {
+            if (! m_pl_found)
+                // we are not waiting for finishing a chunk
+                m_pl_found = find_payload(m_input_buff);
+
+            if (m_pl_found && (m_input_buff.size() >= m_pl_found.total_size()))
+            {
+                if (m_pl_found.data_sz != 0)
+                {
+                    handle_payload(&m_input_buff[m_pl_found.size_nl_sz], m_pl_found.data_sz);
+                }
+                else
+                {
+                    handle_payload_end();
+                    m_read_payload = false;
+                }
+                trim_start = cbegin(m_input_buff) + m_pl_found.total_size();
+                m_input_buff.assign(trim_start, cend(m_input_buff));
+                m_pl_found.reset();
+            }
+            else
+                break;
+        }
     }
-    if (found.end != cbegin(m_input_buff))
-        m_input_buff.assign(found.end, cend(m_input_buff));
 }
 
 
 } // end ns
 } // end ns
-

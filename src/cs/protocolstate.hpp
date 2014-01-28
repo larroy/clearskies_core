@@ -26,6 +26,41 @@ namespace cs
 {
 namespace protocol
 {
+
+struct PayLoadFound
+{
+    PayLoadFound():
+        found()
+        , garbage()
+        , size_nl_sz()
+        , data_sz()
+    {}
+
+    void reset()
+    {
+        found = false;
+        garbage = false;
+        size_nl_sz = 0;
+        data_sz = 0;
+    }
+    explicit operator bool() const
+    {
+        return found;
+    }
+    size_t total_size() const
+    {
+        return size_nl_sz + data_sz;
+    }
+    bool found;
+    bool garbage;
+    size_t size_nl_sz;
+    size_t data_sz;
+};
+
+PayLoadFound find_payload(const std::string& buff);
+
+
+
 /**
  * @brief Base protocol state class for all protocols
  * @author plarroy
@@ -41,7 +76,9 @@ public:
      * Once a full message is read, handle_message is called
      */
     ProtocolState():
-        m_input_buff()
+          m_input_buff()
+        , m_read_payload(false)
+        , m_pl_found()
     {
         m_input_buff.reserve(4096);
     }
@@ -57,10 +94,15 @@ public:
     void input(const char* data, size_t len);
 
     virtual void handle_message(const message::Message&) = 0;
+    virtual void handle_payload(const char* data, size_t len) = 0;
+    virtual void handle_payload_end() = 0;
 
 private:
     /// FIXME: using a deque would be more efficient for appending data
     std::string m_input_buff;
+
+    bool m_read_payload;
+    PayLoadFound m_pl_found;
     
 };
 
@@ -74,6 +116,10 @@ struct MsgFound
         signature(),
         end()
     {}
+    explicit operator bool() const
+    {
+        return found;
+    }
     bool found;
     bool garbage;
     /// prefix !: payload $: signed &: signed payload
@@ -85,7 +131,5 @@ struct MsgFound
 };
 
 MsgFound find_message(const std::string& buff);
-
-
 } // end ns
 } // end ns
