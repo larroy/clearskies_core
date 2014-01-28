@@ -77,8 +77,8 @@ class Message
 public:
     Message(const Message&) = default;
     Message(Message&&) = default;
-    Message& operator=(const Message&) & = default;
-    Message& operator=(Message&&) & = default;
+    Message& operator=(const Message&) = default;
+    Message& operator=(Message&&) = default;
 
     /**
      * Construct a message from a json string
