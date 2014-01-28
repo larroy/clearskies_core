@@ -1,0 +1,20 @@
+language: cpp
+
+compiler:
+  - clang
+
+before_install:
+  # Install GYP
+  - svn export http://gyp.googlecode.com/svn/trunk/ -r 1845 gyp
+  - export PATH=$(pwd)/gyp:${PATH}
+
+  # Install Ninja
+  - wget https://github.com/martine/ninja/releases/download/v1.4.0/ninja-linux.zip
+  - sudo unzip -d /usr/bin/ ninja-linux.zip
+  
+  # Install boost
+  - sudo apt-get install libboost-test-dev
+
+script:
+  - ./build.sh
+  - ./test.sh
