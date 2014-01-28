@@ -26,7 +26,7 @@
 #include "utp_types.h"
 #include <assert.h>
 
-#if defined(POSIX)
+#if defined(POSIX) || defined(__ANDROID__)
 /* Allow over-writing FORCEINLINE from makefile because gcc 3.4.4 for buffalo
    doesn't seem to support __attribute__((always_inline)) in -O0 build
    (strangely, it works in -Os build) */
