@@ -79,6 +79,8 @@ public:
 class Message
 {
 public:
+    static size_t MAX_SIZE;
+
     Message(const Message&) = default;
     Message(Message&&) = default;
     Message& operator=(const Message&) = default;
@@ -106,6 +108,11 @@ public:
 
     virtual ~Message() {}
 
+    std::string serialize();
+
+    /// derived classes should override this and fill m_json with their data members
+    virtual void fill_json();
+
     /**
      * @throws MessageError if the message is invalid
      */
@@ -131,6 +138,9 @@ public:
     {
         return m_type != MType::UNKNOWN;
     }
+
+    char prefix() const;
+
 
     MType m_type;
     bool m_has_payload;
@@ -171,6 +181,8 @@ public:
         , m_timeout(60)
     {
     }
+
+    virtual void fill_json() override;
 
     bool valid() const override
     {

@@ -63,3 +63,11 @@ BOOST_AUTO_TEST_CASE(MessageTest_refine)
     BOOST_CHECK(ping.type() == MType::PING);
  
 }
+
+
+BOOST_AUTO_TEST_CASE(MessageTest_serialize)
+{
+    Ping m;
+    string s = m.serialize();
+    BOOST_CHECK_EQUAL(s, R"(m28{"timeout":60,"type":"ping"})" "\n");
+}

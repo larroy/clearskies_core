@@ -16,6 +16,12 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "message.hpp"
+#include <sstream>
+#include <cassert>
+#include "jsoncons/json_serializer.hpp"
+
+using namespace std;
+
 namespace cs
 {
 namespace message
@@ -114,6 +120,9 @@ MType mtype_from_string(const std::string& type)
     return MType::UNKNOWN;
 }
 
+
+size_t Message::MAX_SIZE = 1ULL << 20;
+
 Message::Message(const std::string& json, bool payload,  const std::string& signature):
       m_type(MType::UNKNOWN)
     , m_has_payload(payload)
@@ -135,7 +144,57 @@ Message::Message(const std::string& json, bool payload,  const std::string& sign
 }
 
 
+std::string Message::serialize()
+{
+    ostringstream os;
+    ostringstream json_os;
+    jsoncons::json_serializer serializer(json_os, false);
 
+    fill_json();
+    m_json.to_stream(serializer);
+    const string& json_str = json_os.str();
+
+    // m2{}\n
+    os << prefix();
+    assert(json_str.size() <= MAX_SIZE);
+    os << json_str.size();
+    os << json_str;
+    os << '\n';
+
+    return os.str();
+}
+
+void Message::fill_json()
+{
+    using namespace jsoncons;
+    m_json = json::an_object;
+    m_json["type"] = mtype_to_string(type());
+}
+
+
+char Message::prefix() const
+{
+    char res = 'm';
+    if (m_has_payload && ! m_signature.empty())
+        res = '$';
+    else if (m_has_payload && m_signature.empty())
+        res = '!';
+    else if (! m_has_payload && m_signature.empty())
+        res = 'm';
+    else if (! m_has_payload && ! m_signature.empty())
+        res = 's';
+    return res;
+}
+
+
+void Ping::fill_json()
+{
+    using namespace jsoncons;
+    m_json = json::an_object;
+    m_json["type"] = mtype_to_string(type());
+    m_json["timeout"] = m_timeout;
+}
 
 } // end ns
 } // end ns
+
