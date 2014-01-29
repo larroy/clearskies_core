@@ -1,6 +1,8 @@
 clearskies_core
 ===============
 
+[![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
+
 Open source C++ bittorrent sync clone using the clearskies protocol:
 
 Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/core.md
@@ -36,5 +38,4 @@ Development is with **GCC 4.8**
 https://groups.google.com/forum/#!forum/clearskies-dev
 
 
-[![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
 
