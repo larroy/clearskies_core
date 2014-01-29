@@ -36,3 +36,5 @@ Development is with **GCC 4.8**
 https://groups.google.com/forum/#!forum/clearskies-dev
 
 
+[![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
+
