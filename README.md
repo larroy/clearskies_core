@@ -23,8 +23,8 @@ Development is with **GCC 4.8**
 
 # Build instructions:
 
-./build.sh
-./test.sh
+    ./build.sh
+    ./test.sh
 
 # Status of the project
 
