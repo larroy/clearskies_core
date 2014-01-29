@@ -18,6 +18,7 @@
 #pragma once
 
 #include "protocolstate.hpp"
+#include <array>
 
 namespace cs
 {
