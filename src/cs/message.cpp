@@ -18,6 +18,7 @@
 #include "message.hpp"
 #include <sstream>
 #include <cassert>
+#include <array>
 #include "jsoncons/json_serializer.hpp"
 
 using namespace std;
