@@ -17,9 +17,10 @@
  */
 
 #pragma once
-#include "jsoncons/json.hpp"
 #include "int_types.h"
 #include "utils.hpp"
+#include <string>
+#include <vector>
 
 namespace cs
 {
@@ -31,11 +32,8 @@ enum class MType: unsigned
 {
     UNKNOWN = 0,
 
-    EMPTY,
-
     // Internal messages
     INTERNAL_START,
-
 
     PING,
     GREETING,
@@ -68,30 +66,46 @@ enum class MType: unsigned
 std::string mtype_to_string(MType type);
 MType mtype_from_string(const std::string& type);
 
-class MessageError: public std::runtime_error
+// forward declaration of message classes to avoid circular dependency below
+class Unknown;
+class InternalStart;
+class Ping;
+class Greeting;
+class Start;
+class CannotStart;
+
+
+class ConstMessageVisitor
 {
 public:
-    MessageError(const std::string& x):
-        std::runtime_error(x)
-    {}
+    virtual ~ConstMessageVisitor() = 0;
+    virtual void visit(const Unknown&) = 0;
+    virtual void visit(const InternalStart&) = 0;
+    virtual void visit(const Ping&) = 0;
+    virtual void visit(const Greeting&) = 0;
+    virtual void visit(const Start&) = 0;
+    virtual void visit(const CannotStart&) = 0;
 };
+
+
+class MutatingMessageVisitor
+{
+public:
+    virtual ~MutatingMessageVisitor() = 0;
+    virtual void visit(Unknown&) = 0;
+    virtual void visit(InternalStart&) = 0;
+    virtual void visit(Ping&) = 0;
+    virtual void visit(Greeting&) = 0;
+    virtual void visit(Start&) = 0;
+    virtual void visit(CannotStart&) = 0;
+};
+
 
 class Message
 {
 public:
     static size_t MAX_SIZE;
 
-    Message(const Message&) = default;
-    Message(Message&&) = default;
-    Message& operator=(const Message&) = default;
-    Message& operator=(Message&&) = default;
-
-    /**
-     * Construct a message from a json string
-     * @throws MessageError on failing to parse message
-     * if the type field is not known or pressent type() is UNKNOWN
-     */
-    Message(const std::string& json, bool payload = false, const std::string& signature = std::string());
 protected:
     /**
      * Message with specific type only to be used from derived clases
@@ -99,33 +113,20 @@ protected:
     Message(MType type):
           m_type(type)
         , m_has_payload(false)
-        , m_json()
         , m_signature()
     {
     }
 
 public:
+    virtual ~Message() = 0;
 
-    virtual ~Message() {}
+    Message(const Message&) = default;
+    Message(Message&&) = default;
+    Message& operator=(const Message&) = default;
+    Message& operator=(Message&&) = default;
 
-    std::string serialize();
-
-    /// derived classes should override this and fill m_json with their data members
-    virtual void fill_json();
-
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    template<class ConcreteMessageType>
-    ConcreteMessageType refine()
-    {
-        return ConcreteMessageType(m_json);
-    }
-
-    bool is_known() const
-    {
-        return m_type != MType::UNKNOWN;
-    }
+    virtual void accept(ConstMessageVisitor& v) const = 0;
+    virtual void accept(MutatingMessageVisitor& v) = 0;
 
     /// @return type of message
     MType type() const
@@ -133,36 +134,52 @@ public:
         return m_type;
     }
 
-    /// @return true if the message has the structure that we expect
-    virtual bool valid() const
+    bool has_payload() const
     {
-        return m_type != MType::UNKNOWN;
+        return m_has_payload;
     }
 
-    char prefix() const;
-
+    bool has_signature() const
+    {
+        return ! m_signature.empty();
+    }
 
     MType m_type;
     bool m_has_payload;
-    jsoncons::json m_json;
     std::string m_signature;
 };
 
+
+/**
+ * A message whose type we don't recognize
+ */
+class Unknown: public Message
+{
+public:
+    Unknown():
+        Message(MType::UNKNOWN)
+    {}
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+    std::string m_content;
+};
 
 /**
  * Internal message to start the ClearSkiesProtocol and send a greeting
  */
 class InternalStart: public Message
 {
+public:
     InternalStart():
         Message(MType::INTERNAL_START)
     {}
 
-    bool valid() const override
-    {
-        return m_type == MType::INTERNAL_START;
-    }
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 };
+
 
 class Ping: public Message
 {
@@ -173,24 +190,12 @@ public:
     {
     }
 
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    Ping(const jsoncons::json& json):
-          Message(MType::PING)
-        , m_timeout(60)
-    {
-    }
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
-    virtual void fill_json() override;
-
-    bool valid() const override
-    {
-        return m_type == MType::PING;
-    }
-    /// timeout in seconds
     u32 m_timeout;
 };
+
 
 class Greeting: public Message
 {
@@ -203,22 +208,9 @@ public:
     {
     }
 
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    Greeting(const jsoncons::json& json):
-          Message(MType::GREETING)
-        , m_software()
-        , m_protocol()
-        , m_features()
-    {
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
-    }
-
-    bool valid() const override
-    {
-        return m_type == MType::GREETING;
-    }
 
     std::string m_software;
     std::vector<int> m_protocol;
@@ -240,25 +232,9 @@ public:
     {
     }
 
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    Start(const jsoncons::json& json):
-          Message(MType::START)
-        , m_software()
-        , m_protocol()
-        , m_features()
-        , m_id()
-        , m_access()
-        , m_peer()
-    {
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
-    }
-
-    bool valid() const override
-    {
-        return m_type == MType::START;
-    }
 
     std::string m_software;
     std::vector<int> m_protocol;
@@ -268,6 +244,7 @@ public:
     std::string m_peer;
 };
 
+
 class CannotStart: public Message
 {
 public:
@@ -276,19 +253,11 @@ public:
     {
     }
 
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    CannotStart(const jsoncons::json& json):
-          Message(MType::CANNOT_START)
-    {
-    }
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
-    bool valid() const override
-    {
-        return m_type == MType::CANNOT_START;
-    }
 };
+
 
 
 

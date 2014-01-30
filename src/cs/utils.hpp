@@ -18,10 +18,10 @@
 
 #pragma once
 #include <sstream>
+#include <memory>
 
 namespace std
 {
-
 // Forgotten stuff in the C++11 standard:
 
 template<typename T, typename... Args>
@@ -58,6 +58,9 @@ auto cend( const C& c ) -> decltype(c.cend())
 } // end ns
 
 
+
+
+
 /// Formatted string, allows to use stream operators and returns a std::string with the resulting format
 #define fs(x) \
    (static_cast<const std::ostringstream&>(((*std::make_unique<std::ostringstream>().get()) << x)).str ())
@@ -68,3 +71,10 @@ auto cend( const C& c ) -> decltype(c.cend())
    (static_cast<const std::ostringstream&>(((*std::make_unique<std::ostringstream>().get()) << "ERROR: "<< __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ <<  x)).str ())
 
 
+
+namespace utils
+{
+
+
+
+} // end ns

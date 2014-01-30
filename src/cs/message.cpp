@@ -38,7 +38,6 @@ mtype_str_table_t mtype_str_table_init()
 {
     mtype_str_table_t res;
     res[SC(MType::UNKNOWN)] = "unknown";
-    res[SC(MType::EMPTY)] = "empty";
     res[SC(MType::INTERNAL_START)] = "__internal_start";
     res[SC(MType::PING)] = "ping";
     res[SC(MType::GREETING)] = "greeting";
@@ -67,8 +66,8 @@ std::string mtype_to_string(MType type)
 
 MType mtype_from_string(const std::string& type)
 {
-    if (type == "empty")
-        return MType::EMPTY;
+    if (type == "unknown")
+        return MType::UNKNOWN;
 
     if (type == "__internal_start")
         return MType::INTERNAL_START;

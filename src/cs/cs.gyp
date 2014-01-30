@@ -16,6 +16,8 @@
                 "protocolstate.cpp",
                 "clearskiesprotocol.hpp",
                 "clearskiesprotocol.cpp",
+                "messagecoder.hpp",
+                "messagecoder.cpp",
             ],                                                                        
             "include_dirs": [
                 "../",
