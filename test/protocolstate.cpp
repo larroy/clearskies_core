@@ -26,7 +26,7 @@ using namespace cs::protocol;
 class ProtocolTest: public ProtocolState
 {
 public:
-    ProtocolTest(): 
+    ProtocolTest():
         ProtocolState()
         , m_messages()
         , m_payload()
@@ -70,17 +70,100 @@ public:
     std::function<void(const std::string&)> m_pl_garbage_cb;
 };
 
-#if 0
-BOOST_AUTO_TEST_CASE(find_messsage_test)
+BOOST_AUTO_TEST_CASE(find_messsage_test_01)
 {
-    string buff = "some garbage\n";
+    string buff = "som: e garbage\n";
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(! mrs.found);
     BOOST_CHECK(mrs.garbage);
-    BOOST_CHECK(mrs.json.empty());
-    BOOST_CHECK(! mrs.prefix);
-    BOOST_CHECK_EQUAL(&*mrs.end, &buff[13]);
+    BOOST_CHECK(! mrs.has_signature());
+}
 
+BOOST_AUTO_TEST_CASE(find_messsage_test_02)
+{
+    string buff = "m123981029830912830918203981092830912830918092380918309810923809182309\n";
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(! mrs.found);
+    BOOST_CHECK(mrs.garbage);
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_03)
+{
+    string buff = "m2:{}\n";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 2u);
+    BOOST_CHECK_EQUAL(mrs.end, 6);
+    BOOST_CHECK(! mrs.has_signature());
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_04)
+{
+    string buff = "!7:{jsonz}\n";
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, '!');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK_EQUAL(mrs.end, 11);
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_05)
+{
+    string buff = "!7:{jsonz}\n5\npayld";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, '!');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK(! mrs.has_signature());
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_06)
+{
+    string buff = "s7:{jsonz}\nsignz\n";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 's');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK(mrs.has_signature());
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "signz");
+}
+
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_07)
+{
+    string buff = "$7:{jsonz}\nsign\n5\npayld";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK(mrs.has_signature());
+    BOOST_CHECK_EQUAL(mrs.prefix, '$');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "sign");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+}
+
+
+
+
+
+#if 0
     buff = "";
     mrs = find_message(buff);
     BOOST_CHECK(! found.found);

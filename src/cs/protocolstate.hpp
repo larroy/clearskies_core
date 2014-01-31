@@ -65,6 +65,11 @@ struct MsgRstate
     {
         return has_payload(prefix);
     }
+    
+    bool has_signature() const
+    {
+        return signature_sz != 0;
+    }
 
     /// prefix !: payload $: signed &: signed payload
     char prefix;

@@ -78,7 +78,7 @@ class CannotStart;
 class ConstMessageVisitor
 {
 public:
-    virtual ~ConstMessageVisitor() = 0;
+    virtual ~ConstMessageVisitor() {};
     virtual void visit(const Unknown&) = 0;
     virtual void visit(const InternalStart&) = 0;
     virtual void visit(const Ping&) = 0;
@@ -91,7 +91,7 @@ public:
 class MutatingMessageVisitor
 {
 public:
-    virtual ~MutatingMessageVisitor() = 0;
+    virtual ~MutatingMessageVisitor() {};
     virtual void visit(Unknown&) = 0;
     virtual void visit(InternalStart&) = 0;
     virtual void visit(Ping&) = 0;
@@ -118,7 +118,7 @@ protected:
     }
 
 public:
-    virtual ~Message() = 0;
+    virtual ~Message() {};
 
     Message(const Message&) = default;
     Message(Message&&) = default;

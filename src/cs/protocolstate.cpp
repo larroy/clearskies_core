@@ -90,24 +90,23 @@ MsgRstate find_message(const std::string& buff)
     assert(! buff.empty());
     result.prefix = buff[0];
     auto b10 = to_base10(&buff[1], &buff[colon_pos]);
-    if (! b10.first || result.msg_len < 1) // at least \n is needed at the end of the message and included in the size
+    if (! b10.first)
         return result.set_garbage();
-    // message size including \n
     result.msg_len = b10.second;
     const size_t msg_start = colon_pos + 1;
-    const size_t msg_end = msg_start + result.msg_len;
+    const size_t msg_end = msg_start + result.msg_len; // \n position
     const size_t msg_have = buff.size() - msg_start;
-    size_t msg_plus_sig_end = msg_end;
+    size_t msg_plus_sig_end = msg_end + 1;
     if (msg_have >= result.msg_len)
     {
         // process message
         if (has_signature(result.prefix))
         {
-            const size_t newline_pos = buff.find('\n', msg_end);
+            const size_t newline_pos = buff.find('\n', msg_plus_sig_end);
             if (newline_pos == string::npos)
             {
                 assert(msg_end <= buff.size());
-                size_t signature_have = buff.size() - msg_end;
+                size_t signature_have = buff.size() - (msg_end + 1);
                 if (signature_have > ProtocolState::s_msg_signature_max)
                     return result.set_garbage();
                 else
@@ -117,16 +116,16 @@ MsgRstate find_message(const std::string& buff)
             assert(newline_pos != string::npos);
             if (newline_pos > ProtocolState::s_msg_signature_max)
                 return result.set_garbage();
-            const size_t sig_start = msg_end;
-            const size_t sig_end = newline_pos + 1; // includes \n
-            assert(sig_start < sig_end);
+            const size_t sig_start = msg_plus_sig_end;
+            const size_t sig_end = newline_pos; 
+            msg_plus_sig_end = sig_end + 1;
+            assert(sig_start <= sig_end);
             result.signature = &buff[sig_start];
-            result.signature_sz = sig_end - sig_start - 1;
-            msg_plus_sig_end = sig_end;
+            result.signature_sz = sig_end - sig_start;
         }
-        assert(msg_start < msg_end);
+        assert(msg_start <= msg_end);
         result.encoded = &buff[msg_start];
-        result.encoded_sz = result.msg_len - 1;
+        result.encoded_sz = result.msg_len;
         result.found = true;
         result.end = msg_plus_sig_end;
         return result;

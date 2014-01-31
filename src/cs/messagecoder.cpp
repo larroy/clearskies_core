@@ -30,7 +30,7 @@ namespace message
 class CoderImpl
 {
 public:
-    virtual ~CoderImpl() = 0;
+    virtual ~CoderImpl() {};
     virtual std::unique_ptr<Message> decode_msg(bool, const char*, size_t, const char*, size_t) = 0;
     virtual std::string encode_msg(const Message&) = 0;
 };
@@ -336,9 +336,22 @@ Coder::Coder(CoderType type):
     }
 }
 
+// needs to be defined here because of m_p and CoderImpl fwd declaration
 Coder::~Coder()
 {
 }
+
+
+std::unique_ptr<Message> Coder::decode_msg(bool payload, const char* encoded, size_t encoded_sz, const char* signature, size_t signature_sz)
+{
+    return m_p->decode_msg(payload, encoded, encoded_sz, signature, signature_sz);
+}
+
+std::string Coder::encode_msg(const Message& m) const
+{
+    return m_p->encode_msg(m);
+}
+
 
 
 } // end ns
