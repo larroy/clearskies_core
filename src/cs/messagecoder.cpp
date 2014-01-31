@@ -31,7 +31,7 @@ class CoderImpl
 {
 public:
     virtual ~CoderImpl() = 0;
-    virtual std::unique_ptr<Message> decode_msg(bool payload, const char* msg, size_t len, std::string&& signature) = 0;
+    virtual std::unique_ptr<Message> decode_msg(bool, const char*, size_t, const char*, size_t) = 0;
     virtual std::string encode_msg(const Message&) = 0;
 };
 
@@ -144,7 +144,7 @@ public:
     {}
 
 
-    std::unique_ptr<Message> decode_msg(bool payload, const char* msg, size_t len, std::string&& signature) override;
+    std::unique_ptr<Message> decode_msg(bool, const char*, size_t, const char*, size_t) override;
     std::string encode_msg(const Message&) override;
 
 protected:
@@ -161,10 +161,10 @@ private:
 };
 
 
-std::unique_ptr<Message> JSONCoder::decode_msg(bool payload, const char* msgdata, size_t len, std::string&& signature)
+std::unique_ptr<Message> JSONCoder::decode_msg(bool payload, const char* encoded, size_t encoded_sz, const char* signature, size_t signature_sz)
 try
 {
-    const auto json = jsoncons::json::parse_string(string(msgdata, len));
+    const auto json = jsoncons::json::parse_string(string(encoded, encoded_sz));
 
     MType type = MType::UNKNOWN;
     if (json.has_member("type"))
@@ -175,6 +175,7 @@ try
     case MType::INTERNAL_START:
     {
         auto msg = make_unique<InternalStart>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -182,6 +183,7 @@ try
     case MType::PING:
     {
         auto msg = make_unique<Ping>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -189,6 +191,7 @@ try
     case MType::GREETING:
     {
         auto msg = make_unique<Greeting>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -196,6 +199,7 @@ try
     case MType::START:
     {
         auto msg = make_unique<Start>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -203,6 +207,7 @@ try
     case MType::CANNOT_START:
     {
         auto msg = make_unique<CannotStart>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -218,6 +223,7 @@ try
     default:
     case MType::UNKNOWN:
         auto msg = make_unique<Unknown>();
+        msg->m_payload = payload;
         decode(json, *msg);
         return std::move(msg);
     }
@@ -233,36 +239,78 @@ catch(const std::runtime_error& e)
 }
 
 
-
-std::string JSONCoder::encode_msg(const Message&)
+namespace
 {
-    string result;
-    return result;
+
+std::string json_2_str(const jsoncons::json& json)
+{
+    ostringstream json_os;
+    jsoncons::json_serializer serializer(json_os, false); // no indent
+    json.to_stream(serializer);
+    return json_os.str();
 }
 
+}
+
+
+std::string JSONCoder::encode_msg(const Message& msg)
+{
+    char prefix = 0;
+    if (! msg.payload() && ! msg.signature())
+        prefix = 'm';
+    else if (msg.payload() && ! msg.signature())
+        prefix = '!';
+    else if (! msg.payload() &&  msg.signature())
+        prefix = 's';
+    else if (msg.payload() &&  msg.signature())
+        prefix = '$';
+
+    // m3:{}\n
+    ostringstream result;
+    result << prefix;
+    assert(m_encoded_msg.size() + 1 <= Message::MAX_SIZE);
+    result << (m_encoded_msg.size() + 1);
+    result << ':';
+    result << m_encoded_msg;
+    result << '\n'; // + 1, included in the size field
+    return result.str();
+}
+
+#define ENCXX\
+    do {\
+        jsoncons::json json;\
+        encode(x, json);\
+        m_encoded_msg = json_2_str(json);\
+    } while(0);
 
 void JSONCoder::visit(const Unknown&)
 {
+    assert(0);
 }
 
-void JSONCoder::visit(const InternalStart&)
+void JSONCoder::visit(const InternalStart& x)
 {
+    ENCXX;
 }
 
-void JSONCoder::visit(const Ping&)
+void JSONCoder::visit(const Ping& x)
 {
+    ENCXX;
 }
 
-void JSONCoder::visit(const Greeting&)
+void JSONCoder::visit(const Greeting& x)
 {
+    ENCXX;
 }
 
-void JSONCoder::visit(const Start&)
+void JSONCoder::visit(const Start& x)
 {
+    ENCXX;
 }
 
-void JSONCoder::visit(const CannotStart&)
+void JSONCoder::visit(const CannotStart& x)
 {
+    ENCXX;
 }
 
 

@@ -36,7 +36,6 @@ enum class State: unsigned
 };
 
 
-typedef std::function<void(const char*, size_t)> write_cb_t;
 
 // state transition function
 typedef std::function<void(const message::Message&)> state_trans_fn_t;
@@ -55,16 +54,16 @@ typedef std::array<std::array<state_trans_fn_t, SC(State::MAX)>, SC(message::MTy
  */
 class ClearSkiesProtocol: public ProtocolState
 {
-    ClearSkiesProtocol(write_cb_t write_cb):
-          m_state(State::INITIAL)
-        , m_write_cb(write_cb)
+    ClearSkiesProtocol(write_cb_t write_cb = [](const char*, size_t){}):
+          ProtocolState(write_cb)
+        , m_state(State::INITIAL)
     {}
 
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
     // overrides from ProtocolState
-    void handle_message(const message::Message&) override;
+    void handle_message(std::unique_ptr<message::Message>) override;
     void handle_payload(const char* data, size_t len) override;
     void handle_payload_end() override;
     void handle_msg_garbage(const std::string& buff) override;
@@ -75,9 +74,6 @@ class ClearSkiesProtocol: public ProtocolState
     void trans_INITIAL_INTERNAL_START(const message::Message&);
 
     State m_state;
-
-    /// callback used to write data
-    write_cb_t m_write_cb;
 
     state_trans_table_t m_state_trans_table;
 };

@@ -31,7 +31,7 @@ void ClearSkiesProtocol::trans_INITIAL_INTERNAL_START(const message::Message& ms
 
 }
 
-void ClearSkiesProtocol::handle_message(const message::Message& msg)
+void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
 {
 }
 

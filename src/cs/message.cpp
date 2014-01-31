@@ -19,7 +19,6 @@
 #include <sstream>
 #include <cassert>
 #include <array>
-#include "jsoncons/json_serializer.hpp"
 
 using namespace std;
 
@@ -121,79 +120,7 @@ MType mtype_from_string(const std::string& type)
 }
 
 
-size_t Message::MAX_SIZE = 1ULL << 20;
-
-Message::Message(const std::string& json, bool payload,  const std::string& signature):
-      m_type(MType::UNKNOWN)
-    , m_has_payload(payload)
-    , m_json()
-    , m_signature(signature)
-{
-    // translate jsoncons::json_parse_exception to MessageError
-    try
-    {
-        m_json = jsoncons::json::parse_string(json);
-    }
-    catch(const jsoncons::json_parse_exception& e)
-    {
-        throw MessageError(fs("json parse error:" << e.what()));
-    }
-    // set type from json
-    if (m_json.has_member("type"))
-        m_type = mtype_from_string(m_json["type"].as_string());
-}
-
-
-std::string Message::serialize()
-{
-    ostringstream os;
-    ostringstream json_os;
-    jsoncons::json_serializer serializer(json_os, false);
-
-    fill_json();
-    m_json.to_stream(serializer);
-    const string& json_str = json_os.str();
-
-    // m2{}\n
-    os << prefix();
-    assert(json_str.size() <= MAX_SIZE);
-    os << json_str.size();
-    os << json_str;
-    os << '\n';
-
-    return os.str();
-}
-
-void Message::fill_json()
-{
-    using namespace jsoncons;
-    m_json = json::an_object;
-    m_json["type"] = mtype_to_string(type());
-}
-
-
-char Message::prefix() const
-{
-    char res = 'm';
-    if (m_has_payload && ! m_signature.empty())
-        res = '$';
-    else if (m_has_payload && m_signature.empty())
-        res = '!';
-    else if (! m_has_payload && m_signature.empty())
-        res = 'm';
-    else if (! m_has_payload && ! m_signature.empty())
-        res = 's';
-    return res;
-}
-
-
-void Ping::fill_json()
-{
-    using namespace jsoncons;
-    m_json = json::an_object;
-    m_json["type"] = mtype_to_string(type());
-    m_json["timeout"] = m_timeout;
-}
+size_t Message::MAX_SIZE = 1ULL << 24; // 16 MB
 
 } // end ns
 } // end ns

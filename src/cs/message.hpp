@@ -112,7 +112,7 @@ protected:
      */
     Message(MType type):
           m_type(type)
-        , m_has_payload(false)
+        , m_payload(false)
         , m_signature()
     {
     }
@@ -134,18 +134,18 @@ public:
         return m_type;
     }
 
-    bool has_payload() const
+    bool payload() const
     {
-        return m_has_payload;
+        return m_payload;
     }
 
-    bool has_signature() const
+    bool signature() const
     {
         return ! m_signature.empty();
     }
 
     MType m_type;
-    bool m_has_payload;
+    bool m_payload;
     std::string m_signature;
 };
 

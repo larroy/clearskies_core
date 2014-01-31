@@ -48,12 +48,17 @@ public:
     Coder(CoderType type = CoderType::JSON);
     ~Coder();
 
+    // copies disabled
     Coder(const Coder&) = delete;
     Coder& operator=(const Coder&) = delete;
 
+    // moves enabled
+    Coder(Coder&&) = default;
+    Coder& operator=(Coder&&) = default;
+
     /// @returns a pointer to a polymorphic Message
     /// @throws CoderError when the message has a format that prevents decoding
-    std::unique_ptr<Message> decode_msg(bool payload, const char* msg, size_t len, std::string&& signature);
+    std::unique_ptr<Message> decode_msg(bool payload, const char* encoded, size_t encoded_sz, const char* signature, size_t signature_sz);
 
     /// @returns a string with the encoded message
     std::string encode_msg(const Message&) const;
