@@ -3,9 +3,15 @@ clearskies_core
 
 [![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
 
-Open source C++ bittorrent sync clone using the clearskies protocol:
+Open source, distributed data synchornization software using the clearskies protocol.
 
 Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/core.md
+
+# Status of the project:
+
+* Early stages of development, there's nothing here for users. Only if you are willing to help and
+  contribute.
+
 
 # Dependencies:
 
