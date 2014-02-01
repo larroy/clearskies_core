@@ -16,6 +16,7 @@
  */
 
 #include "cs/protocolstate.hpp"
+#include "cs/messagecoder.hpp"
 #include <boost/test/unit_test.hpp>
 #include <vector>
 
@@ -160,6 +161,30 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_07)
 }
 
 
+BOOST_AUTO_TEST_CASE(find_messsage_test_08)
+{
+    ProtocolTest proto;
+    Coder coder;
+    string coded = coder.encode_msg(Ping());
+    MsgRstate mrs = find_message(coded);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":60,"type":"ping"})" "\n");
+
+
+    Ping msg; 
+    msg.m_timeout = 10;
+    coded = coder.encode_msg(msg);
+    mrs = find_message(coded);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":10,"type":"ping"})" "\n");
+
+}
 
 
 

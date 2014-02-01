@@ -146,6 +146,10 @@ public:
 
     std::unique_ptr<Message> decode_msg(bool, const char*, size_t, const char*, size_t) override;
     std::string encode_msg(const Message&) override;
+    void reset()
+    {
+        m_encoded_msg.clear();
+    }
 
 protected:
     void visit(const Unknown&) override;
@@ -266,6 +270,7 @@ std::string JSONCoder::encode_msg(const Message& msg)
         prefix = '$';
 
     // m3:{}\n
+    msg.accept(*this);
     ostringstream result;
     result << prefix;
     assert(m_encoded_msg.size() + 1 <= Message::MAX_SIZE);
@@ -273,6 +278,12 @@ std::string JSONCoder::encode_msg(const Message& msg)
     result << ':';
     result << m_encoded_msg;
     result << '\n'; // + 1, included in the size field
+
+    /******/
+    // reset m_encoded_msg
+    reset();
+    /******/
+
     return result.str();
 }
 
