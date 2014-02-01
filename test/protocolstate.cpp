@@ -161,9 +161,8 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_07)
 }
 
 
-BOOST_AUTO_TEST_CASE(find_messsage_test_08)
+BOOST_AUTO_TEST_CASE(messagecoder_test)
 {
-    ProtocolTest proto;
     Coder coder;
     string coded = coder.encode_msg(Ping());
     MsgRstate mrs = find_message(coded);
@@ -171,7 +170,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_08)
     BOOST_CHECK(! mrs.garbage);
     BOOST_CHECK(! mrs.payload());
     BOOST_CHECK_EQUAL(mrs.prefix, 'm');
-    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":60,"type":"ping"})" "\n");
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":60,"type":"ping"})");
 
 
     Ping msg; 
@@ -182,10 +181,18 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_08)
     BOOST_CHECK(! mrs.garbage);
     BOOST_CHECK(! mrs.payload());
     BOOST_CHECK_EQUAL(mrs.prefix, 'm');
-    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":10,"type":"ping"})" "\n");
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":10,"type":"ping"})");
 
 }
 
+BOOST_AUTO_TEST_CASE(Protocol_test_01)
+{
+    Coder coder;
+    ProtocolTest proto;
+    string coded = coder.encode_msg(Greeting());
+    for (const auto x: coded)
+        proto.input(string(1, x));
+}
 
 
 #if 0

@@ -233,13 +233,17 @@ try
     }
     assert(0);
 }
-catch(const jsoncons::json_parse_exception& e)
+catch(const jsoncons::json_exception& e)
 {
     throw CoderError(fs("JSONCoder::decode JSON parse error:" << e.what()));
 }
 catch(const std::runtime_error& e)
 {
     throw CoderError(fs("JSONCoder::decode runtime_error: " << e.what()));
+}
+catch(const std::exception & e)
+{
+    throw CoderError(fs("JSONCoder::decode exception: " << e.what()));
 }
 
 
@@ -273,11 +277,11 @@ std::string JSONCoder::encode_msg(const Message& msg)
     msg.accept(*this);
     ostringstream result;
     result << prefix;
-    assert(m_encoded_msg.size() + 1 <= Message::MAX_SIZE);
-    result << (m_encoded_msg.size() + 1);
+    assert(m_encoded_msg.size() <= Message::MAX_SIZE);
+    result << m_encoded_msg.size();
     result << ':';
     result << m_encoded_msg;
-    result << '\n'; // + 1, included in the size field
+    result << '\n';
 
     /******/
     // reset m_encoded_msg

@@ -93,11 +93,11 @@ MsgRstate find_message(const std::string& buff)
     if (! b10.first)
         return result.set_garbage();
     result.msg_len = b10.second;
-    const size_t msg_start = colon_pos + 1;
-    const size_t msg_end = msg_start + result.msg_len; // \n position
-    const size_t msg_have = buff.size() - msg_start;
-    size_t msg_plus_sig_end = msg_end + 1;
-    if (msg_have >= result.msg_len)
+    const size_t encoded_start = colon_pos + 1;
+    const size_t encoded_end = encoded_start + result.msg_len; // \n position
+    const size_t msg_have = buff.size() - encoded_start;
+    size_t msg_plus_sig_end = encoded_end + 1;
+    if (msg_have >= result.msg_len + 1)
     {
         // process message
         if (has_signature(result.prefix))
@@ -105,8 +105,8 @@ MsgRstate find_message(const std::string& buff)
             const size_t newline_pos = buff.find('\n', msg_plus_sig_end);
             if (newline_pos == string::npos)
             {
-                assert(msg_end <= buff.size());
-                size_t signature_have = buff.size() - (msg_end + 1);
+                assert(encoded_end <= buff.size());
+                size_t signature_have = buff.size() - (encoded_end + 1);
                 if (signature_have > ProtocolState::s_msg_signature_max)
                     return result.set_garbage();
                 else
@@ -123,8 +123,8 @@ MsgRstate find_message(const std::string& buff)
             result.signature = &buff[sig_start];
             result.signature_sz = sig_end - sig_start;
         }
-        assert(msg_start <= msg_end);
-        result.encoded = &buff[msg_start];
+        assert(encoded_start <= encoded_end);
+        result.encoded = &buff[encoded_start];
         result.encoded_sz = result.msg_len;
         result.found = true;
         result.end = msg_plus_sig_end;
@@ -188,10 +188,17 @@ void ProtocolState::input(const char* data, size_t len)
             MsgRstate mrs = find_message(m_input_buff);
             if (mrs.found)
             {
-                unique_ptr<message::Message> msg = m_msg_coder.decode_msg(mrs.payload(), mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz);
-                if (mrs.payload())
-                    m_read_payload = true;
-                handle_message(move(msg));
+                try 
+                {
+                    unique_ptr<message::Message> msg = m_msg_coder.decode_msg(mrs.payload(), mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz);
+                    if (mrs.payload())
+                        m_read_payload = true;
+                    handle_message(move(msg));
+                } 
+                catch(const message::CoderError& e)
+                {
+                    handle_msg_garbage(fs("message::CoderError exception: " <<  e.what()));
+                }
             }
             if (mrs.garbage)
                 handle_msg_garbage(m_input_buff);
