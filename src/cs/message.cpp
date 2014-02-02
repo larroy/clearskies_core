@@ -93,7 +93,7 @@ MType mtype_from_string(const std::string& type)
         return MType::KEYS;
 
     if (type == "keys_acknowledgment")
-        return MType::KEYS;
+        return MType::KEYS_ACKNOWLEDGMENT;
 
     if (type == "manifest")
         return MType::MANIFEST;
