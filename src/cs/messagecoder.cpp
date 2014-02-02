@@ -184,46 +184,47 @@ try
     if (json.has_member("type"))
         type = mtype_from_string(json["type"].as_string());
 
+    unique_ptr<Message> msg;
     switch(type)
     {
     case MType::INTERNAL_START:
     {
-        auto msg = make_unique<InternalStart>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<InternalStart>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     case MType::PING:
     {
-        auto msg = make_unique<Ping>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<Ping>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     case MType::GREETING:
     {
-        auto msg = make_unique<Greeting>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<Greeting>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     case MType::START:
     {
-        auto msg = make_unique<Start>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<Start>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     case MType::CANNOT_START:
     {
-        auto msg = make_unique<CannotStart>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<CannotStart>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     // FIXME implement rest of messages
@@ -236,12 +237,14 @@ try
     case MType::MANIFEST_CURRENT:
     default:
     case MType::UNKNOWN:
-        auto msg = make_unique<Unknown>();
-        msg->m_payload = payload;
-        decode(json, *msg);
-        return std::move(msg);
+        auto xmsg = make_unique<Unknown>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
-    assert(0);
+    msg->m_payload = payload;
+    msg->m_signature.assign(signature, signature_sz);
+    return std::move(msg);
 }
 catch(const jsoncons::json_exception& e)
 {
@@ -292,6 +295,8 @@ std::string JSONCoder::encode_msg(const Message& msg)
     result << ':';
     result << m_encoded_msg;
     result << '\n';
+    if (msg.signature())
+        result << msg.m_signature << '\n';
 
     /******/
     // reset m_encoded_msg

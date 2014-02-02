@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(messagecoder_test)
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":60,"type":"ping"})");
 
 
-    Ping msg; 
+    Ping msg;
     msg.m_timeout = 10;
     coded = coder.encode_msg(msg);
     mrs = find_message(coded);
@@ -198,6 +198,47 @@ BOOST_AUTO_TEST_CASE(Protocol_test_01)
     BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
     BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
 }
+
+BOOST_AUTO_TEST_CASE(Protocol_test_payload)
+{
+    Coder coder;
+    ProtocolTest proto;
+    Greeting msg;
+    msg.m_payload = true;
+    string coded = coder.encode_msg(msg);
+    coded.append("3\n1230\n");
+    for (const auto x: coded)
+        proto.input(string(1, x));
+
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
+    BOOST_CHECK_EQUAL(proto.m_payload, "123");
+
+}
+
+BOOST_AUTO_TEST_CASE(Protocol_test_signature)
+{
+    Coder coder;
+    ProtocolTest proto;
+    Greeting msg;
+    msg.m_signature = "by me";
+    string coded = coder.encode_msg(msg);
+
+    for (const auto x: coded)
+        proto.input(string(1, x));
+    //proto.input(coded);
+
+    //cout << coded << endl;
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
+    const auto & rec = *proto.m_messages.at(0);
+
+    BOOST_CHECK(rec.signature());
+    BOOST_CHECK_EQUAL(rec.m_signature, "by me");
+}
+
+
+
 
 
 #if 0
