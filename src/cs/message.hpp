@@ -17,9 +17,10 @@
  */
 
 #pragma once
-#include "jsoncons/json.hpp"
 #include "int_types.h"
 #include "utils.hpp"
+#include <string>
+#include <vector>
 
 namespace cs
 {
@@ -31,7 +32,8 @@ enum class MType: unsigned
 {
     UNKNOWN = 0,
 
-    EMPTY,
+    // Internal messages
+    INTERNAL_START,
 
     PING,
     GREETING,
@@ -64,59 +66,67 @@ enum class MType: unsigned
 std::string mtype_to_string(MType type);
 MType mtype_from_string(const std::string& type);
 
-class MessageError: public std::runtime_error
+// forward declaration of message classes to avoid circular dependency below
+class Unknown;
+class InternalStart;
+class Ping;
+class Greeting;
+class Start;
+class CannotStart;
+
+
+class ConstMessageVisitor
 {
 public:
-    MessageError(const std::string& x):
-        std::runtime_error(x)
-    {}
+    virtual ~ConstMessageVisitor() {};
+    virtual void visit(const Unknown&) = 0;
+    virtual void visit(const InternalStart&) = 0;
+    virtual void visit(const Ping&) = 0;
+    virtual void visit(const Greeting&) = 0;
+    virtual void visit(const Start&) = 0;
+    virtual void visit(const CannotStart&) = 0;
 };
+
+
+class MutatingMessageVisitor
+{
+public:
+    virtual ~MutatingMessageVisitor() {};
+    virtual void visit(Unknown&) = 0;
+    virtual void visit(InternalStart&) = 0;
+    virtual void visit(Ping&) = 0;
+    virtual void visit(Greeting&) = 0;
+    virtual void visit(Start&) = 0;
+    virtual void visit(CannotStart&) = 0;
+};
+
 
 class Message
 {
 public:
-    Message(const Message&) = default;
-    Message(Message&&) = default;
-    Message& operator=(const Message&) = default;
-    Message& operator=(Message&&) = default;
+    static size_t MAX_SIZE;
 
-    /**
-     * Construct a message from a json string
-     * @throws MessageError on failing to parse message
-     * if the type field is not known or pressent type() is UNKNOWN
-     */
-    Message(const std::string& json, bool payload = false, const std::string& signature = std::string());
 protected:
     /**
      * Message with specific type only to be used from derived clases
      */
     Message(MType type):
           m_type(type)
-        , m_has_payload(false)
-        , m_json()
+        , m_payload(false)
         , m_signature()
     {
     }
 
 public:
+    virtual ~Message() {};
 
-    virtual ~Message() {}
+    Message(const Message&) = default;
+    Message(Message&&) = default;
+    Message& operator=(const Message&) = default;
+    Message& operator=(Message&&) = default;
 
-
-    template<class ConcreteMessageType>
-
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    ConcreteMessageType refine()
-    {
-        return ConcreteMessageType(m_json);
-    }
-
-    bool is_known() const
-    {
-        return m_type != MType::UNKNOWN;
-    }
+    virtual void accept(ConstMessageVisitor& v) const = 0;
+    virtual void accept(MutatingMessageVisitor& v) = 0;
 
     /// @return type of message
     MType type() const
@@ -124,46 +134,131 @@ public:
         return m_type;
     }
 
-    /// @return true if the message has the structure that we expect
-    virtual bool valid() const
+    bool payload() const
     {
-        return m_type != MType::UNKNOWN;
+        return m_payload;
+    }
+
+    bool signature() const
+    {
+        return ! m_signature.empty();
     }
 
     MType m_type;
-    bool m_has_payload;
-    jsoncons::json m_json;
+    bool m_payload;
     std::string m_signature;
 };
+
+
+/**
+ * A message whose type we don't recognize
+ */
+class Unknown: public Message
+{
+public:
+    Unknown():
+        Message(MType::UNKNOWN)
+    {}
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+    std::string m_content;
+};
+
+/**
+ * Internal message to start the ClearSkiesProtocol and send a greeting
+ */
+class InternalStart: public Message
+{
+public:
+    InternalStart():
+        Message(MType::INTERNAL_START)
+    {}
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+};
+
 
 class Ping: public Message
 {
 public:
     Ping():
           Message(MType::PING)
-        , m_timeout()
+        , m_timeout(60)
     {
     }
 
-    /**
-     * @throws MessageError if the message is invalid
-     */
-    Ping(const jsoncons::json& json):
-          Message(MType::PING)
-        , m_timeout()
-    {
-        // get timeout
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
-    }
-
-    bool valid() const override
-    {
-        if (m_type == MType::PING)
-            return true;
-        return false;
-    }
     u32 m_timeout;
 };
+
+
+class Greeting: public Message
+{
+public:
+    Greeting():
+          Message(MType::GREETING)
+        , m_software()
+        , m_protocol()
+        , m_features()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_software;
+    std::vector<int> m_protocol;
+    std::vector<std::string> m_features;
+};
+
+
+class Start: public Message
+{
+public:
+    Start():
+          Message(MType::START)
+        , m_software()
+        , m_protocol()
+        , m_features()
+        , m_id()
+        , m_access()
+        , m_peer()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_software;
+    std::vector<int> m_protocol;
+    std::vector<std::string> m_features;
+    std::string m_id;
+    std::string m_access;
+    std::string m_peer;
+};
+
+
+class CannotStart: public Message
+{
+public:
+    CannotStart():
+          Message(MType::CANNOT_START)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+};
+
+
 
 
 } // end ns

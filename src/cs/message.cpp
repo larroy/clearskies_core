@@ -16,7 +16,11 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "message.hpp"
+#include <sstream>
+#include <cassert>
 #include <array>
+
+using namespace std;
 
 namespace cs
 {
@@ -33,7 +37,7 @@ mtype_str_table_t mtype_str_table_init()
 {
     mtype_str_table_t res;
     res[SC(MType::UNKNOWN)] = "unknown";
-    res[SC(MType::EMPTY)] = "empty";
+    res[SC(MType::INTERNAL_START)] = "__internal_start";
     res[SC(MType::PING)] = "ping";
     res[SC(MType::GREETING)] = "greeting";
     res[SC(MType::START)] = "start";
@@ -61,6 +65,12 @@ std::string mtype_to_string(MType type)
 
 MType mtype_from_string(const std::string& type)
 {
+    if (type == "unknown")
+        return MType::UNKNOWN;
+
+    if (type == "__internal_start")
+        return MType::INTERNAL_START;
+
     if (type == "ping")
         return MType::PING;
 
@@ -109,28 +119,9 @@ MType mtype_from_string(const std::string& type)
     return MType::UNKNOWN;
 }
 
-Message::Message(const std::string& json, bool payload,  const std::string& signature):
-      m_type(MType::UNKNOWN)
-    , m_has_payload(payload)
-    , m_json()
-    , m_signature(signature)
-{
-    // translate jsoncons::json_parse_exception to MessageError
-    try
-    {
-        m_json = jsoncons::json::parse_string(json);
-    }
-    catch(const jsoncons::json_parse_exception& e)
-    {
-        throw MessageError(fs("json parse error:" << e.what()));
-    }
-    // set type from json
-    if (m_json.has_member("type"))
-        m_type = mtype_from_string(m_json["type"].as_string());
-}
 
-
-
+size_t Message::MAX_SIZE = 1ULL << 24; // 16 MB
 
 } // end ns
 } // end ns
+

@@ -16,6 +16,7 @@
  */
 
 #include "cs/protocolstate.hpp"
+#include "cs/messagecoder.hpp"
 #include <boost/test/unit_test.hpp>
 #include <vector>
 
@@ -26,7 +27,7 @@ using namespace cs::protocol;
 class ProtocolTest: public ProtocolState
 {
 public:
-    ProtocolTest(): 
+    ProtocolTest():
         ProtocolState()
         , m_messages()
         , m_payload()
@@ -35,9 +36,10 @@ public:
         , m_pl_garbage_cb([](const string&){})
     {
     }
-    void handle_message(const Message& m) override
+
+    void handle_message(unique_ptr<Message> msg) override
     {
-        m_messages.emplace_back(m);
+        m_messages.emplace_back(move(msg));
     }
 
     void handle_payload(const char* data, size_t len) override
@@ -53,34 +55,195 @@ public:
     void handle_msg_garbage(const std::string& buff) override
     {
         m_msg_garbage_cb(buff);
+        cout << "handle_msg_garbage: " << buff << endl;
     }
 
     void handle_pl_garbage(const std::string& buff) override
     {
         m_pl_garbage_cb(buff);
+        cout << "handle_pl_garbage: " << buff << endl;
     }
 
 
 
-    vector<Message> m_messages;
+    vector<unique_ptr<Message>> m_messages;
     string m_payload;
     bool m_payload_end;
     std::function<void(const std::string&)> m_msg_garbage_cb;
     std::function<void(const std::string&)> m_pl_garbage_cb;
 };
 
-BOOST_AUTO_TEST_CASE(find_messsage_test)
+BOOST_AUTO_TEST_CASE(find_messsage_test_01)
 {
-    string buff = "some garbage\n";
-    MsgFound found = find_message(buff);
-    BOOST_CHECK(! found.found);
-    BOOST_CHECK(found.garbage);
-    BOOST_CHECK(found.json.empty());
-    BOOST_CHECK(! found.prefix);
-    BOOST_CHECK_EQUAL(&*found.end, &buff[13]);
+    string buff = "som: e garbage\n";
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(! mrs.found);
+    BOOST_CHECK(mrs.garbage);
+    BOOST_CHECK(! mrs.has_signature());
+}
 
+BOOST_AUTO_TEST_CASE(find_messsage_test_02)
+{
+    string buff = "m123981029830912830918203981092830912830918092380918309810923809182309\n";
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(! mrs.found);
+    BOOST_CHECK(mrs.garbage);
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_03)
+{
+    string buff = "m2:{}\n";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 2u);
+    BOOST_CHECK_EQUAL(mrs.end, 6);
+    BOOST_CHECK(! mrs.has_signature());
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_04)
+{
+    string buff = "!7:{jsonz}\n";
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, '!');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK_EQUAL(mrs.end, 11);
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_05)
+{
+    string buff = "!7:{jsonz}\n5\npayld";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, '!');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK(! mrs.has_signature());
+}
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_06)
+{
+    string buff = "s7:{jsonz}\nsignz\n";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 's');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+    BOOST_CHECK(mrs.has_signature());
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "signz");
+}
+
+
+BOOST_AUTO_TEST_CASE(find_messsage_test_07)
+{
+    string buff = "$7:{jsonz}\nsign\n5\npayld";
+    //             01234 5 6
+    MsgRstate mrs = find_message(buff);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(mrs.payload());
+    BOOST_CHECK(mrs.has_signature());
+    BOOST_CHECK_EQUAL(mrs.prefix, '$');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "sign");
+    BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
+}
+
+
+BOOST_AUTO_TEST_CASE(messagecoder_test)
+{
+    Coder coder;
+    string coded = coder.encode_msg(Ping());
+    MsgRstate mrs = find_message(coded);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":60,"type":"ping"})");
+
+
+    Ping msg;
+    msg.m_timeout = 10;
+    coded = coder.encode_msg(msg);
+    mrs = find_message(coded);
+    BOOST_CHECK(mrs.found);
+    BOOST_CHECK(! mrs.garbage);
+    BOOST_CHECK(! mrs.payload());
+    BOOST_CHECK_EQUAL(mrs.prefix, 'm');
+    BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), R"({"timeout":10,"type":"ping"})");
+
+}
+
+BOOST_AUTO_TEST_CASE(Protocol_test_01)
+{
+    Coder coder;
+    ProtocolTest proto;
+    string coded = coder.encode_msg(Greeting());
+    for (const auto x: coded)
+        proto.input(string(1, x));
+
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
+}
+
+BOOST_AUTO_TEST_CASE(Protocol_test_payload)
+{
+    Coder coder;
+    ProtocolTest proto;
+    Greeting msg;
+    msg.m_payload = true;
+    string coded = coder.encode_msg(msg);
+    coded.append("3\n1230\n");
+    for (const auto x: coded)
+        proto.input(string(1, x));
+
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
+    BOOST_CHECK_EQUAL(proto.m_payload, "123");
+
+}
+
+BOOST_AUTO_TEST_CASE(Protocol_test_signature)
+{
+    Coder coder;
+    ProtocolTest proto;
+    Greeting msg;
+    msg.m_signature = "by me";
+    string coded = coder.encode_msg(msg);
+
+    for (const auto x: coded)
+        proto.input(string(1, x));
+    //proto.input(coded);
+
+    //cout << coded << endl;
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
+    const auto & rec = *proto.m_messages.at(0);
+
+    BOOST_CHECK(rec.signature());
+    BOOST_CHECK_EQUAL(rec.m_signature, "by me");
+}
+
+
+
+
+
+#if 0
     buff = "";
-    found = find_message(buff);
+    mrs = find_message(buff);
     BOOST_CHECK(! found.found);
     BOOST_CHECK(! found.garbage);
     BOOST_CHECK(found.json.empty());
@@ -282,3 +445,4 @@ BOOST_AUTO_TEST_CASE(ProtocolStateTest_garbage_02)
     BOOST_CHECK(proto.m_messages[0].type() == MType::UNKNOWN);
     BOOST_CHECK(proto.m_messages[1].type() == MType::UNKNOWN);
 }
+#endif
