@@ -39,7 +39,7 @@ namespace coder
 {
 /************************** JSON Implementation **************************/
 
-namespace json
+namespace jsoni
 {
 
 /*** decode json -> msg ***/
@@ -125,8 +125,9 @@ void encode(const Greeting& msg, jsoncons::json& json)
     using namespace jsoncons;
     encode_type(msg, json);
     json["software"] = msg.m_software;
-    json["protocol"] = to_array(msg.m_protocol.begin(), msg.m_protocol.end());
-    json["features"] = to_array(msg.m_features.begin(), msg.m_features.end());
+    //json["protocol"] = to_array(msg.m_protocol.begin(), msg.m_protocol.end());
+    json["protocol"] = jsoncons::json(msg.m_protocol.begin(), msg.m_protocol.end());
+    json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
 }
 
 void encode(const Start& msg, jsoncons::json& json)
@@ -352,7 +353,7 @@ Coder::Coder(CoderType type):
     switch(type)
     {
         case CoderType::JSON:
-            m_p = make_unique<coder::json::JSONCoder>();
+            m_p = make_unique<coder::jsoni::JSONCoder>();
             break;
 
         default:
