@@ -18,3 +18,7 @@ before_install:
 script:
   - ./build.sh
   - ./test.sh
+
+
+git:
+    depth: 2
