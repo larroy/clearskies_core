@@ -20,6 +20,7 @@
 #include "message.hpp"
 #include <memory>
 #include <string>
+#include <stdexcept>
 
 
 namespace cs
