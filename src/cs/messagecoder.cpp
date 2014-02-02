@@ -111,13 +111,22 @@ void encode(const Ping& msg, jsoncons::json& json)
     json["timeout"] = msg.m_timeout;
 }
 
+template<class It>
+jsoncons::json to_array(It begin, It end)
+{
+    auto result = jsoncons::json::make_array();
+    for (auto i = begin; i != end; ++i)
+        result.add(jsoncons::json(*i));
+    return result;
+}
+
 void encode(const Greeting& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
     json["software"] = msg.m_software;
-    //json["protocol"] = json(msg.m_protocol.begin(), msg.m_protocol.end());
-    //json["features"] = json(msg.m_features.begin(), msg.m_features.end());
+    json["protocol"] = to_array(msg.m_protocol.begin(), msg.m_protocol.end());
+    json["features"] = to_array(msg.m_features.begin(), msg.m_features.end());
 }
 
 void encode(const Start& msg, jsoncons::json& json)

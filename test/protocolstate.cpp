@@ -55,11 +55,13 @@ public:
     void handle_msg_garbage(const std::string& buff) override
     {
         m_msg_garbage_cb(buff);
+        cout << "handle_msg_garbage: " << buff << endl;
     }
 
     void handle_pl_garbage(const std::string& buff) override
     {
         m_pl_garbage_cb(buff);
+        cout << "handle_pl_garbage: " << buff << endl;
     }
 
 
@@ -192,6 +194,9 @@ BOOST_AUTO_TEST_CASE(Protocol_test_01)
     string coded = coder.encode_msg(Greeting());
     for (const auto x: coded)
         proto.input(string(1, x));
+
+    BOOST_CHECK_EQUAL(proto.m_messages.size(), 1u);
+    BOOST_CHECK(typeid(*proto.m_messages.at(0)) == typeid(Greeting));
 }
 
 
