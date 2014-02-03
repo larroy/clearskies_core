@@ -91,6 +91,12 @@ void decode(const jsoncons::json& json, StartTLS& msg)
     msg.m_access = maccess_from_string(json["access"].as_string());
 }
 
+void decode(const jsoncons::json& json, Identity& msg)
+{
+    msg.m_name = json["name"].as_string();
+    msg.m_time = json["time"].as_int();
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -161,6 +167,14 @@ void encode(const StartTLS& msg, jsoncons::json& json)
     json["access"] = maccess_to_string(msg.m_access);
 }
 
+void encode(const Identity& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["name"] = msg.m_name;
+    json["time"] = to_string(msg.m_time);
+}
+
 // FIXME implement rest of messages
 
 
@@ -188,6 +202,7 @@ protected:
     void visit(const Start&) override;
     void visit(const CannotStart&) override;
     void visit(const StartTLS&) override;
+    void visit(const Identity&) override;
     // FIXME implement rest of messages
 
 private:
@@ -249,14 +264,21 @@ try
 
     case MType::STARTTLS:
     {
-            auto xmsg = make_unique<StartTLS>();
-            decode(json, *xmsg);
-            msg = move(xmsg);
-            break;
+        auto xmsg = make_unique<StartTLS>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::IDENTITY:
+    {
+        auto xmsg = make_unique<Identity>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
     }
 
     // FIXME implement rest of messages
-    case MType::IDENTITY:
     case MType::KEYS:
     case MType::KEYS_ACKNOWLEDGMENT:
     case MType::MANIFEST:
@@ -371,6 +393,11 @@ void JSONCoder::visit(const CannotStart& x)
 }
 
 void JSONCoder::visit(const StartTLS& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Identity& x)
 {
     ENCXX;
 }
