@@ -178,6 +178,10 @@ size_t ProtocolState::s_msg_size_max = 16777216;
 size_t ProtocolState::s_payload_chunk_size_max = 16777216;
 size_t ProtocolState::s_input_buff_size = 4096;
 
+/**
+ * Check if we have a full message then decode it and handle, otherwise wait for more data, same for
+ * payload.
+ */
 void ProtocolState::input(const char* data, size_t len)
 {
     m_input_buff.append(data, len);

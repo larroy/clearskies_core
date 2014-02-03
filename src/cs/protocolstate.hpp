@@ -40,7 +40,6 @@ inline bool has_payload(const char c)
 }
 
 
-
 struct MsgRstate
 {
     MsgRstate():
@@ -85,6 +84,8 @@ struct MsgRstate
     size_t end;
 };
 
+
+/// @return where the message starts and its components in the input buffer
 MsgRstate find_message(const std::string& buff);
 
 
@@ -132,19 +133,20 @@ struct PayLoadFound
     size_t data_sz;
 };
 
+/// @return info about a payload chunk on the input buffer
 PayLoadFound find_payload(const std::string& buff);
 
-
+/// type of callback for writing data
 typedef std::function<void(const char*, size_t)> write_cb_t;
 
 /**
  * @brief Base protocol state class for all protocols
  * @author plarroy
  *
- * Input data is fed and when messages are assembled handle_message is called which implementes the
- * message dispatching logic
+ * Low level buffer IO handling
  *
- * Implements the low level message reading and assembling plus message serialization and writing
+ * Input data is fed and when messages are complete, handle_message is called which implementes the
+ * message dispatching logic in derived classes
  */
 class ProtocolState
 {
@@ -155,10 +157,6 @@ public:
     static size_t s_payload_chunk_size_max;
     /// initial size of the input buffer
     static size_t s_input_buff_size;
-    /**
-     * feed input data, for example from socket IO
-     * Once a full message is read, handle_message is called
-     */
     ProtocolState(write_cb_t write_cb = [](const char*, size_t){}):
           m_input_buff()
         , m_read_payload(false)
@@ -173,24 +171,36 @@ public:
     //ProtocolState& operator=(const ProtocolState&) = delete;
 
     virtual ~ProtocolState() = default;
+
     void input(const std::string& s)
     {
         input(s.c_str(), s.size());
     }
+    /**
+     * feed input data, for example from socket IO
+     * Once a full message is read, handle_message is called
+     */
     void input(const char* data, size_t len);
 
+    /// called when a message is completely read on the input buffer
     virtual void handle_message(std::unique_ptr<message::Message>) = 0;
+    /// called after a message with the payload flag was handled and payload was input
     virtual void handle_payload(const char* data, size_t len) = 0;
+    /// called at the end of payload (record of size 0)
     virtual void handle_payload_end() = 0;
     /// in case of garbage we should probably close the connection ASAP
     virtual void handle_msg_garbage(const std::string& buff) {};
+    /// garbage in payload
     virtual void handle_pl_garbage(const std::string& buff) {};
 
 private:
+    /// internal input buffer accumulating data until it can be processed
     std::string m_input_buff;
     /// true if we are reading a payload section, false if we are reading or expecting a message
     bool m_read_payload;
     PayLoadFound m_pl_found;
+
+    /// encoder used for message data
     message::Coder m_msg_coder;
 
 public:
