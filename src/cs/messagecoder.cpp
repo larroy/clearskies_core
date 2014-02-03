@@ -97,6 +97,19 @@ void decode(const jsoncons::json& json, Identity& msg)
     msg.m_time = json["time"].as_int();
 }
 
+void decode(const jsoncons::json& json, Keys& msg)
+{
+    msg.m_access = maccess_from_string(json["access"].as_string());
+    msg.m_share_id = json["share_id"].as_string();
+
+    auto ro = json["read_only"];
+    msg.m_ro_psk = ro["psk"].as_string();
+    msg.m_ro_rsa = ro["rsa"].as_string();
+
+    auto rw = json["read_write"];
+    msg.m_rw_public_rsa = rw["public_rsa"].as_string();
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -175,6 +188,21 @@ void encode(const Identity& msg, jsoncons::json& json)
     json["time"] = to_string(msg.m_time);
 }
 
+void encode(const Keys& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["access"] = maccess_to_string(msg.m_access);
+    json["share_id"] = msg.m_share_id;
+
+    auto ro = json["read_only"];
+    ro["psk"] = msg.m_ro_psk;
+    ro["rsa"] = msg.m_ro_rsa;
+
+    auto rw = json["read_write"];
+    json["public_rsa"] = msg.m_rw_public_rsa;
+}
+
 // FIXME implement rest of messages
 
 
@@ -203,6 +231,7 @@ protected:
     void visit(const CannotStart&) override;
     void visit(const StartTLS&) override;
     void visit(const Identity&) override;
+    void visit(const Keys&) override;
     // FIXME implement rest of messages
 
 private:
@@ -278,8 +307,15 @@ try
         break;
     }
 
-    // FIXME implement rest of messages
     case MType::KEYS:
+    {
+        auto xmsg = make_unique<Keys>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    // FIXME implement rest of messages
     case MType::KEYS_ACKNOWLEDGMENT:
     case MType::MANIFEST:
     case MType::GET_MANIFEST:
@@ -297,7 +333,7 @@ try
 }
 catch(const jsoncons::json_exception& e)
 {
-    throw CoderError(fs("JSONCoder::decode JSON parse error:" << e.what()));
+    throw CoderError(fs("JSONCoder::decode JSON parse error: " << e.what()));
 }
 catch(const std::runtime_error& e)
 {
@@ -398,6 +434,11 @@ void JSONCoder::visit(const StartTLS& x)
 }
 
 void JSONCoder::visit(const Identity& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Keys& x)
 {
     ENCXX;
 }
