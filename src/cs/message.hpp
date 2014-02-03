@@ -108,7 +108,7 @@ public:
 
 protected:
     /**
-     * Message with specific type only to be used from derived clases
+     * Message with specific type only to be used from derived classes
      */
     Message(MType type):
           m_type(type)
@@ -237,7 +237,7 @@ public:
 
 
     std::string m_software;
-    std::vector<int> m_protocol;
+    int m_protocol;
     std::vector<std::string> m_features;
     std::string m_id;
     std::string m_access;
