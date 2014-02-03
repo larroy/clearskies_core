@@ -87,8 +87,8 @@ void decode(const jsoncons::json& json, CannotStart& msg)
 
 void decode(const jsoncons::json& json, StartTLS& msg)
 {
-    msg.m_peer = json["software"].as_string();
-    msg.m_access = maccess_from_string(json["protocol"].as_string());
+    msg.m_peer = json["peer"].as_string();
+    msg.m_access = maccess_from_string(json["access"].as_string());
 }
 
 /*** encode msg -> json ***/
