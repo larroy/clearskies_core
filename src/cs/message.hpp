@@ -66,6 +66,18 @@ enum class MType: unsigned
 std::string mtype_to_string(MType type);
 MType mtype_from_string(const std::string& type);
 
+
+enum class MAccess: unsigned
+{
+    UNKNOWN = 0,
+    READ_ONLY,
+    READ_WRITE,
+};
+
+std::string maccess_to_string(MAccess access);
+MAccess maccess_from_string(const std::string& access);
+
+
 // forward declaration of message classes to avoid circular dependency below
 class Unknown;
 class InternalStart;
@@ -73,6 +85,7 @@ class Ping;
 class Greeting;
 class Start;
 class CannotStart;
+class StartTLS;
 
 
 class ConstMessageVisitor
@@ -85,6 +98,7 @@ public:
     virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
     virtual void visit(const CannotStart&) = 0;
+    virtual void visit(const StartTLS&) = 0;
 };
 
 
@@ -98,6 +112,7 @@ public:
     virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
     virtual void visit(CannotStart&) = 0;
+    virtual void visit(StartTLS&) = 0;
 };
 
 
@@ -258,6 +273,24 @@ public:
 
 };
 
+
+class StartTLS: public Message
+{
+public:
+    StartTLS():
+          Message(MType::STARTTLS)
+        , m_peer()
+        , m_access()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_peer;
+    MAccess m_access;
+};
 
 
 

@@ -59,3 +59,15 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_to_str) {
     BOOST_CHECK(mtype_to_string(MType::UPDATE) == "update");
     BOOST_CHECK(mtype_to_string(MType::MOVE) == "move");
 }
+
+BOOST_AUTO_TEST_CASE(MessageTest_access_from_str) {
+    BOOST_CHECK(maccess_from_string("unknown") == MAccess::UNKNOWN);
+    BOOST_CHECK(maccess_from_string("read-only") == MAccess::READ_ONLY);
+    BOOST_CHECK(maccess_from_string("read-write") == MAccess::READ_WRITE);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_access_to_str) {
+    BOOST_CHECK(maccess_to_string(MAccess::UNKNOWN) == "unknown");
+    BOOST_CHECK(maccess_to_string(MAccess::READ_ONLY) == "read-only");
+    BOOST_CHECK(maccess_to_string(MAccess::READ_WRITE) == "read-write");
+}
