@@ -86,6 +86,7 @@ class Greeting;
 class Start;
 class CannotStart;
 class StartTLS;
+class Identity;
 
 
 class ConstMessageVisitor
@@ -99,6 +100,7 @@ public:
     virtual void visit(const Start&) = 0;
     virtual void visit(const CannotStart&) = 0;
     virtual void visit(const StartTLS&) = 0;
+    virtual void visit(const Identity&) = 0;
 };
 
 
@@ -113,6 +115,7 @@ public:
     virtual void visit(Start&) = 0;
     virtual void visit(CannotStart&) = 0;
     virtual void visit(StartTLS&) = 0;
+    virtual void visit(Identity&) = 0;
 };
 
 
@@ -292,6 +295,24 @@ public:
     MAccess m_access;
 };
 
+
+class Identity: public Message
+{
+public:
+    Identity():
+          Message(MType::IDENTITY)
+        , m_name()
+        , m_time()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_name;
+    int m_time;     // FIXME is int the correct type to represent time?
+};
 
 
 } // end ns
