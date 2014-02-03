@@ -110,6 +110,10 @@ void decode(const jsoncons::json& json, Keys& msg)
     msg.m_rw_public_rsa = rw["public_rsa"].as_string();
 }
 
+void decode(const jsoncons::json& json, Keys_Acknowledgment& msg)
+{
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -203,6 +207,11 @@ void encode(const Keys& msg, jsoncons::json& json)
     json["public_rsa"] = msg.m_rw_public_rsa;
 }
 
+void encode(const Keys_Acknowledgment& msg, jsoncons::json& json)
+{
+    assert(0);
+}
+
 // FIXME implement rest of messages
 
 
@@ -232,6 +241,7 @@ protected:
     void visit(const StartTLS&) override;
     void visit(const Identity&) override;
     void visit(const Keys&) override;
+    void visit(const Keys_Acknowledgment&) override;
     // FIXME implement rest of messages
 
 private:
@@ -315,8 +325,15 @@ try
         break;
     }
 
-    // FIXME implement rest of messages
     case MType::KEYS_ACKNOWLEDGMENT:
+    {
+        auto xmsg = make_unique<Keys>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    // FIXME implement rest of messages
     case MType::MANIFEST:
     case MType::GET_MANIFEST:
     case MType::MANIFEST_CURRENT:
@@ -439,6 +456,11 @@ void JSONCoder::visit(const Identity& x)
 }
 
 void JSONCoder::visit(const Keys& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Keys_Acknowledgment& x)
 {
     ENCXX;
 }
