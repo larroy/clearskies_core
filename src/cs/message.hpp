@@ -87,6 +87,8 @@ class Start;
 class CannotStart;
 class StartTLS;
 class Identity;
+class Keys;
+class Keys_Acknowledgment;
 
 
 class ConstMessageVisitor
@@ -101,6 +103,8 @@ public:
     virtual void visit(const CannotStart&) = 0;
     virtual void visit(const StartTLS&) = 0;
     virtual void visit(const Identity&) = 0;
+    virtual void visit(const Keys&) = 0;
+    virtual void visit(const Keys_Acknowledgment&) = 0;
 };
 
 
@@ -116,6 +120,8 @@ public:
     virtual void visit(CannotStart&) = 0;
     virtual void visit(StartTLS&) = 0;
     virtual void visit(Identity&) = 0;
+    virtual void visit(Keys&) = 0;
+    virtual void visit(Keys_Acknowledgment&) = 0;
 };
 
 
@@ -312,6 +318,45 @@ public:
 
     std::string m_name;
     int m_time;     // FIXME is int the correct type to represent time?
+};
+
+
+class Keys: public Message
+{
+public:
+    Keys():
+          Message(MType::KEYS)
+        , m_access()
+        , m_share_id()
+        , m_ro_psk()
+        , m_ro_rsa()
+        , m_rw_public_rsa()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    MAccess m_access;
+    std::string m_share_id;
+    std::string m_ro_psk;
+    std::string m_ro_rsa;
+    std::string m_rw_public_rsa;
+};
+
+
+class Keys_Acknowledgment: public Message
+{
+public:
+    Keys_Acknowledgment():
+          Message(MType::KEYS_ACKNOWLEDGMENT)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
 };
 
 
