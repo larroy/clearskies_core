@@ -74,7 +74,7 @@ void decode(const jsoncons::json& json, Start& msg)
 {
 
     msg.m_software = json["software"].as_string();
-    msg.m_protocol = json["protocol"].as_vector<int>();
+    msg.m_protocol = json["protocol"].as_int();
     msg.m_features = json["features"].as_vector<string>();
     msg.m_id = json["id"].as_string();
     msg.m_access = json["access"].as_string();
@@ -83,6 +83,12 @@ void decode(const jsoncons::json& json, Start& msg)
 
 void decode(const jsoncons::json& json, CannotStart& msg)
 {
+}
+
+void decode(const jsoncons::json& json, StartTLS& msg)
+{
+    msg.m_peer = json["peer"].as_string();
+    msg.m_access = maccess_from_string(json["access"].as_string());
 }
 
 /*** encode msg -> json ***/
@@ -134,12 +140,25 @@ void encode(const Start& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
-    // FIXME
+    json["software"] = msg.m_software;
+    json["protocol"] = to_string(msg.m_protocol);
+    json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
+    json["id"] = msg.m_id;
+    json["access"] = msg.m_access;
+    json["peer"] = msg.m_peer;
 }
 
 void encode(const CannotStart& msg, jsoncons::json& json)
 {
     encode_type(msg, json);
+}
+
+void encode(const StartTLS& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["peer"] = msg.m_peer;
+    json["access"] = maccess_to_string(msg.m_access);
 }
 
 // FIXME implement rest of messages
@@ -168,6 +187,7 @@ protected:
     void visit(const Greeting&) override;
     void visit(const Start&) override;
     void visit(const CannotStart&) override;
+    void visit(const StartTLS&) override;
     // FIXME implement rest of messages
 
 private:
@@ -227,8 +247,15 @@ try
         break;
     }
 
-    // FIXME implement rest of messages
     case MType::STARTTLS:
+    {
+            auto xmsg = make_unique<StartTLS>();
+            decode(json, *xmsg);
+            msg = move(xmsg);
+            break;
+    }
+
+    // FIXME implement rest of messages
     case MType::IDENTITY:
     case MType::KEYS:
     case MType::KEYS_ACKNOWLEDGMENT:
@@ -339,6 +366,11 @@ void JSONCoder::visit(const Start& x)
 }
 
 void JSONCoder::visit(const CannotStart& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const StartTLS& x)
 {
     ENCXX;
 }

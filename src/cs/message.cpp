@@ -119,6 +119,31 @@ MType mtype_from_string(const std::string& type)
     return MType::UNKNOWN;
 }
 
+std::string maccess_to_string(MAccess access)
+{
+    switch (access) {
+        case MAccess::READ_ONLY:
+            return "read-only";
+
+        case MAccess::READ_WRITE:
+            return "read-write";
+
+        default:
+            return "unknown";
+    }
+}
+
+MAccess maccess_from_string(const std::string& access)
+{
+    if (access == "read-only")
+            return MAccess::READ_ONLY;
+
+    if (access == "read-write")
+        return MAccess::READ_WRITE;
+
+    return MAccess::UNKNOWN;
+}
+
 
 size_t Message::MAX_SIZE = 1ULL << 24; // 16 MB
 
