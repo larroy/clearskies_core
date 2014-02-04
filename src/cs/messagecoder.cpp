@@ -110,7 +110,7 @@ void decode(const jsoncons::json& json, Keys& msg)
     msg.m_rw_public_rsa = rw["public_rsa"].as_string();
 }
 
-void decode(const jsoncons::json& json, Keys_Acknowledgment& msg)
+void decode(const jsoncons::json& json, KeysAcknowledgment& msg)
 {
 }
 
@@ -260,7 +260,7 @@ void encode(const Keys& msg, jsoncons::json& json)
     json["read_write"] = rw;
 }
 
-void encode(const Keys_Acknowledgment& msg, jsoncons::json& json)
+void encode(const KeysAcknowledgment& msg, jsoncons::json& json)
 {
     assert(0);
 }
@@ -350,7 +350,7 @@ protected:
     void visit(const StartTLS&) override;
     void visit(const Identity&) override;
     void visit(const Keys&) override;
-    void visit(const Keys_Acknowledgment&) override;
+    void visit(const KeysAcknowledgment&) override;
     void visit(const Manifest&) override;
     void visit(const GetManifest&) override;
     void visit(const ManifestCurrent&) override;
@@ -441,7 +441,7 @@ try
 
     case MType::KEYS_ACKNOWLEDGMENT:
     {
-        auto xmsg = make_unique<Keys_Acknowledgment>();
+        auto xmsg = make_unique<KeysAcknowledgment>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -612,7 +612,7 @@ void JSONCoder::visit(const Keys& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const Keys_Acknowledgment& x)
+void JSONCoder::visit(const KeysAcknowledgment& x)
 {
     ENCXX;
 }
