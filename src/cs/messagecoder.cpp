@@ -189,6 +189,23 @@ void decode(const jsoncons::json& json, Update& msg)
     }
 }
 
+void decode(const jsoncons::json& json, Move& msg)
+{
+    msg.m_revision = json["revision"].as_longlong();
+    msg.m_source = json["source"].as_string();
+
+    // Read json file object as an MFile
+    auto j_file = json["destination"];
+
+    msg.m_destination.m_path = j_file["path"].as_string();
+    msg.m_destination.m_utime = j_file["utime"].as_double();
+    msg.m_destination.m_size = j_file["size"].as_longlong();
+    msg.m_destination.m_mtime = j_file["mtime"].as_vector<int>();
+    msg.m_destination.m_mode = j_file["mode"].as_string();
+    msg.m_destination.m_sha256 = j_file["sha256"].as_string();
+    msg.m_destination.m_deleted = false;
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -367,6 +384,23 @@ void encode(const Update& msg, jsoncons::json& json)
     json["file"] = j_file;
 }
 
+void encode(const Move& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["revision"] = msg.m_revision;
+
+    jsoncons::json j_file;
+    j_file["path"] = msg.m_destination.m_path;
+    j_file["utime"] = msg.m_destination.m_utime;
+    j_file["size"] = msg.m_destination.m_size;
+    j_file["mtime"] = jsoncons::json(msg.m_destination.m_mtime.begin(), msg.m_destination.m_mtime.end());
+    j_file["mode"] = msg.m_destination.m_mode;
+    j_file["sha256"] = msg.m_destination.m_sha256;
+
+    json["file"] = j_file;
+}
+
 // FIXME implement rest of messages
 
 
@@ -403,6 +437,7 @@ protected:
     void visit(const Get&) override;
     void visit(const FileData&) override;
     void visit(const Update&) override;
+    void visit(const Move&) override;
     // FIXME implement rest of messages
 
 private:
@@ -537,6 +572,14 @@ try
     case MType::UPDATE:
     {
         auto xmsg = make_unique<Update>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::MOVE:
+    {
+        auto xmsg = make_unique<Move>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -698,6 +741,11 @@ void JSONCoder::visit(const FileData& x)
 }
 
 void JSONCoder::visit(const Update& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Move& x)
 {
     ENCXX;
 }

@@ -107,6 +107,7 @@ class ManifestCurrent;
 class Get;
 class FileData;
 class Update;
+class Move;
 
 
 class ConstMessageVisitor
@@ -129,6 +130,7 @@ public:
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
     virtual void visit(const Update&) = 0;
+    virtual void visit(const Move&) = 0;
 };
 
 
@@ -152,6 +154,7 @@ public:
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
     virtual void visit(Update&) = 0;
+    virtual void visit(Move&) = 0;
 };
 
 
@@ -495,6 +498,25 @@ public:
     MFile m_file;
 };
 
+class Move: public Message
+{
+public:
+    Move():
+          Message(MType::MOVE)
+        , m_revision()
+        , m_source()
+        , m_destination()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
+    std::string m_source;
+    MFile m_destination;
+};
 
 
 } // end ns
