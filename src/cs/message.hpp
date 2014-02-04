@@ -78,6 +78,18 @@ std::string maccess_to_string(MAccess access);
 MAccess maccess_from_string(const std::string& access);
 
 
+struct MFile
+{
+    std::string m_path;
+    double m_utime;
+    long long m_size;
+    std::vector<int> m_mtime;
+    std::string m_mode;
+    std::string m_sha256;
+    bool m_deleted;
+};
+
+
 // forward declaration of message classes to avoid circular dependency below
 class Unknown;
 class InternalStart;
@@ -89,6 +101,7 @@ class StartTLS;
 class Identity;
 class Keys;
 class Keys_Acknowledgment;
+class Manifest;
 
 
 class ConstMessageVisitor
@@ -105,6 +118,7 @@ public:
     virtual void visit(const Identity&) = 0;
     virtual void visit(const Keys&) = 0;
     virtual void visit(const Keys_Acknowledgment&) = 0;
+    virtual void visit(const Manifest&) = 0;
 };
 
 
@@ -122,6 +136,7 @@ public:
     virtual void visit(Identity&) = 0;
     virtual void visit(Keys&) = 0;
     virtual void visit(Keys_Acknowledgment&) = 0;
+    virtual void visit(Manifest&) = 0;
 };
 
 
@@ -357,6 +372,27 @@ public:
     virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
     virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 
+};
+
+
+class Manifest: public Message
+{
+public:
+    Manifest():
+          Message(MType::MANIFEST)
+        , m_peer()
+        , m_revision()
+        , m_files()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_peer;
+    long long m_revision;
+    std::vector<MFile> m_files;
 };
 
 
