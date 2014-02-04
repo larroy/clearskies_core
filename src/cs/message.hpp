@@ -103,6 +103,7 @@ class Keys;
 class Keys_Acknowledgment;
 class Manifest;
 class GetManifest;
+class ManifestCurrent;
 
 
 class ConstMessageVisitor
@@ -121,6 +122,7 @@ public:
     virtual void visit(const Keys_Acknowledgment&) = 0;
     virtual void visit(const Manifest&) = 0;
     virtual void visit(const GetManifest&) = 0;
+    virtual void visit(const ManifestCurrent&) = 0;
 };
 
 
@@ -140,6 +142,7 @@ public:
     virtual void visit(Keys_Acknowledgment&) = 0;
     virtual void visit(Manifest&) = 0;
     virtual void visit(GetManifest&) = 0;
+    virtual void visit(ManifestCurrent&) = 0;
 };
 
 
@@ -413,6 +416,20 @@ public:
 
 
     long long m_revision;
+};
+
+
+class ManifestCurrent: public Message
+{
+public:
+    ManifestCurrent():
+          Message(MType::MANIFEST_CURRENT)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
 };
 
 
