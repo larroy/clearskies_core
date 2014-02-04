@@ -153,6 +153,12 @@ void decode(const jsoncons::json& json, ManifestCurrent& msg)
 {
 }
 
+void decode(const jsoncons::json& json, Get& msg)
+{
+    msg.m_path = json["path"].as_string();
+    msg.m_range = json["range"].as_vector<long long>();
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -293,6 +299,14 @@ void encode(const ManifestCurrent& msg, jsoncons::json& json)
     assert(0);
 }
 
+void encode(const Get& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["path"] = msg.m_path;
+    json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
+}
+
 // FIXME implement rest of messages
 
 
@@ -326,6 +340,7 @@ protected:
     void visit(const Manifest&) override;
     void visit(const GetManifest&) override;
     void visit(const ManifestCurrent&) override;
+    void visit(const Get&) override;
     // FIXME implement rest of messages
 
 private:
@@ -436,6 +451,14 @@ try
     case MType::MANIFEST_CURRENT:
     {
         auto xmsg = make_unique<GetManifest>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::GET:
+    {
+        auto xmsg = make_unique<Get>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -582,6 +605,11 @@ void JSONCoder::visit(const GetManifest& x)
 }
 
 void JSONCoder::visit(const ManifestCurrent& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Get& x)
 {
     ENCXX;
 }
