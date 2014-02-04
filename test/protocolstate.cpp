@@ -19,6 +19,7 @@
 #include "cs/messagecoder.hpp"
 #include <boost/test/unit_test.hpp>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 using namespace cs::message;
