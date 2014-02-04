@@ -108,6 +108,7 @@ class Get;
 class FileData;
 class Update;
 class Move;
+class Max;
 
 
 class ConstMessageVisitor
@@ -131,6 +132,7 @@ public:
     virtual void visit(const FileData&) = 0;
     virtual void visit(const Update&) = 0;
     virtual void visit(const Move&) = 0;
+    virtual void visit(const Max&) = 0;
 };
 
 
@@ -155,6 +157,7 @@ public:
     virtual void visit(FileData&) = 0;
     virtual void visit(Update&) = 0;
     virtual void visit(Move&) = 0;
+    virtual void visit(Max&) = 0;
 };
 
 
@@ -516,6 +519,21 @@ public:
     long long m_revision;
     std::string m_source;
     MFile m_destination;
+};
+
+class Max: public Message
+{
+public:
+    Max():
+          Message(MType::MAX)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    //FIXME couldn't find this message type in the documentation
 };
 
 

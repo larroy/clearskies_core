@@ -206,6 +206,10 @@ void decode(const jsoncons::json& json, Move& msg)
     msg.m_destination.m_deleted = false;
 }
 
+void decode(const jsoncons::json& json, Max& msg)
+{
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -401,7 +405,10 @@ void encode(const Move& msg, jsoncons::json& json)
     json["file"] = j_file;
 }
 
-// FIXME implement rest of messages
+void encode(const Max& msg, jsoncons::json& json)
+{
+    assert(0);
+}
 
 
 class JSONCoder: public CoderImpl, public ConstMessageVisitor
@@ -438,7 +445,7 @@ protected:
     void visit(const FileData&) override;
     void visit(const Update&) override;
     void visit(const Move&) override;
-    // FIXME implement rest of messages
+    void visit(const Max&) override;
 
 private:
     std::string m_encoded_msg;
@@ -585,6 +592,14 @@ try
         break;
     }
 
+    case MType::MAX:
+    {
+        auto xmsg = make_unique<Max>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
     // FIXME implement rest of messages
 
     default:
@@ -594,6 +609,7 @@ try
         msg = move(xmsg);
         break;
     }
+
     msg->m_payload = payload;
     msg->m_signature.assign(signature, signature_sz);
     return std::move(msg);
@@ -750,7 +766,10 @@ void JSONCoder::visit(const Move& x)
     ENCXX;
 }
 
-// FIXME implement rest of messages
+void JSONCoder::visit(const Max& x)
+{
+    ENCXX;
+}
 
 
 } // end ns json
