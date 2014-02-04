@@ -144,6 +144,11 @@ void decode(const jsoncons::json& json, Manifest& msg)
     }
 }
 
+void decode(const jsoncons::json& json, GetManifest& msg)
+{
+    msg.m_revision = json["revision"].as_longlong();
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -272,6 +277,13 @@ void encode(const Manifest& msg, jsoncons::json& json)
     json["files"] = jsoncons::json(j_files.begin(), j_files.end());
 }
 
+void encode(const GetManifest& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["revision"] = msg.m_revision;
+}
+
 // FIXME implement rest of messages
 
 
@@ -303,6 +315,7 @@ protected:
     void visit(const Keys&) override;
     void visit(const Keys_Acknowledgment&) override;
     void visit(const Manifest&) override;
+    void visit(const GetManifest&) override;
     // FIXME implement rest of messages
 
 private:
@@ -402,8 +415,15 @@ try
         break;
     }
 
-    // FIXME implement rest of messages
     case MType::GET_MANIFEST:
+    {
+        auto xmsg = make_unique<GetManifest>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    // FIXME implement rest of messages
     case MType::MANIFEST_CURRENT:
 
     default:
@@ -535,6 +555,11 @@ void JSONCoder::visit(const Keys_Acknowledgment& x)
 }
 
 void JSONCoder::visit(const Manifest& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const GetManifest& x)
 {
     ENCXX;
 }

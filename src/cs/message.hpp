@@ -102,6 +102,7 @@ class Identity;
 class Keys;
 class Keys_Acknowledgment;
 class Manifest;
+class GetManifest;
 
 
 class ConstMessageVisitor
@@ -119,6 +120,7 @@ public:
     virtual void visit(const Keys&) = 0;
     virtual void visit(const Keys_Acknowledgment&) = 0;
     virtual void visit(const Manifest&) = 0;
+    virtual void visit(const GetManifest&) = 0;
 };
 
 
@@ -137,6 +139,7 @@ public:
     virtual void visit(Keys&) = 0;
     virtual void visit(Keys_Acknowledgment&) = 0;
     virtual void visit(Manifest&) = 0;
+    virtual void visit(GetManifest&) = 0;
 };
 
 
@@ -393,6 +396,23 @@ public:
     std::string m_peer;
     long long m_revision;
     std::vector<MFile> m_files;
+};
+
+
+class GetManifest: public Message
+{
+public:
+    GetManifest():
+          Message(MType::GET_MANIFEST)
+        , m_revision()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
 };
 
 
