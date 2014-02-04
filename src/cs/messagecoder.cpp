@@ -159,6 +159,12 @@ void decode(const jsoncons::json& json, Get& msg)
     msg.m_range = json["range"].as_vector<long long>();
 }
 
+void decode(const jsoncons::json& json, FileData& msg)
+{
+    msg.m_path = json["path"].as_string();
+    msg.m_range = json["range"].as_vector<long long>();
+}
+
 /*** encode msg -> json ***/
 
 void encode_type(const Message& msg, jsoncons::json& json)
@@ -307,6 +313,14 @@ void encode(const Get& msg, jsoncons::json& json)
     json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
 }
 
+void encode(const FileData& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["path"] = msg.m_path;
+    json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
+}
+
 // FIXME implement rest of messages
 
 
@@ -341,6 +355,7 @@ protected:
     void visit(const GetManifest&) override;
     void visit(const ManifestCurrent&) override;
     void visit(const Get&) override;
+    void visit(const FileData&) override;
     // FIXME implement rest of messages
 
 private:
@@ -426,7 +441,7 @@ try
 
     case MType::KEYS_ACKNOWLEDGMENT:
     {
-        auto xmsg = make_unique<Keys>();
+        auto xmsg = make_unique<Keys_Acknowledgment>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -450,7 +465,7 @@ try
 
     case MType::MANIFEST_CURRENT:
     {
-        auto xmsg = make_unique<GetManifest>();
+        auto xmsg = make_unique<ManifestCurrent>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -459,6 +474,14 @@ try
     case MType::GET:
     {
         auto xmsg = make_unique<Get>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::FILE_DATA:
+    {
+        auto xmsg = make_unique<FileData>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -610,6 +633,11 @@ void JSONCoder::visit(const ManifestCurrent& x)
 }
 
 void JSONCoder::visit(const Get& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const FileData& x)
 {
     ENCXX;
 }

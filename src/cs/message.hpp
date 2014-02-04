@@ -105,6 +105,7 @@ class Manifest;
 class GetManifest;
 class ManifestCurrent;
 class Get;
+class FileData;
 
 
 class ConstMessageVisitor
@@ -125,6 +126,7 @@ public:
     virtual void visit(const GetManifest&) = 0;
     virtual void visit(const ManifestCurrent&) = 0;
     virtual void visit(const Get&) = 0;
+    virtual void visit(const FileData&) = 0;
 };
 
 
@@ -146,6 +148,7 @@ public:
     virtual void visit(GetManifest&) = 0;
     virtual void visit(ManifestCurrent&) = 0;
     virtual void visit(Get&) = 0;
+    virtual void visit(FileData&) = 0;
 };
 
 
@@ -440,6 +443,24 @@ class Get: public Message
 public:
     Get():
           Message(MType::GET)
+        , m_path()
+        , m_range()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_path;
+    std::vector<long long> m_range;
+};
+
+class FileData: public Message
+{
+public:
+    FileData():
+          Message(MType::FILE_DATA)
         , m_path()
         , m_range()
     {
