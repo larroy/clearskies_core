@@ -15,6 +15,8 @@
                     '-D_GLIBCXX_DEBUG',
                 ],
                 "xcode_settings": {
+                    "CLANG_CXX_LANGUAGE_STANDARD": "c++11",
+                    "CLANG_CXX_LIBRARY": "libc++",
                     "OTHER_CFLAGS": [
                         "-g",
                         "-O0"
@@ -36,12 +38,13 @@
                     "NDEBUG"
                 ],
                 "xcode_settings": {
+                    "CLANG_CXX_LANGUAGE_STANDARD": "c++11",
+                    "CLANG_CXX_LIBRARY": "libc++",
                     "OTHER_CFLAGS": [
                         "-O3"
                     ],
                     "OTHER_CPLUSPLUSFLAGS": [
-                        "-O3",
-                        "-DNDEBUG"
+                        "-O3"
                     ]
                 }
             }
