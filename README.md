@@ -3,7 +3,7 @@ clearskies_core
 
 [![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
 
-Open source, distributed data synchornization software using the clearskies protocol.
+Open source, distributed data synchronization software using the clearskies protocol.
 
 Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/core.md
 
