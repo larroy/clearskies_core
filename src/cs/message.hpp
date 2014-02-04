@@ -100,7 +100,7 @@ class CannotStart;
 class StartTLS;
 class Identity;
 class Keys;
-class Keys_Acknowledgment;
+class KeysAcknowledgment;
 class Manifest;
 class GetManifest;
 class ManifestCurrent;
@@ -121,7 +121,7 @@ public:
     virtual void visit(const StartTLS&) = 0;
     virtual void visit(const Identity&) = 0;
     virtual void visit(const Keys&) = 0;
-    virtual void visit(const Keys_Acknowledgment&) = 0;
+    virtual void visit(const KeysAcknowledgment&) = 0;
     virtual void visit(const Manifest&) = 0;
     virtual void visit(const GetManifest&) = 0;
     virtual void visit(const ManifestCurrent&) = 0;
@@ -143,7 +143,7 @@ public:
     virtual void visit(StartTLS&) = 0;
     virtual void visit(Identity&) = 0;
     virtual void visit(Keys&) = 0;
-    virtual void visit(Keys_Acknowledgment&) = 0;
+    virtual void visit(KeysAcknowledgment&) = 0;
     virtual void visit(Manifest&) = 0;
     virtual void visit(GetManifest&) = 0;
     virtual void visit(ManifestCurrent&) = 0;
@@ -373,10 +373,10 @@ public:
 };
 
 
-class Keys_Acknowledgment: public Message
+class KeysAcknowledgment: public Message
 {
 public:
-    Keys_Acknowledgment():
+    KeysAcknowledgment():
           Message(MType::KEYS_ACKNOWLEDGMENT)
     {
     }
