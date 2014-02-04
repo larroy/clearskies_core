@@ -106,6 +106,7 @@ class GetManifest;
 class ManifestCurrent;
 class Get;
 class FileData;
+class Update;
 
 
 class ConstMessageVisitor
@@ -127,6 +128,7 @@ public:
     virtual void visit(const ManifestCurrent&) = 0;
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
+    virtual void visit(const Update&) = 0;
 };
 
 
@@ -149,6 +151,7 @@ public:
     virtual void visit(ManifestCurrent&) = 0;
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
+    virtual void visit(Update&) = 0;
 };
 
 
@@ -473,6 +476,25 @@ public:
     std::string m_path;
     std::vector<long long> m_range;
 };
+
+class Update: public Message
+{
+public:
+    Update():
+          Message(MType::UPDATE)
+        , m_revision()
+        , m_file()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
+    MFile m_file;
+};
+
 
 
 } // end ns
