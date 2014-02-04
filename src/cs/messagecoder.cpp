@@ -199,12 +199,14 @@ void encode(const Keys& msg, jsoncons::json& json)
     json["access"] = maccess_to_string(msg.m_access);
     json["share_id"] = msg.m_share_id;
 
-    auto ro = json["read_only"];
+    jsoncons::json ro;
     ro["psk"] = msg.m_ro_psk;
     ro["rsa"] = msg.m_ro_rsa;
+    json["read_only"] = ro;
 
-    auto rw = json["read_write"];
-    json["public_rsa"] = msg.m_rw_public_rsa;
+    jsoncons::json rw;
+    rw["public_rsa"] = msg.m_rw_public_rsa;
+    json["read_write"] = rw;
 }
 
 void encode(const Keys_Acknowledgment& msg, jsoncons::json& json)

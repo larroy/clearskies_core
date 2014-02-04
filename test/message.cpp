@@ -16,6 +16,7 @@
  */
 
 #include "cs/message.hpp"
+#include "cs/messagecoder.hpp"
 #include <boost/test/unit_test.hpp>
 
 using namespace std;
@@ -62,12 +63,50 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_to_str) {
 
 BOOST_AUTO_TEST_CASE(MessageTest_access_from_str) {
     BOOST_CHECK(maccess_from_string("unknown") == MAccess::UNKNOWN);
-    BOOST_CHECK(maccess_from_string("read-only") == MAccess::READ_ONLY);
-    BOOST_CHECK(maccess_from_string("read-write") == MAccess::READ_WRITE);
+    BOOST_CHECK(maccess_from_string("read_only") == MAccess::READ_ONLY);
+    BOOST_CHECK(maccess_from_string("read_write") == MAccess::READ_WRITE);
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_access_to_str) {
     BOOST_CHECK(maccess_to_string(MAccess::UNKNOWN) == "unknown");
-    BOOST_CHECK(maccess_to_string(MAccess::READ_ONLY) == "read-only");
-    BOOST_CHECK(maccess_to_string(MAccess::READ_WRITE) == "read-write");
+    BOOST_CHECK(maccess_to_string(MAccess::READ_ONLY) == "read_only");
+    BOOST_CHECK(maccess_to_string(MAccess::READ_WRITE) == "read_write");
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_keys) {
+    Coder coder;
+
+    string input = "s347:{\
+      \"type\": \"keys\",\
+      \"access\": \"read_only\",\
+      \"share_id\": \"2bd01bbb634ec221f916e176cd2c7c6c2fa04e641c494979613d3485defd7d18\",\
+      \"read_only\": {\
+        \"psk\": \"b699049ce1f453628117e8ba6ee75f42\",\
+        \"rsa\": \"-----BEGIN RSA PRIVATE KEY-----\\nMIIJKAIBAAKCAgEA4Zu1XDLoHf...TE KEY-----\\n\"\
+      },\
+      \"read_write\": {\
+        \"public_rsa\": \"-----BEGIN RSA PUBLIC KEY-----\\nMIIBgjAcBgoqhkiG9w0BDAEDMA4E...\"\
+      }\
+    }";
+
+    unique_ptr<Keys> msg(static_cast<Keys*>(coder.decode_msg(false, input.c_str(), input.size(), "sig", 3).release()));
+
+    // Check decoding
+    BOOST_CHECK(msg->m_type == MType::KEYS);
+    BOOST_CHECK(msg->m_access == MAccess::READ_ONLY);
+    BOOST_CHECK(msg->m_share_id == "2bd01bbb634ec221f916e176cd2c7c6c2fa04e641c494979613d3485defd7d18");
+    BOOST_CHECK(msg->m_ro_psk == "b699049ce1f453628117e8ba6ee75f42");
+    BOOST_CHECK(msg->m_ro_rsa == "-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEA4Zu1XDLoHf...TE KEY-----\n");
+    BOOST_CHECK(msg->m_rw_public_rsa == "-----BEGIN RSA PUBLIC KEY-----\nMIIBgjAcBgoqhkiG9w0BDAEDMA4E...");
+
+    // Check encoding
+    std::string output = coder.encode_msg(*msg.get());
+    unique_ptr<Keys> out_msg(static_cast<Keys*>(coder.decode_msg(false, input.c_str(), input.size(), "sig", 3).release()));
+
+    BOOST_CHECK(msg->m_type == out_msg->m_type);
+    BOOST_CHECK(msg->m_access == out_msg->m_access);
+    BOOST_CHECK(msg->m_share_id == out_msg->m_share_id);
+    BOOST_CHECK(msg->m_ro_psk == out_msg->m_ro_psk);
+    BOOST_CHECK(msg->m_ro_rsa == out_msg->m_ro_rsa);
+    BOOST_CHECK(msg->m_rw_public_rsa == out_msg->m_rw_public_rsa);
 }
