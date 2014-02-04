@@ -100,8 +100,15 @@ class CannotStart;
 class StartTLS;
 class Identity;
 class Keys;
-class Keys_Acknowledgment;
+class KeysAcknowledgment;
 class Manifest;
+class GetManifest;
+class ManifestCurrent;
+class Get;
+class FileData;
+class Update;
+class Move;
+class Max;
 
 
 class ConstMessageVisitor
@@ -117,8 +124,15 @@ public:
     virtual void visit(const StartTLS&) = 0;
     virtual void visit(const Identity&) = 0;
     virtual void visit(const Keys&) = 0;
-    virtual void visit(const Keys_Acknowledgment&) = 0;
+    virtual void visit(const KeysAcknowledgment&) = 0;
     virtual void visit(const Manifest&) = 0;
+    virtual void visit(const GetManifest&) = 0;
+    virtual void visit(const ManifestCurrent&) = 0;
+    virtual void visit(const Get&) = 0;
+    virtual void visit(const FileData&) = 0;
+    virtual void visit(const Update&) = 0;
+    virtual void visit(const Move&) = 0;
+    virtual void visit(const Max&) = 0;
 };
 
 
@@ -135,8 +149,15 @@ public:
     virtual void visit(StartTLS&) = 0;
     virtual void visit(Identity&) = 0;
     virtual void visit(Keys&) = 0;
-    virtual void visit(Keys_Acknowledgment&) = 0;
+    virtual void visit(KeysAcknowledgment&) = 0;
     virtual void visit(Manifest&) = 0;
+    virtual void visit(GetManifest&) = 0;
+    virtual void visit(ManifestCurrent&) = 0;
+    virtual void visit(Get&) = 0;
+    virtual void visit(FileData&) = 0;
+    virtual void visit(Update&) = 0;
+    virtual void visit(Move&) = 0;
+    virtual void visit(Max&) = 0;
 };
 
 
@@ -361,10 +382,10 @@ public:
 };
 
 
-class Keys_Acknowledgment: public Message
+class KeysAcknowledgment: public Message
 {
 public:
-    Keys_Acknowledgment():
+    KeysAcknowledgment():
           Message(MType::KEYS_ACKNOWLEDGMENT)
     {
     }
@@ -393,6 +414,126 @@ public:
     std::string m_peer;
     long long m_revision;
     std::vector<MFile> m_files;
+};
+
+
+class GetManifest: public Message
+{
+public:
+    GetManifest():
+          Message(MType::GET_MANIFEST)
+        , m_revision()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
+};
+
+
+class ManifestCurrent: public Message
+{
+public:
+    ManifestCurrent():
+          Message(MType::MANIFEST_CURRENT)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+};
+
+class Get: public Message
+{
+public:
+    Get():
+          Message(MType::GET)
+        , m_path()
+        , m_range()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_path;
+    std::vector<long long> m_range;
+};
+
+class FileData: public Message
+{
+public:
+    FileData():
+          Message(MType::FILE_DATA)
+        , m_path()
+        , m_range()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    std::string m_path;
+    std::vector<long long> m_range;
+};
+
+class Update: public Message
+{
+public:
+    Update():
+          Message(MType::UPDATE)
+        , m_revision()
+        , m_file()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
+    MFile m_file;
+};
+
+class Move: public Message
+{
+public:
+    Move():
+          Message(MType::MOVE)
+        , m_revision()
+        , m_source()
+        , m_destination()
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    long long m_revision;
+    std::string m_source;
+    MFile m_destination;
+};
+
+class Max: public Message
+{
+public:
+    Max():
+          Message(MType::MAX)
+    {
+    }
+
+    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
+    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
+
+
+    //FIXME couldn't find this message type in the documentation
 };
 
 

@@ -110,7 +110,7 @@ void decode(const jsoncons::json& json, Keys& msg)
     msg.m_rw_public_rsa = rw["public_rsa"].as_string();
 }
 
-void decode(const jsoncons::json& json, Keys_Acknowledgment& msg)
+void decode(const jsoncons::json& json, KeysAcknowledgment& msg)
 {
 }
 
@@ -142,6 +142,72 @@ void decode(const jsoncons::json& json, Manifest& msg)
 
         msg.m_files.push_back(file);
     }
+}
+
+void decode(const jsoncons::json& json, GetManifest& msg)
+{
+    msg.m_revision = json["revision"].as_longlong();
+}
+
+void decode(const jsoncons::json& json, ManifestCurrent& msg)
+{
+}
+
+void decode(const jsoncons::json& json, Get& msg)
+{
+    msg.m_path = json["path"].as_string();
+    msg.m_range = json["range"].as_vector<long long>();
+}
+
+void decode(const jsoncons::json& json, FileData& msg)
+{
+    msg.m_path = json["path"].as_string();
+    msg.m_range = json["range"].as_vector<long long>();
+}
+
+void decode(const jsoncons::json& json, Update& msg)
+{
+    msg.m_revision = json["revision"].as_longlong();
+
+    // Read json file object as an MFile
+    auto j_file = json["file"];
+
+    msg.m_file.m_path = j_file["path"].as_string();
+    msg.m_file.m_utime = j_file["utime"].as_double();
+
+    if (j_file.has_member("deleted")) {
+        msg.m_file.m_deleted = j_file["deleted"].as_bool();
+    } else {
+        msg.m_file.m_deleted = false;
+    }
+
+    if (!msg.m_file.m_deleted) {
+        msg.m_file.m_size = j_file["size"].as_longlong();
+        msg.m_file.m_mtime = j_file["mtime"].as_vector<int>();
+        msg.m_file.m_mode = j_file["mode"].as_string();
+        msg.m_file.m_sha256 = j_file["sha256"].as_string();
+    }
+}
+
+void decode(const jsoncons::json& json, Move& msg)
+{
+    msg.m_revision = json["revision"].as_longlong();
+    msg.m_source = json["source"].as_string();
+
+    // Read json file object as an MFile
+    auto j_file = json["destination"];
+
+    msg.m_destination.m_path = j_file["path"].as_string();
+    msg.m_destination.m_utime = j_file["utime"].as_double();
+    msg.m_destination.m_size = j_file["size"].as_longlong();
+    msg.m_destination.m_mtime = j_file["mtime"].as_vector<int>();
+    msg.m_destination.m_mode = j_file["mode"].as_string();
+    msg.m_destination.m_sha256 = j_file["sha256"].as_string();
+    msg.m_destination.m_deleted = false;
+}
+
+void decode(const jsoncons::json& json, Max& msg)
+{
 }
 
 /*** encode msg -> json ***/
@@ -239,7 +305,7 @@ void encode(const Keys& msg, jsoncons::json& json)
     json["read_write"] = rw;
 }
 
-void encode(const Keys_Acknowledgment& msg, jsoncons::json& json)
+void encode(const KeysAcknowledgment& msg, jsoncons::json& json)
 {
     assert(0);
 }
@@ -272,7 +338,77 @@ void encode(const Manifest& msg, jsoncons::json& json)
     json["files"] = jsoncons::json(j_files.begin(), j_files.end());
 }
 
-// FIXME implement rest of messages
+void encode(const GetManifest& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["revision"] = msg.m_revision;
+}
+
+void encode(const ManifestCurrent& msg, jsoncons::json& json)
+{
+    assert(0);
+}
+
+void encode(const Get& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["path"] = msg.m_path;
+    json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
+}
+
+void encode(const FileData& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["path"] = msg.m_path;
+    json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
+}
+
+void encode(const Update& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["revision"] = msg.m_revision;
+
+    jsoncons::json j_file;
+    j_file["path"] = msg.m_file.m_path;
+    j_file["utime"] = msg.m_file.m_utime;
+
+    if (!msg.m_file.m_deleted) {
+        j_file["size"] = msg.m_file.m_size;
+        j_file["mtime"] = jsoncons::json(msg.m_file.m_mtime.begin(), msg.m_file.m_mtime.end());
+        j_file["mode"] = msg.m_file.m_mode;
+        j_file["sha256"] = msg.m_file.m_sha256;
+    } else {
+        j_file["deleted"] = msg.m_file.m_deleted;
+    }
+
+    json["file"] = j_file;
+}
+
+void encode(const Move& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["revision"] = msg.m_revision;
+
+    jsoncons::json j_file;
+    j_file["path"] = msg.m_destination.m_path;
+    j_file["utime"] = msg.m_destination.m_utime;
+    j_file["size"] = msg.m_destination.m_size;
+    j_file["mtime"] = jsoncons::json(msg.m_destination.m_mtime.begin(), msg.m_destination.m_mtime.end());
+    j_file["mode"] = msg.m_destination.m_mode;
+    j_file["sha256"] = msg.m_destination.m_sha256;
+
+    json["file"] = j_file;
+}
+
+void encode(const Max& msg, jsoncons::json& json)
+{
+    assert(0);
+}
 
 
 class JSONCoder: public CoderImpl, public ConstMessageVisitor
@@ -301,9 +437,15 @@ protected:
     void visit(const StartTLS&) override;
     void visit(const Identity&) override;
     void visit(const Keys&) override;
-    void visit(const Keys_Acknowledgment&) override;
+    void visit(const KeysAcknowledgment&) override;
     void visit(const Manifest&) override;
-    // FIXME implement rest of messages
+    void visit(const GetManifest&) override;
+    void visit(const ManifestCurrent&) override;
+    void visit(const Get&) override;
+    void visit(const FileData&) override;
+    void visit(const Update&) override;
+    void visit(const Move&) override;
+    void visit(const Max&) override;
 
 private:
     std::string m_encoded_msg;
@@ -388,7 +530,7 @@ try
 
     case MType::KEYS_ACKNOWLEDGMENT:
     {
-        auto xmsg = make_unique<Keys>();
+        auto xmsg = make_unique<KeysAcknowledgment>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -402,9 +544,63 @@ try
         break;
     }
 
-    // FIXME implement rest of messages
     case MType::GET_MANIFEST:
+    {
+        auto xmsg = make_unique<GetManifest>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
     case MType::MANIFEST_CURRENT:
+    {
+        auto xmsg = make_unique<ManifestCurrent>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::GET:
+    {
+        auto xmsg = make_unique<Get>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::FILE_DATA:
+    {
+        auto xmsg = make_unique<FileData>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::UPDATE:
+    {
+        auto xmsg = make_unique<Update>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::MOVE:
+    {
+        auto xmsg = make_unique<Move>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::MAX:
+    {
+        auto xmsg = make_unique<Max>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    // FIXME implement rest of messages
 
     default:
     case MType::UNKNOWN:
@@ -413,6 +609,7 @@ try
         msg = move(xmsg);
         break;
     }
+
     msg->m_payload = payload;
     msg->m_signature.assign(signature, signature_sz);
     return std::move(msg);
@@ -529,7 +726,7 @@ void JSONCoder::visit(const Keys& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const Keys_Acknowledgment& x)
+void JSONCoder::visit(const KeysAcknowledgment& x)
 {
     ENCXX;
 }
@@ -539,7 +736,40 @@ void JSONCoder::visit(const Manifest& x)
     ENCXX;
 }
 
-// FIXME implement rest of messages
+void JSONCoder::visit(const GetManifest& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const ManifestCurrent& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Get& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const FileData& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Update& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Move& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const Max& x)
+{
+    ENCXX;
+}
 
 
 } // end ns json
