@@ -13,17 +13,20 @@
                     '-Wnon-virtual-dtor',
                     '-Wno-deprecated',
                     '-D_GLIBCXX_DEBUG',
+                    '-Wall',
+                    '-Werror',
+                    '-fmessage-length=0',
                 ],
                 "xcode_settings": {
                     "CLANG_CXX_LANGUAGE_STANDARD": "c++11",
                     "CLANG_CXX_LIBRARY": "libc++",
                     "OTHER_CFLAGS": [
                         "-g",
-                        "-O0"
+                        "-O0",
                     ],
                     "OTHER_CPLUSPLUSFLAGS": [
                         "-g",
-                        "-O0"
+                        "-O0",
                     ]
                 }
             },
@@ -33,6 +36,9 @@
                     '-std=c++11',
                     '-Wnon-virtual-dtor',
                     '-Wno-deprecated',
+                    '-Wall',
+                    '-Werror',
+                    '-fmessage-length=0',
                 ],
                 "defines": [
                     "NDEBUG"
