@@ -1,6 +1,6 @@
 {
     "includes": [
-        '../common.gypi',
+        "../common.gypi",
     ],
     "targets":
     [
@@ -18,15 +18,11 @@
             "include_dirs": [
                 "../src",
             ],
-            'link_settings': {
-                'libraries': [
-                    '-lboost_unit_test_framework',
+            "link_settings": {
+                "libraries": [
+                    "-lboost_unit_test_framework",
                 ],
-#              'library_dirs': [
-#                '/usr/lib',
-#              ],
             },
         },
     ],
 }
-

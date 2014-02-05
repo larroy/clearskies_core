@@ -60,6 +60,7 @@ enum class MType: unsigned
     /// notification of moved file
     MOVE,
 
+    /// Not a message, Maximum value of the enum used to create arrays
     MAX,
 };
 
@@ -108,7 +109,6 @@ class Get;
 class FileData;
 class Update;
 class Move;
-class Max;
 
 
 class ConstMessageVisitor
@@ -132,7 +132,6 @@ public:
     virtual void visit(const FileData&) = 0;
     virtual void visit(const Update&) = 0;
     virtual void visit(const Move&) = 0;
-    virtual void visit(const Max&) = 0;
 };
 
 
@@ -157,7 +156,6 @@ public:
     virtual void visit(FileData&) = 0;
     virtual void visit(Update&) = 0;
     virtual void visit(Move&) = 0;
-    virtual void visit(Max&) = 0;
 };
 
 
@@ -170,7 +168,7 @@ protected:
     /**
      * Message with specific type only to be used from derived classes
      */
-    Message(MType type):
+    explicit Message(MType type):
           m_type(type)
         , m_payload(false)
         , m_signature()
@@ -209,95 +207,68 @@ public:
     std::string m_signature;
 };
 
+template <typename CLASS, MType TYPE>
+class MessageImpl: public Message
+{
+protected:
+    typedef MessageImpl<CLASS, TYPE> THIS;
+
+    MessageImpl():
+        Message(TYPE)
+    {
+        static_assert(std::is_base_of<THIS, CLASS>::value, "CLASS must inherit from MessageImpl");
+    }
+
+public:
+    virtual void accept(ConstMessageVisitor& v) const override
+    {
+        v.visit(*static_cast<const CLASS*>(this));
+    }
+
+    virtual void accept(MutatingMessageVisitor& v) override
+    {
+        v.visit(*static_cast<CLASS*>(this));
+    }
+};
 
 /**
  * A message whose type we don't recognize
  */
-class Unknown: public Message
+class Unknown: public MessageImpl<Unknown, MType::UNKNOWN>
 {
 public:
-    Unknown():
-        Message(MType::UNKNOWN)
-    {}
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
     std::string m_content;
 };
 
 /**
  * Internal message to start the ClearSkiesProtocol and send a greeting
  */
-class InternalStart: public Message
+class InternalStart: public MessageImpl<InternalStart, MType::INTERNAL_START>
 {
-public:
-    InternalStart():
-        Message(MType::INTERNAL_START)
-    {}
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
 };
 
 
-class Ping: public Message
+class Ping: public MessageImpl<Ping, MType::PING>
 {
 public:
-    Ping():
-          Message(MType::PING)
-        , m_timeout(60)
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-    u32 m_timeout;
+    u32 m_timeout = 60;
 };
 
 
-class Greeting: public Message
+class Greeting: public MessageImpl<Greeting, MType::GREETING>
 {
 public:
-    Greeting():
-          Message(MType::GREETING)
-        , m_software()
-        , m_protocol()
-        , m_features()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_software;
     std::vector<int> m_protocol;
     std::vector<std::string> m_features;
 };
 
 
-class Start: public Message
+class Start: public MessageImpl<Start, MType::START>
 {
 public:
-    Start():
-          Message(MType::START)
-        , m_software()
-        , m_protocol()
-        , m_features()
-        , m_id()
-        , m_access()
-        , m_peer()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_software;
-    int m_protocol;
+    int m_protocol = 0;
     std::vector<std::string> m_features;
     std::string m_id;
     std::string m_access;
@@ -305,76 +276,31 @@ public:
 };
 
 
-class CannotStart: public Message
+class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 {
-public:
-    CannotStart():
-          Message(MType::CANNOT_START)
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
 };
 
 
-class StartTLS: public Message
+class StartTLS: public MessageImpl<StartTLS, MType::STARTTLS>
 {
 public:
-    StartTLS():
-          Message(MType::STARTTLS)
-        , m_peer()
-        , m_access()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_peer;
-    MAccess m_access;
+    MAccess m_access = MAccess::UNKNOWN;
 };
 
 
-class Identity: public Message
+class Identity: public MessageImpl<Identity, MType::IDENTITY>
 {
 public:
-    Identity():
-          Message(MType::IDENTITY)
-        , m_name()
-        , m_time()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_name;
-    int m_time;     // FIXME is int the correct type to represent time?
+    int m_time = 0;     // FIXME is int the correct type to represent time?
 };
 
 
-class Keys: public Message
+class Keys: public MessageImpl<Keys, MType::KEYS>
 {
 public:
-    Keys():
-          Message(MType::KEYS)
-        , m_access()
-        , m_share_id()
-        , m_ro_psk()
-        , m_ro_rsa()
-        , m_rw_public_rsa()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
-    MAccess m_access;
+    MAccess m_access = MAccess::UNKNOWN;
     std::string m_share_id;
     std::string m_ro_psk;
     std::string m_ro_rsa;
@@ -382,158 +308,58 @@ public:
 };
 
 
-class KeysAcknowledgment: public Message
+class KeysAcknowledgment: public MessageImpl<KeysAcknowledgment, MType::KEYS_ACKNOWLEDGMENT>
 {
-public:
-    KeysAcknowledgment():
-          Message(MType::KEYS_ACKNOWLEDGMENT)
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
 };
 
 
-class Manifest: public Message
+class Manifest: public MessageImpl<Manifest, MType::MANIFEST>
 {
 public:
-    Manifest():
-          Message(MType::MANIFEST)
-        , m_peer()
-        , m_revision()
-        , m_files()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_peer;
-    long long m_revision;
+    long long m_revision = 0;
     std::vector<MFile> m_files;
 };
 
 
-class GetManifest: public Message
+class GetManifest: public MessageImpl<GetManifest, MType::GET_MANIFEST>
 {
 public:
-    GetManifest():
-          Message(MType::GET_MANIFEST)
-        , m_revision()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
-    long long m_revision;
+    long long m_revision = 0;
 };
 
 
-class ManifestCurrent: public Message
+class ManifestCurrent: public MessageImpl<ManifestCurrent, MType::MANIFEST_CURRENT>
 {
-public:
-    ManifestCurrent():
-          Message(MType::MANIFEST_CURRENT)
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
 };
 
-class Get: public Message
+class Get: public MessageImpl<Get, MType::GET>
 {
 public:
-    Get():
-          Message(MType::GET)
-        , m_path()
-        , m_range()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_path;
     std::vector<long long> m_range;
 };
 
-class FileData: public Message
+class FileData: public MessageImpl<FileData, MType::FILE_DATA>
 {
 public:
-    FileData():
-          Message(MType::FILE_DATA)
-        , m_path()
-        , m_range()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
     std::string m_path;
     std::vector<long long> m_range;
 };
 
-class Update: public Message
+class Update: public MessageImpl<Update, MType::UPDATE>
 {
 public:
-    Update():
-          Message(MType::UPDATE)
-        , m_revision()
-        , m_file()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
-    long long m_revision;
+    long long m_revision = 0;
     MFile m_file;
 };
 
-class Move: public Message
+class Move: public MessageImpl<Move, MType::MOVE>
 {
 public:
-    Move():
-          Message(MType::MOVE)
-        , m_revision()
-        , m_source()
-        , m_destination()
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
-    long long m_revision;
+    long long m_revision = 0;
     std::string m_source;
     MFile m_destination;
-};
-
-class Max: public Message
-{
-public:
-    Max():
-          Message(MType::MAX)
-    {
-    }
-
-    virtual void accept(ConstMessageVisitor& v) const override { v.visit(*this); }
-    virtual void accept(MutatingMessageVisitor& v) override { v.visit(*this); }
-
-
-    //FIXME couldn't find this message type in the documentation
 };
 
 

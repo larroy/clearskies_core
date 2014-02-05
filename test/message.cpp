@@ -73,6 +73,129 @@ BOOST_AUTO_TEST_CASE(MessageTest_access_to_str) {
     BOOST_CHECK(maccess_to_string(MAccess::READ_WRITE) == "read_write");
 }
 
+void check_message_defaults(const Message& m, MType type)
+{
+    BOOST_CHECK(m.type() == type);
+    BOOST_CHECK(!m.payload());
+    BOOST_CHECK(!m.signature());
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_unknown_defaults) {
+    Unknown m;
+    check_message_defaults(m, MType::UNKNOWN);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_internal_start_defaults) {
+    InternalStart m;
+    check_message_defaults(m, MType::INTERNAL_START);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_ping_defaults) {
+    Ping m;
+    check_message_defaults(m, MType::PING);
+    BOOST_CHECK(m.m_timeout == 60);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_greeting_defaults) {
+    Greeting m;
+    check_message_defaults(m, MType::GREETING);
+    BOOST_CHECK(m.m_software == "");
+    BOOST_CHECK(m.m_protocol.empty());
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_start_defaults) {
+    Start m;
+    check_message_defaults(m, MType::START);
+    BOOST_CHECK(m.m_software == "");
+    BOOST_CHECK(m.m_protocol == 0);
+    BOOST_CHECK(m.m_features.empty());
+    BOOST_CHECK(m.m_id == "");
+    BOOST_CHECK(m.m_access == "");
+    BOOST_CHECK(m.m_peer == "");
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_cannot_start_defaults) {
+    CannotStart m;
+    check_message_defaults(m, MType::CANNOT_START);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_starttls_defaults) {
+    StartTLS m;
+    check_message_defaults(m, MType::STARTTLS);
+    BOOST_CHECK(m.m_peer == "");
+    BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_identity_defaults) {
+    Identity m;
+    check_message_defaults(m, MType::IDENTITY);
+    BOOST_CHECK(m.m_name == "");
+    BOOST_CHECK(m.m_time == 0);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults) {
+    Keys m;
+    check_message_defaults(m, MType::KEYS);
+    BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
+    BOOST_CHECK(m.m_share_id == "");
+    BOOST_CHECK(m.m_ro_psk == "");
+    BOOST_CHECK(m.m_ro_rsa == "");
+    BOOST_CHECK(m.m_rw_public_rsa == "");
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_keys_acknowledgment_defaults) {
+    KeysAcknowledgment m;
+    check_message_defaults(m, MType::KEYS_ACKNOWLEDGMENT);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults) {
+    Manifest m;
+    check_message_defaults(m, MType::MANIFEST);
+    BOOST_CHECK(m.m_peer == "");
+    BOOST_CHECK(m.m_revision == 0);
+    BOOST_CHECK(m.m_files.empty());
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_get_manifest_defaults) {
+    GetManifest m;
+    check_message_defaults(m, MType::GET_MANIFEST);
+    BOOST_CHECK(m.m_revision == 0);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_current_defaults) {
+    ManifestCurrent m;
+    check_message_defaults(m, MType::MANIFEST_CURRENT);
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults) {
+    Get m;
+    check_message_defaults(m, MType::GET);
+    BOOST_CHECK(m.m_path == "");
+    BOOST_CHECK(m.m_range.empty());
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults) {
+    FileData m;
+    check_message_defaults(m, MType::FILE_DATA);
+    BOOST_CHECK(m.m_path == "");
+    BOOST_CHECK(m.m_range.empty());
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_update_defaults) {
+    Update m;
+    check_message_defaults(m, MType::UPDATE);
+    BOOST_CHECK(m.m_revision == 0);
+    BOOST_CHECK(m.m_file.m_path == ""); // TODO: Check MFile is default
+}
+
+BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults) {
+    Move m;
+    check_message_defaults(m, MType::MOVE);
+    BOOST_CHECK(m.m_revision == 0);
+    BOOST_CHECK(m.m_source == "");
+    BOOST_CHECK(m.m_destination.m_path == ""); // TODO: Check MFile is default
+}
+
 BOOST_AUTO_TEST_CASE(MessageTest_type_keys) {
     Coder coder;
 
@@ -159,7 +282,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest) {
     BOOST_CHECK(msg->m_peer == out_msg->m_peer);
     BOOST_CHECK(msg->m_revision == out_msg->m_revision);
     BOOST_CHECK(msg->m_files.size() == out_msg->m_files.size());
-    for (int i = 0; i < msg->m_files.size(); i++) {
+    for (size_t i = 0; i < msg->m_files.size(); i++) {
         BOOST_CHECK(msg->m_files[i].m_path == out_msg->m_files[i].m_path);
         BOOST_CHECK(msg->m_files[i].m_utime == out_msg->m_files[i].m_utime);
         BOOST_CHECK(msg->m_files[i].m_size == out_msg->m_files[i].m_size);

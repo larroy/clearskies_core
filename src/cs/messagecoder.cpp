@@ -69,7 +69,6 @@ void decode(const jsoncons::json& json, Greeting& msg)
     msg.m_features = json["features"].as_vector<string>();
 }
 
-// TODO use a stringify macro to save some code
 void decode(const jsoncons::json& json, Start& msg)
 {
 
@@ -120,7 +119,7 @@ void decode(const jsoncons::json& json, Manifest& msg)
     msg.m_revision = json["revision"].as_longlong();
 
     // Read json file objects as MFiles
-    for(int i = 0; i < json["files"].size(); i++) {
+    for(size_t i = 0; i < json["files"].size(); i++) {
         auto j_file = json["files"][i];
 
         MFile file;
@@ -206,9 +205,6 @@ void decode(const jsoncons::json& json, Move& msg)
     msg.m_destination.m_deleted = false;
 }
 
-void decode(const jsoncons::json& json, Max& msg)
-{
-}
 
 /*** encode msg -> json ***/
 
@@ -405,11 +401,6 @@ void encode(const Move& msg, jsoncons::json& json)
     json["file"] = j_file;
 }
 
-void encode(const Max& msg, jsoncons::json& json)
-{
-    assert(0);
-}
-
 
 class JSONCoder: public CoderImpl, public ConstMessageVisitor
 {
@@ -445,7 +436,6 @@ protected:
     void visit(const FileData&) override;
     void visit(const Update&) override;
     void visit(const Move&) override;
-    void visit(const Max&) override;
 
 private:
     std::string m_encoded_msg;
@@ -592,15 +582,7 @@ try
         break;
     }
 
-    case MType::MAX:
-    {
-        auto xmsg = make_unique<Max>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    // FIXME implement rest of messages
+    // Add additional message types here
 
     default:
     case MType::UNKNOWN:
@@ -766,10 +748,6 @@ void JSONCoder::visit(const Move& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const Max& x)
-{
-    ENCXX;
-}
 
 
 } // end ns json
