@@ -60,6 +60,7 @@ enum class MType: unsigned
     /// notification of moved file
     MOVE,
 
+    /// Not a message, Maximum value of the enum used to create arrays
     MAX,
 };
 
@@ -108,7 +109,6 @@ class Get;
 class FileData;
 class Update;
 class Move;
-class Max;
 
 
 class ConstMessageVisitor
@@ -132,7 +132,6 @@ public:
     virtual void visit(const FileData&) = 0;
     virtual void visit(const Update&) = 0;
     virtual void visit(const Move&) = 0;
-    virtual void visit(const Max&) = 0;
 };
 
 
@@ -157,7 +156,6 @@ public:
     virtual void visit(FileData&) = 0;
     virtual void visit(Update&) = 0;
     virtual void visit(Move&) = 0;
-    virtual void visit(Max&) = 0;
 };
 
 
@@ -369,10 +367,6 @@ public:
     MFile m_destination;
 };
 
-class Max: public MessageImpl<Max, MType::MAX>
-{
-    //FIXME couldn't find this message type in the documentation
-};
 
 } // end ns
 } // end ns
