@@ -168,7 +168,7 @@ protected:
     /**
      * Message with specific type only to be used from derived classes
      */
-    Message(MType type):
+    explicit Message(MType type):
           m_type(type)
         , m_payload(false)
         , m_signature()
@@ -213,7 +213,7 @@ class MessageImpl: public Message
 protected:
     typedef MessageImpl<CLASS, TYPE> THIS;
 
-    explicit MessageImpl():
+    MessageImpl():
         Message(TYPE)
     {
         static_assert(std::is_base_of<THIS, CLASS>::value, "CLASS must inherit from MessageImpl");
