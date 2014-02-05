@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest) {
     BOOST_CHECK(msg->m_peer == out_msg->m_peer);
     BOOST_CHECK(msg->m_revision == out_msg->m_revision);
     BOOST_CHECK(msg->m_files.size() == out_msg->m_files.size());
-    for (int i = 0; i < msg->m_files.size(); i++) {
+    for (size_t i = 0; i < msg->m_files.size(); i++) {
         BOOST_CHECK(msg->m_files[i].m_path == out_msg->m_files[i].m_path);
         BOOST_CHECK(msg->m_files[i].m_utime == out_msg->m_files[i].m_utime);
         BOOST_CHECK(msg->m_files[i].m_size == out_msg->m_files[i].m_size);

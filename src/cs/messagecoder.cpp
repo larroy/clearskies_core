@@ -69,7 +69,6 @@ void decode(const jsoncons::json& json, Greeting& msg)
     msg.m_features = json["features"].as_vector<string>();
 }
 
-// TODO use a stringify macro to save some code
 void decode(const jsoncons::json& json, Start& msg)
 {
 
@@ -120,7 +119,7 @@ void decode(const jsoncons::json& json, Manifest& msg)
     msg.m_revision = json["revision"].as_longlong();
 
     // Read json file objects as MFiles
-    for(int i = 0; i < json["files"].size(); i++) {
+    for(size_t i = 0; i < json["files"].size(); i++) {
         auto j_file = json["files"][i];
 
         MFile file;
