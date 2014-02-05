@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 
+namespace cs
+{
+
 typedef int8_t i8;
 typedef uint8_t u8;
 typedef int16_t i16;
@@ -19,3 +22,5 @@ typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 
+
+} // end ns
