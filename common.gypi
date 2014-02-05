@@ -25,6 +25,7 @@
                         "-O0",
                     ],
                     "OTHER_CPLUSPLUSFLAGS": [
+                        "-fcolor-diagnostics",
                         "-g",
                         "-O0",
                         "-Wall",
@@ -52,6 +53,7 @@
                         "-O3",
                     ],
                     "OTHER_CPLUSPLUSFLAGS": [
+                        "-fcolor-diagnostics",
                         "-O3",
                         "-Wall",
                         "-Werror",
