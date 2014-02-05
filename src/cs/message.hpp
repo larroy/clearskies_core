@@ -251,11 +251,6 @@ class InternalStart: public MessageImpl<InternalStart, MType::INTERNAL_START>
 class Ping: public MessageImpl<Ping, MType::PING>
 {
 public:
-    Ping():
-        m_timeout(60)
-    {
-    }
-
     u32 m_timeout = 60;
 };
 
