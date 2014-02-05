@@ -7,6 +7,9 @@
         {
             "target_name": "cs",
             "type": "static_library",
+            "dependencies": [
+                "../../vendor/sqlite3pp/sqlite3pp.gyp:sqlite3pp",
+            ],
             "sources": [
                 "int_types.h",
                 "clearskiesprotocol.cpp",
