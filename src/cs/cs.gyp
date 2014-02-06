@@ -22,9 +22,13 @@
                 "protocolstate.hpp",
                 "protocolstatecore.hpp",
                 "utils.hpp",
+                "share.hpp",
+                "share.cpp",
+                "file.hpp",
             ],
             "include_dirs": [
                 "../",
+                "../../vendor",
             ],
         },
     ],
