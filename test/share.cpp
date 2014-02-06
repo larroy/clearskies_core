@@ -23,28 +23,42 @@
 using namespace std;
 using namespace cs::share;
 
-enum 
+enum
 {
     TMPDIR,
     DBPATH,
 };
 
-tuple<string, string> create_tmpdir_dbpath()
+struct Tmpdir
 {
-    bfs::path tmpdir = bfs::temp_directory_path();
-    tmpdir /= bfs::unique_path("%%%%-%%%%-%%%%-%%%%");
-    cout << tmpdir.string() << endl;
-    assert(! bfs::exists(tmpdir));
-    bfs::create_directory(tmpdir);
-    assert(bfs::exists(tmpdir));
-    bfs::path dbfile(tmpdir.string() + "__cs.db");
-    assert(! bfs::exists(dbfile));
-    return make_tuple(tmpdir.string(), dbfile.string());
-}
+    Tmpdir()
+    {
+        tmpdir_ = bfs::temp_directory_path();
+        tmpdir_ /= bfs::unique_path("clearskies-%%%%-%%%%-%%%%-%%%%");
+        cout << tmpdir_.string() << endl;
+        assert(! bfs::exists(tmpdir_));
+        bfs::create_directory(tmpdir_);
+        assert(bfs::exists(tmpdir_));
+        dbpath_ = (tmpdir_.string() + "__cs.db");
+        assert(! bfs::exists(dbpath_));
+
+        tmpdir = tmpdir_.string();
+        dbpath = dbpath_.string();
+    }
+    bfs::path tmpdir_;
+    bfs::path dbpath_;
+    string tmpdir;
+    string dbpath;
+    ~Tmpdir()
+    {
+        remove_all(tmpdir_);
+        remove_all(dbpath_);
+    }
+};
 
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
-    auto tmpdir_dbpath = create_tmpdir_dbpath();
-    Share share(get<TMPDIR>(tmpdir_dbpath));
+    Tmpdir tmp;
+    Share share(tmp.tmpdir);
     share.scan_thread();
 }
