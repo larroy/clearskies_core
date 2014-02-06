@@ -13,6 +13,7 @@
                     "-Wnon-virtual-dtor",
                     "-Wno-deprecated",
                     "-D_GLIBCXX_DEBUG",
+                    "-DDEBUG",
                     "-Wall",
                     "-Werror",
                     "-fmessage-length=0",

@@ -67,16 +67,26 @@ void Share::scan_thread()
             f.mtime = fs(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
+            scan_file(move(f));
 
+#ifdef DEBUG
             cout << f.path << endl;
             cout << f.mtime << endl;
             cout << oct << f.mode << dec << endl;
             cout << f.size << endl;
             cout << endl;
+#endif
         }
     }
 }
 
+
+void Share::scan_file(File&& file)
+{   
+    /* Compare file mtime, if file is new || size || mtime don't match saved mark for checksum
+     *
+     */
+}
 
 } // end ns
 } // end ns

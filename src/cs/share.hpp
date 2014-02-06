@@ -22,12 +22,17 @@
 #include <string>
 #include <thread>
 #include "sqlite3pp/sqlite3pp.h"
+#include "file.hpp"
 
 namespace cs
 {
 namespace share
 {
 
+/**
+ * Filesystem scan is done in two passes, first files are monitored for size and time changes, then
+ * if this indicates any change or the file is new they ar marked to be checksummed
+ */
 class Share
 {
 public:
@@ -36,7 +41,13 @@ public:
 
     void scan();
 
+// FIXME: to make non public / testable
+
+    /// first pass, "stat"
     void scan_thread();
+    /// second pass, "checksum"
+    void checksum_thread() {};
+    void scan_file(File&& file);
 
 private:
     std::thread m_scan_thread;
