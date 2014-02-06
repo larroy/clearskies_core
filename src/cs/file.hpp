@@ -37,7 +37,7 @@ struct File
     std::string path;
     std::string utime;
     std::string mtime;
-    size_t size;
+    u64 size;
     u16 mode;
     std::string sha256;
     bool deleted;

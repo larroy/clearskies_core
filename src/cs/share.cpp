@@ -18,6 +18,7 @@
 #include "share.hpp"
 #include "boost_fs_fwd.hpp"
 #include "utils.hpp"
+#include "file.hpp"
 
 using namespace std;
 
@@ -56,7 +57,23 @@ void Share::scan_thread()
     bfs::recursive_directory_iterator end;
     for ( ; it != end; ++it)
     {
-        cout << it->path().string() << endl;
+        const auto& dentry = *it;
+        if (dentry.status().type() == bfs::regular_file)
+        {
+            File f;
+            f.path = dentry.path().string();
+            // FIXME convert to iso time
+            // FIXME utime
+            f.mtime = fs(bfs::last_write_time(dentry.path()));
+            f.size = bfs::file_size(dentry.path());
+            f.mode = dentry.status().permissions();
+
+            cout << f.path << endl;
+            cout << f.mtime << endl;
+            cout << oct << f.mode << dec << endl;
+            cout << f.size << endl;
+            cout << endl;
+        }
     }
 }
 

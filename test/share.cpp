@@ -35,7 +35,7 @@ struct Tmpdir
     {
         tmpdir_ = bfs::temp_directory_path();
         tmpdir_ /= bfs::unique_path("clearskies-%%%%-%%%%-%%%%-%%%%");
-        cout << tmpdir_.string() << endl;
+        // cout << tmpdir_.string() << endl;
         assert(! bfs::exists(tmpdir_));
         bfs::create_directory(tmpdir_);
         assert(bfs::exists(tmpdir_));
@@ -56,9 +56,33 @@ struct Tmpdir
     }
 };
 
+
+void create_tree(const bfs::path& path)
+{
+    bfs::create_directory(path / "a");
+    bfs::path aaa = path / "a" / "aa";
+    bfs::create_directory(aaa);
+    bfs::path aaaf = aaa / "f";
+    bfs::ofstream aaaf_os(aaaf);
+
+    bfs::path aab = path / "a" / "ab";
+    bfs::create_directory(aab);
+    bfs::path aabf = aab / "aabf";
+    bfs::ofstream aabf_os(aabf);
+
+    bfs::create_directory(path / "a" / "ac");
+    bfs::path b = path / "b";
+    bfs::create_directory(b);
+
+    bfs::ofstream bf_os(b / "f");
+
+    bfs::create_directory(path / "c");
+}
+
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
     Tmpdir tmp;
     Share share(tmp.tmpdir);
+    create_tree(tmp.tmpdir);
     share.scan_thread();
 }
