@@ -16,9 +16,8 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "share.hpp"
-#include "boost_fs_fwd.hpp"
 #include "utils.hpp"
-#include "file.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -61,7 +60,10 @@ void Share::scan_thread()
         if (dentry.status().type() == bfs::regular_file)
         {
             File f;
-            f.path = dentry.path().string();
+            // we get the path relative to the share
+            bfs::path fpath = get_tail(dentry.path(), it.level() + 1);
+            assert(fpath.is_relative());
+            f.path = fpath.string();
             // FIXME convert to iso time
             // FIXME utime
             f.mtime = fs(bfs::last_write_time(dentry.path()));
@@ -69,7 +71,7 @@ void Share::scan_thread()
             f.mode = dentry.status().permissions();
             scan_file(move(f));
 
-#ifdef DEBUG
+#if 0
             cout << f.path << endl;
             cout << f.mtime << endl;
             cout << oct << f.mode << dec << endl;
@@ -86,7 +88,28 @@ void Share::scan_file(File&& file)
     /* Compare file mtime, if file is new || size || mtime don't match saved mark for checksum
      *
      */
+
+    //sqlite3pp::query file_q(m_db, "
 }
+
+
+bfs::path get_tail(const bfs::path& path, size_t tail)
+{
+    auto pi = path.begin();
+    auto pe = path.end();
+    assert(distance(pi, pe) >= (i64)tail);
+    pi = pe;
+    while (tail > 0)
+    {
+        --pi;
+        --tail;
+    }
+    bfs::path result;
+    while (pi != pe)
+        result /= *pi++;
+    return result;
+}
+
 
 } // end ns
 } // end ns

@@ -14,10 +14,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <boost/test/unit_test.hpp>
 #include "cs/share.hpp"
 #include "cs/boost_fs_fwd.hpp"
-#include <boost/test/unit_test.hpp>
 #include <utility>
 
 using namespace std;
@@ -85,4 +84,13 @@ BOOST_AUTO_TEST_CASE(Share_test_01)
     Share share(tmp.tmpdir);
     create_tree(tmp.tmpdir);
     share.scan_thread();
+}
+
+BOOST_AUTO_TEST_CASE(tail_test)
+{
+    BOOST_CHECK_EQUAL(get_tail(bfs::path("a/b/c"), 2).string(), "b/c");
+    BOOST_CHECK_EQUAL(get_tail(bfs::path("a/b/c"), 1).string(), "c");
+    BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c"), 4).string(), "/a/b/c");
+    BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/"), 1).string(), ".");
+    BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/d"), 1).string(), "d");
 }

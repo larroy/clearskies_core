@@ -18,11 +18,12 @@
 
 #pragma once
 #include "int_types.h"
+#include "file.hpp"
+#include "boost_fs_fwd.hpp"
+#include "sqlite3pp/sqlite3pp.h"
 #include <array>
 #include <string>
 #include <thread>
-#include "sqlite3pp/sqlite3pp.h"
-#include "file.hpp"
 
 namespace cs
 {
@@ -47,6 +48,8 @@ public:
     void scan_thread();
     /// second pass, "checksum"
     void checksum_thread() {};
+
+    /// actions to perform for each scanned file
     void scan_file(File&& file);
 
 private:
@@ -73,6 +76,7 @@ public:
     std::array<u8, 256> m_pkc_ro;
 };
 
+bfs::path get_tail(const bfs::path& path, size_t tail);
 
 
 } // end ns

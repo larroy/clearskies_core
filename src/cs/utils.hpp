@@ -19,6 +19,7 @@
 #pragma once
 #include <sstream>
 #include <memory>
+#include <ctime>
 
 namespace std
 {
@@ -75,6 +76,8 @@ auto cend( const C& c ) -> decltype(c.cend())
 namespace utils
 {
 
+/// @returns time in YYYY-MM-DDThh:mm:ssZ  (http://www.w4.org/TR/NOTE-datetime)
+std::string isotime(std::time_t);
 
 
 } // end ns

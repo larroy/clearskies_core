@@ -18,6 +18,7 @@
 
 #pragma once
 #include "int_types.h"
+#include <string>
 
 namespace cs
 {
@@ -35,6 +36,7 @@ struct File
     {}
 
     std::string path;
+    // UTC time in format: YYYY-MM-DDThh:mm:ss.sZ  (http://www.w3.org/TR/NOTE-datetime)
     std::string utime;
     std::string mtime;
     u64 size;
