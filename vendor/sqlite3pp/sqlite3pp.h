@@ -109,21 +109,23 @@ namespace sqlite3pp
     int prepare(char const* stmt);
     int finish();
 
-    int bind(int idx, int value);
-    int bind(int idx, double value);
-    int bind(int idx, long long int value);
-    int bind(int idx, char const* value, bool fstatic = true);
-    int bind(int idx, void const* value, int n, bool fstatic = true);
-    int bind(int idx);
-    int bind(int idx, null_type);
+    void bind(int idx, int value);
+    void bind(int idx, double value);
+    void bind(int idx, long long int value);
+    void bind(int idx, const std::string&, bool blob = false, bool fstatic = true);
+    void bind(int idx, char const* value, bool fstatic = true);
+    void bind(int idx, void const* value, int n, bool fstatic = true);
+    void bind(int idx);
+    void bind(int idx, null_type);
 
-    int bind(char const* name, int value);
-    int bind(char const* name, double value);
-    int bind(char const* name, long long int value);
-    int bind(char const* name, char const* value, bool fstatic = true);
-    int bind(char const* name, void const* value, int n, bool fstatic = true);
-    int bind(char const* name);
-    int bind(char const* name, null_type);
+    void bind(char const* name, int value);
+    void bind(char const* name, double value);
+    void bind(char const* name, long long int value);
+    void bind(char const* name, const std::string&, bool blob = false, bool fstatic = true);
+    void bind(char const* name, char const* value, bool fstatic = true);
+    void bind(char const* name, void const* value, int n, bool fstatic = true);
+    void bind(char const* name);
+    void bind(char const* name, null_type);
 
     int step();
     int reset();

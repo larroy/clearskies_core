@@ -23,7 +23,10 @@
 // THE SOFTWARE.
 
 #include "sqlite3pp.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
+
+
+#define THROW_ERR(ret) do { if ((ret) != SQLITE_OK) throw database_error(db_); } while(0); 
 
 namespace sqlite3pp
 {
@@ -172,7 +175,7 @@ namespace sqlite3pp
   {
     va_list ap;
     va_start(ap, sql);
-    boost::shared_ptr<char> msql(sqlite3_vmprintf(sql, ap), sqlite3_free);
+    std::unique_ptr<char, void (*)(void *)> msql(sqlite3_vmprintf(sql, ap), sqlite3_free);
     va_end(ap);
 
     return execute(msql.get());
@@ -241,80 +244,105 @@ namespace sqlite3pp
     return sqlite3_reset(stmt_);
   }
 
-  int statement::bind(int idx, int value)
+  void statement::bind(int idx, int value)
   {
-    return sqlite3_bind_int(stmt_, idx, value);
+    THROW_ERR(sqlite3_bind_int(stmt_, idx, value));
   }
 
-  int statement::bind(int idx, double value)
+  void statement::bind(int idx, double value)
   {
-    return sqlite3_bind_double(stmt_, idx, value);
+    THROW_ERR(sqlite3_bind_double(stmt_, idx, value));
   }
 
-  int statement::bind(int idx, long long int value)
+  void statement::bind(int idx, long long int value)
   {
-    return sqlite3_bind_int64(stmt_, idx, value);
+    THROW_ERR(sqlite3_bind_int64(stmt_, idx, value));
   }
 
-  int statement::bind(int idx, char const* value, bool fstatic)
+  void statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
   {
-    return sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT);
+    if (blob)
+    {
+        THROW_ERR(sqlite3_bind_blob(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+    }
+    else
+    {
+        THROW_ERR(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+    }
   }
 
-  int statement::bind(int idx, void const* value, int n, bool fstatic)
+  void statement::bind(int idx, char const* value, bool fstatic)
   {
-    return sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT);
+    THROW_ERR(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
   }
 
-  int statement::bind(int idx)
+  void statement::bind(int idx, void const* value, int n, bool fstatic)
   {
-    return sqlite3_bind_null(stmt_, idx);
+    THROW_ERR(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
   }
 
-  int statement::bind(int idx, null_type)
+  void statement::bind(int idx)
   {
-    return bind(idx);
+    THROW_ERR(sqlite3_bind_null(stmt_, idx));
   }
 
-  int statement::bind(char const* name, int value)
+  void statement::bind(int idx, null_type)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx, value);
+    bind(idx);
   }
 
-  int statement::bind(char const* name, double value)
+  void statement::bind(char const* name, int value)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx, value);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value);
   }
 
-  int statement::bind(char const* name, long long int value)
+  void statement::bind(char const* name, double value)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx, value);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value);
   }
 
-  int statement::bind(char const* name, char const* value, bool fstatic)
+  void statement::bind(char const* name, long long int value)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx, value, fstatic);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value);
   }
 
-  int statement::bind(char const* name, void const* value, int n, bool fstatic)
+  void statement::bind(char const* name, const std::string& value, bool blob, bool fstatic)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx, value, n, fstatic);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value, blob, fstatic);
   }
 
-  int statement::bind(char const* name)
+  void statement::bind(char const* name, char const* value, bool fstatic)
   {
-    int idx = sqlite3_bind_parameter_index(stmt_, name);
-    return bind(idx);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value, fstatic);
   }
 
-  int statement::bind(char const* name, null_type)
+  void statement::bind(char const* name, void const* value, int n, bool fstatic)
   {
-    return bind(name);
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx, value, n, fstatic);
+  }
+
+  void statement::bind(char const* name)
+  {
+    const int idx = sqlite3_bind_parameter_index(stmt_, name);
+    assert(idx);
+    bind(idx);
+  }
+
+  void statement::bind(char const* name, null_type)
+  {
+    bind(name);
   }
 
 
