@@ -34,7 +34,7 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_peer_id()
     , m_psk_rw()
     , m_psk_ro()
-    , m_psk_ut()
+    , m_psk_untrusted()
     , m_pkc_rw()
     , m_pkc_ro()
 {
@@ -44,15 +44,47 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
 
     if (! bfs::is_directory(share_path_))
         throw std::runtime_error(fs("Share::Share error: " << share_path_ << " not a directory"));
+
+    initialize_tables();
+}
+
+void Share::initialize_tables()
+{
+    sqlite3pp::command create_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
+        path TEXT PRIMARY KEY,
+        utime TEXT,
+        mtime TEXT,
+        size INTEGER,
+        mode INTEGER,
+        sha256 TEXT,
+        deleted INTEGER DEFAULT 0,
+        hash_pend INTEGER DEFAULT 0)
+    )#");
+}
+
+
+std::unique_ptr<File> Share::get_file_info(const std::string& path)
+{
+    assert(0);
+}
+
+void Share::set_file_info(const File&)
+{
+    assert(0);
 }
 
 void Share::scan()
 {
+    // FIXME create thread with scan_thread code.
+    // when it finishes we get some information on how much is there to checksum for progress
+    // then we checksum, when both steps are finished we need to somehow notify the main theads
+    // protocolstate so it can send updates etc. We can do this by sending commands to a control
+    // pipe or with other mechanism TBD
 }
 
 void Share::scan_thread()
 {
-    bfs::recursive_directory_iterator it(m_path); 
+    bfs::recursive_directory_iterator it(m_path);
     bfs::recursive_directory_iterator end;
     for ( ; it != end; ++it)
     {
@@ -84,12 +116,12 @@ void Share::scan_thread()
 
 
 void Share::scan_file(File&& file)
-{   
+{
     /* Compare file mtime, if file is new || size || mtime don't match saved mark for checksum
      *
      */
 
-    //sqlite3pp::query file_q(m_db, "
+    //sqlite3pp::query file_q(m_db, "");
 }
 
 

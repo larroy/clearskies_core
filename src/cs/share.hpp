@@ -38,9 +38,25 @@ class Share
 {
 public:
     Share(const std::string& share_path, const std::string& dbpath = ":memory:");
+    void initialize_tables();
 
 
     void scan();
+
+// FIXME: TODO, progress indicators
+    bool scan_in_progress() const { assert(0); }
+    size_t scan_total() const { assert(0); }
+    size_t scan_done() const { assert(0); }
+
+    bool checksum_in_progress() const { assert(0); }
+    size_t checksum_total() const { assert(0); }
+    size_t checksum_done() const { assert(0); }
+
+    /// @returns file metadata given a path, null if there's no such file
+    std::unique_ptr<File> get_file_info(const std::string& path);
+    /// save File metadata on the Share
+    void set_file_info(const File&);
+
 
 // FIXME: to make non public / testable
 
