@@ -17,7 +17,7 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 
 * libboost-test-dev
 * gyp
-* ninja
+* ninja  (ninja-build on debian)
 
 # Supported compilers:
 
