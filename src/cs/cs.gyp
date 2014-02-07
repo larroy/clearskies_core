@@ -22,6 +22,7 @@
                 "protocolstate.hpp",
                 "protocolstatecore.hpp",
                 "utils.hpp",
+                "utils.cpp",
                 "share.hpp",
                 "share.cpp",
                 "file.hpp",

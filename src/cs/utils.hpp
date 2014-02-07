@@ -76,7 +76,7 @@ auto cend( const C& c ) -> decltype(c.cend())
 namespace utils
 {
 
-/// @returns time in YYYY-MM-DDThh:mm:ssZ  (http://www.w4.org/TR/NOTE-datetime)
+/// @returns time in ISO 8601 format "YYYY-MM-DDThh:mm:ssZ"  (http://www.w4.org/TR/NOTE-datetime)
 std::string isotime(std::time_t);
 
 

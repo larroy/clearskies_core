@@ -15,6 +15,7 @@
                 "message.cpp",
                 "protocolstate.cpp",
                 "share.cpp",
+                "utils.cpp",
             ],
             "include_dirs": [
                 "../src",
