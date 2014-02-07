@@ -168,6 +168,8 @@ namespace sqlite3pp
 
     bindstream binder(int idx = 1);
 
+    /// @throws database_error if execute fails
+    void exec();
     int execute();
     int execute_all();
   };
