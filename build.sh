@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # TODO: Remove this once the bug in GYP is fixed!
 # https://groups.google.com/forum/#!topic/gyp-developer/m7LUzJwL9Zc
 if [[ `uname` == "Darwin" ]]; then
