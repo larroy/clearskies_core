@@ -21,6 +21,7 @@
 
 using namespace std;
 using namespace cs::share;
+using cs::File;
 
 enum
 {
@@ -94,3 +95,26 @@ BOOST_AUTO_TEST_CASE(tail_test)
     BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/"), 1).string(), ".");
     BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/d"), 1).string(), "d");
 }
+
+BOOST_AUTO_TEST_CASE(share_set_file_info)
+{
+    File f;
+    f.path = "omg/a/path";
+    f.utime = "12391";
+    f.mtime = "12392";
+    f.size = 69;
+    f.mode = 01777;
+
+    Tmpdir tmp;
+    Share share(tmp.tmpdir);
+
+    share.set_file_info(f);
+
+    auto f_none = share.get_file_info("argsgs");
+    BOOST_CHECK(! f_none);
+
+    auto f_ = share.get_file_info(f.path);
+    BOOST_CHECK(f_);
+}
+
+

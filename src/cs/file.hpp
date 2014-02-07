@@ -33,7 +33,6 @@ struct File
         , mode()
         , sha256()
         , deleted()
-        , hash_pend()
     {}
 
     std::string path;
@@ -44,7 +43,6 @@ struct File
     u16 mode;
     std::string sha256;
     bool deleted;
-    bool hash_pend;
 };
 
 } // end ns

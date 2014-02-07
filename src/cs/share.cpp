@@ -57,20 +57,46 @@ void Share::initialize_tables()
         size INTEGER,
         mode INTEGER,
         sha256 TEXT,
-        deleted INTEGER DEFAULT 0,
-        hash_pend INTEGER DEFAULT 0)
+        deleted INTEGER DEFAULT 0)
     )#");
 }
 
 
 std::unique_ptr<File> Share::get_file_info(const std::string& path)
 {
-    assert(0);
+    auto result = make_unique<File>();
+    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE path = :path");
+    file_q.bind(":path", path);
+
+    bool found = false;
+    for (auto i = file_q.begin(); i != file_q.end(); ++i)
+    {
+        assert(! found);
+        assert(i->get<std::string>(0) == path);
+        result->path = path;
+        result->utime = i->get<std::string>(1);
+        result->mtime = i->get<std::string>(2);
+        result->size = i->get<long long int>(3);
+        result->mode = i->get<int>(4);
+        result->sha256 = i->get<std::string>(5);
+        result->deleted = i->get<int>(6) != 0;
+        found = true;
+    }
+    return move(result);
 }
 
-void Share::set_file_info(const File&)
+void Share::set_file_info(const File& f)
 {
-    assert(0);
+    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, utime, mtime, size, mode, sha256, deleted) VALUES (?,?,?,?,?,?,?)");
+    file_i.bind(1, f.path);
+    file_i.bind(2, f.utime);
+    file_i.bind(3, f.mtime);
+    file_i.bind(4, static_cast<long long int>(f.size));
+    file_i.bind(5, static_cast<int>(f.mode));
+    file_i.bind(6, f.sha256);
+    file_i.bind(7, static_cast<int>(f.deleted));
+
+    file_i.exec();
 }
 
 void Share::scan()
