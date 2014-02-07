@@ -63,13 +63,13 @@ public:
     /// share id, shared publicly
     std::array<u8, 32> m_share_id;
     std::array<u8, 16> m_peer_id;
+
     /// pre-shared key read-write
     std::array<u8, 16> m_psk_rw;
     /// pre-shared key read-only
     std::array<u8, 16> m_psk_ro;
     /// pre-shared key untrusted
     std::array<u8, 16> m_psk_untrusted;
-    /// pre-shared key untrusted
 
     /// private keys
     std::array<u8, 256> m_pkc_rw;
