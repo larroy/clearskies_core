@@ -14,7 +14,9 @@ before_install:
   - sudo unzip -d /usr/bin/ ninja-linux.zip
   
   # Install boost
-  - sudo apt-get install libboost-test-dev
+  #- sudo apt-get install libboost-test-dev
+  - sudo apt-get install libboost-test1.48-dev
+  - sudo apt-get install libboost-filesystem1.48-dev
   - sudo apt-get install libsqlite3-dev
 
   # g++
