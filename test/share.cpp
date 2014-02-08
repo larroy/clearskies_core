@@ -135,6 +135,16 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
     Share share(tmp.tmpdir);
     create_tree(tmp.tmpdir);
     share.scan_thread();
-    share.checksum_thread();
+    for (const auto& file: share)
+        BOOST_CHECK(file.sha256.empty());
 
+    share.checksum_thread();
+    size_t nfiles = 0;
+    for (const auto& file: share)
+    {
+        cout << file.path << endl;
+        ++nfiles;
+        BOOST_CHECK(! file.sha256.empty());
+    }
+    BOOST_CHECK_EQUAL(nfiles, 3);
 }

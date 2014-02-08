@@ -43,6 +43,37 @@ namespace cs
 namespace share
 {
 
+Share::Share_iterator::Share_iterator():
+    m_query_it()
+    , m_file()
+{}
+
+Share::Share_iterator::Share_iterator(Share& share):
+    m_query_it()
+    , m_file()
+    , m_file_set()
+{
+    sqlite3pp::query q(share.m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files ORDER BY path");
+    m_query_it = q.begin();
+}
+
+void Share::Share_iterator::increment()
+{
+    ++m_query_it;
+    m_file_set = false;
+}
+
+File& Share::Share_iterator::dereference() const
+{
+    if (! m_file_set)
+    {
+        file_from_row(m_file, *m_query_it);
+        m_file_set = true;
+    }
+    return m_file;
+}
+
+
 Share::Share(const std::string& share_path, const std::string& dbpath):
       m_path(share_path)
     , m_db(dbpath.c_str())
@@ -171,7 +202,7 @@ void Share::scan_thread()
 void Share::checksum_thread()
 {
 
-    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = ''");
+    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = '' ORDER BY path");
     for (const auto& row: file_q)
     {
         File file;

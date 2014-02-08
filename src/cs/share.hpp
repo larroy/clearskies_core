@@ -21,6 +21,7 @@
 #include "file.hpp"
 #include "boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.h"
+#include <boost/iterator/iterator_facade.hpp>
 #include <array>
 #include <string>
 #include <thread>
@@ -37,9 +38,41 @@ namespace share
 class Share
 {
 public:
+
+    class Share_iterator: public boost::iterator_facade<Share_iterator, File, boost::single_pass_traversal_tag>
+    {
+    public:
+        Share_iterator();
+        explicit Share_iterator(Share&);
+
+    private:
+        friend class boost::iterator_core_access;
+        void increment();
+        bool equal(const Share_iterator& other) const
+        {
+            return m_query_it == other.m_query_it;
+        }
+
+        File& dereference() const;
+
+        sqlite3pp::query::query_iterator m_query_it;
+        mutable File m_file;
+        mutable bool m_file_set;
+    };
+
+
     Share(const std::string& share_path, const std::string& dbpath = ":memory:");
     void initialize_tables();
 
+    Share_iterator begin()
+    {
+        return Share_iterator(*this);
+    }
+
+    Share_iterator end()
+    {
+        return Share_iterator();
+    }
 
     void scan();
 
