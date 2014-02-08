@@ -24,6 +24,8 @@
 
 #include "sqlite3pp.h"
 #include <memory>
+#include <cstdlib>
+#include <cstdio>
 
 
 #define THROW_ERR(ret) do { if ((ret) != SQLITE_OK) throw database_error(db_); } while(0); 
@@ -200,7 +202,17 @@ namespace sqlite3pp
   {
     int rc = finish();
     if (rc != SQLITE_OK)
-      throw database_error(db_);
+    {
+      if (std::uncaught_exception())
+      {
+        // an exception is being handled which called this dtor, we can't throw now
+        std::fputs("statement::~statement: sqlite3_finalize returned with error and an exception was being handled", stderr);
+      }
+      else
+      {
+        throw database_error(db_);
+      }
+    }
   }
 
   int statement::prepare(char const* stmt)
@@ -530,7 +542,18 @@ namespace sqlite3pp
     if (db_) {
       int rc = db_->execute(fcommit_ ? "COMMIT" : "ROLLBACK");
       if (rc != SQLITE_OK)
-        throw database_error(*db_);
+      {
+        if (std::uncaught_exception())
+        {
+            if (fcommit_)
+                std::fputs("transaction::~transaction: COMMIT returned with error and an exception was being handled", stderr);
+            else
+                std::fputs("transaction::~transaction: ROLLBACK returned with error and an exception was being handled", stderr);
+            abort();
+        }
+        else
+            throw database_error(*db_);
+      }
     }
   }
 
