@@ -82,6 +82,7 @@ void Share::scan()
     // then we checksum, when both steps are finished we need to somehow notify the main theads
     // protocolstate so it can send updates etc. We can do this by sending commands to a control
     // pipe or with other mechanism TBD
+    // as suggested by Jewel: http://nikhilm.github.io/uvbook/threads.html uv_async_send, etc.
 }
 
 
