@@ -59,19 +59,21 @@ void Share::initialize_tables()
         sha256 TEXT,
         deleted INTEGER DEFAULT 0)
     )#");
+    create_files_table.exec();
 }
 
 
 std::unique_ptr<File> Share::get_file_info(const std::string& path)
 {
-    auto result = make_unique<File>();
+    unique_ptr<File> result;
     sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE path = :path");
     file_q.bind(":path", path);
 
     bool found = false;
     for (auto i = file_q.begin(); i != file_q.end(); ++i)
     {
-        assert(! found);
+        assert(! found); // path must be unique, it's pk
+        result = make_unique<File>();
         assert(i->get<std::string>(0) == path);
         result->path = path;
         result->utime = i->get<std::string>(1);

@@ -108,13 +108,23 @@ BOOST_AUTO_TEST_CASE(share_set_file_info)
     Tmpdir tmp;
     Share share(tmp.tmpdir);
 
+    auto f_none = share.get_file_info("argsgs");
+    BOOST_CHECK(! f_none);
+
     share.set_file_info(f);
 
-    auto f_none = share.get_file_info("argsgs");
+    f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);
 
     auto f_ = share.get_file_info(f.path);
     BOOST_CHECK(f_);
+    BOOST_CHECK_EQUAL(f_->path, f.path);
+    BOOST_CHECK_EQUAL(f_->utime, f.utime);
+    BOOST_CHECK_EQUAL(f_->mtime, f.mtime);
+    BOOST_CHECK_EQUAL(f_->size, f.size);
+    BOOST_CHECK_EQUAL(f_->mode, f.mode);
+    BOOST_CHECK_EQUAL(f_->sha256, f.sha256);
+    BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
 }
 
 
