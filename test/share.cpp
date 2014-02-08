@@ -128,3 +128,13 @@ BOOST_AUTO_TEST_CASE(share_set_file_info)
 }
 
 
+
+BOOST_AUTO_TEST_CASE(share_checksum_thread)
+{
+    Tmpdir tmp;
+    Share share(tmp.tmpdir);
+    create_tree(tmp.tmpdir);
+    share.scan_thread();
+    share.checksum_thread();
+
+}

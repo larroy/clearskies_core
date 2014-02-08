@@ -111,12 +111,12 @@ std::unique_ptr<File> Share::get_file_info(const std::string& path)
     file_q.bind(":path", path);
 
     bool found = false;
-    for (auto i = file_q.begin(); i != file_q.end(); ++i)
+    for (const auto& row: file_q)
     {
         assert(! found); // path must be unique, it's pk
         result = make_unique<File>();
-        assert(i->get<std::string>(0) == path);
-        file_from_row(*result, *i);
+        assert(row.get<std::string>(0) == path);
+        file_from_row(*result, row);
         found = true;
     }
     return move(result);
@@ -172,7 +172,17 @@ void Share::checksum_thread()
 {
 
     sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = ''");
-    //for (auto i = file_q.begin(); i != file_q.end(); ++i)
+    for (const auto& row: file_q)
+    {
+        File file;
+        file_from_row(file, row);
+        file.checksum();
+        sqlite3pp::command update_hash(m_db, "UPDATE files SET sha256 = :sha256 WHERE path = :path");
+        update_hash.bind(":sha256", file.sha256);
+        update_hash.bind(":path", file.path);
+        update_hash.exec();
+    }
+    // TODO: progress update
 }
 
 void Share::scan_file(File&& file)

@@ -26,6 +26,7 @@
                 "share.hpp",
                 "share.cpp",
                 "file.hpp",
+                "file.cpp",
             ],
             "include_dirs": [
                 "../",
