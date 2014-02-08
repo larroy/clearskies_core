@@ -15,6 +15,7 @@ before_install:
   
   # Install boost
   - sudo apt-get install libboost-test-dev
+  - sudo apt-get install libsqlite3-dev
 
   # g++
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
