@@ -63,7 +63,7 @@ public:
     /// first pass, "stat"
     void scan_thread();
     /// second pass, "checksum"
-    void checksum_thread() {};
+    void checksum_thread();
 
     /// actions to perform for each scanned file
     void scan_file(File&& file);

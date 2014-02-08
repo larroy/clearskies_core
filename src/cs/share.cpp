@@ -48,6 +48,8 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     initialize_tables();
 }
 
+
+
 void Share::initialize_tables()
 {
     sqlite3pp::command create_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
@@ -61,6 +63,17 @@ void Share::initialize_tables()
     )#");
     create_files_table.exec();
 }
+
+
+void Share::scan()
+{
+    // FIXME create thread with scan_thread code.
+    // when it finishes we get some information on how much is there to checksum for progress
+    // then we checksum, when both steps are finished we need to somehow notify the main theads
+    // protocolstate so it can send updates etc. We can do this by sending commands to a control
+    // pipe or with other mechanism TBD
+}
+
 
 
 std::unique_ptr<File> Share::get_file_info(const std::string& path)
@@ -101,15 +114,6 @@ void Share::set_file_info(const File& f)
     file_i.exec();
 }
 
-void Share::scan()
-{
-    // FIXME create thread with scan_thread code.
-    // when it finishes we get some information on how much is there to checksum for progress
-    // then we checksum, when both steps are finished we need to somehow notify the main theads
-    // protocolstate so it can send updates etc. We can do this by sending commands to a control
-    // pipe or with other mechanism TBD
-}
-
 void Share::scan_thread()
 {
     bfs::recursive_directory_iterator it(m_path);
@@ -142,6 +146,10 @@ void Share::scan_thread()
     }
 }
 
+void Share::checksum_thread()
+{
+
+}
 
 void Share::scan_file(File&& file)
 {
