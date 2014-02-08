@@ -52,6 +52,16 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
 
 void Share::initialize_tables()
 {
+    // avoid excessive IO
+    vector<sqlite3pp::command> performance_adjusts;
+    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA synchronous = 0"));
+    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA cache_size = 1000"));
+    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA fullfsync = 0"));
+    // performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA journal_mode = OFF"));
+
+    for (sqlite3pp::command& cmd: performance_adjusts)
+        cmd.exec();
+
     sqlite3pp::command create_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
         path TEXT PRIMARY KEY,
         utime TEXT,
