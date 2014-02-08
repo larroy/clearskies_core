@@ -39,6 +39,9 @@ class Share
 {
 public:
 
+    /**
+     * Iterator to allow for(const auto& file: share) idiom
+     */
     class Share_iterator: public boost::iterator_facade<Share_iterator, File, boost::single_pass_traversal_tag>
     {
     public:
@@ -65,6 +68,10 @@ public:
     Share(const std::string& share_path, const std::string& dbpath = ":memory:");
     void initialize_tables();
 
+    /**
+     * get an iterator to traverse all the files in the share, changes to the file _don't_ update the
+     * database, so the iterator behaves as const
+     */
     Share_iterator begin()
     {
         return Share_iterator(*this);
@@ -126,6 +133,7 @@ public:
     std::array<u8, 256> m_pkc_ro;
 };
 
+/// returns a path with the last tail number of components
 bfs::path get_tail(const bfs::path& path, size_t tail);
 
 
