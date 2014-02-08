@@ -55,6 +55,7 @@ public:
 
         File& dereference() const;
 
+        std::unique_ptr<sqlite3pp::query> m_query;
         sqlite3pp::query::query_iterator m_query_it;
         mutable File m_file;
         mutable bool m_file_set;

@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
     size_t nfiles = 0;
     for (const auto& file: share)
     {
-        cout << file.path << endl;
+        //cout << file.path << endl;
         ++nfiles;
         BOOST_CHECK(! file.sha256.empty());
     }

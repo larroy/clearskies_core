@@ -26,12 +26,12 @@ namespace
 
 void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
 {
-    file.path = row.get<string>(0);
-    file.utime = row.get<string>(1);
-    file.mtime = row.get<string>(2);
+    file.path = row.get<const char*>(0);
+    file.utime = row.get<const char*>(1);
+    file.mtime = row.get<const char*>(2);
     file.size = row.get<long long int>(3);
     file.mode = row.get<int>(4);
-    file.sha256 = row.get<string>(5);
+    file.sha256 = row.get<const char*>(5);
     file.deleted = row.get<int>(6) != 0;
 }
 
@@ -44,17 +44,18 @@ namespace share
 {
 
 Share::Share_iterator::Share_iterator():
-    m_query_it()
+    m_query()
+    , m_query_it()
     , m_file()
+    , m_file_set()
 {}
 
 Share::Share_iterator::Share_iterator(Share& share):
-    m_query_it()
+    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files ORDER BY path"))
+    , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
 {
-    sqlite3pp::query q(share.m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files ORDER BY path");
-    m_query_it = q.begin();
 }
 
 void Share::Share_iterator::increment()
@@ -216,13 +217,20 @@ void Share::checksum_thread()
     // TODO: progress update
 }
 
-void Share::scan_file(File&& file)
+void Share::scan_file(File&& file_found)
 {
-    /* Compare file mtime, if file is new || size || mtime don't match saved mark for checksum
-     *
-     */
-
-    //sqlite3pp::query file_q(m_db, "");
+    // TODO: add bytes to checksum for stats
+    unique_ptr<File> file_prev = get_file_info(file_found.path); 
+    if (file_prev)
+    {
+        if (file_found.mtime != file_prev->mtime
+            || file_found.size != file_prev->size)
+        {
+            set_file_info(file_found);
+        }
+    }
+    else
+        set_file_info(file_found);
 }
 
 

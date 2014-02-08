@@ -195,10 +195,13 @@ namespace sqlite3pp
         statement_(stmt),
         tail_(0)
     {
-        if (stmt) {
+        if (stmt)
+        {
             int rc = prepare(stmt);
             if (rc != SQLITE_OK)
-        throw database_error(db_);
+            {
+                throw database_error(db_);
+            }
         }
     }
 
