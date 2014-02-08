@@ -21,6 +21,23 @@
 
 using namespace std;
 
+namespace
+{
+
+void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
+{
+    file.path = row.get<string>(0);
+    file.utime = row.get<string>(1);
+    file.mtime = row.get<string>(2);
+    file.size = row.get<long long int>(3);
+    file.mode = row.get<int>(4);
+    file.sha256 = row.get<string>(5);
+    file.deleted = row.get<int>(6) != 0;
+}
+
+
+} // end anon ns
+
 namespace cs
 {
 namespace share
@@ -99,13 +116,7 @@ std::unique_ptr<File> Share::get_file_info(const std::string& path)
         assert(! found); // path must be unique, it's pk
         result = make_unique<File>();
         assert(i->get<std::string>(0) == path);
-        result->path = path;
-        result->utime = i->get<std::string>(1);
-        result->mtime = i->get<std::string>(2);
-        result->size = i->get<long long int>(3);
-        result->mode = i->get<int>(4);
-        result->sha256 = i->get<std::string>(5);
-        result->deleted = i->get<int>(6) != 0;
+        file_from_row(*result, *i);
         found = true;
     }
     return move(result);
@@ -160,6 +171,8 @@ void Share::scan_thread()
 void Share::checksum_thread()
 {
 
+    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = ''");
+    //for (auto i = file_q.begin(); i != file_q.end(); ++i)
 }
 
 void Share::scan_file(File&& file)
