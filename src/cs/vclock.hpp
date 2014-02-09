@@ -37,7 +37,11 @@ namespace cs
 class Vclock
 {
 public:
-    Vclock();
+    Vclock():
+        m_clk()
+    {}
+
+    typedef u32 value_type;
 
     /// @returns true if this clock is a descendant from @param other
     bool is_descendant(const Vclock& other) const;
@@ -50,7 +54,7 @@ public:
 
 
     /// increment clock @param key by @param val
-    void incremenet(const std::string& key, u32 val);
+    void increment(const std::string& key, u32 val = 1);
 
 private:
     std::map<std::string, u32> m_clk; 

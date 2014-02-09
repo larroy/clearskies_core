@@ -16,6 +16,7 @@
                 "protocolstate.cpp",
                 "share.cpp",
                 "utils.cpp",
+                "vclock.cpp",
             ],
             "include_dirs": [
                 "../src",

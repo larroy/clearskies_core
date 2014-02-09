@@ -28,6 +28,8 @@
                 "share.cpp",
                 "file.hpp",
                 "file.cpp",
+                "vclock.hpp",
+                "vclock.cpp",
             ],
             "include_dirs": [
                 "../",

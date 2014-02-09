@@ -21,5 +21,12 @@ using namespace cs;
 
 BOOST_AUTO_TEST_CASE(vlock_test)
 {
-    Vclock vclock;
+    Vclock paren;
+    Vclock desc;
+
+    paren.increment("a");
+    desc.increment("a");
+    desc.increment("a");
+    BOOST_CHECK(desc.is_descendant(paren));
+
 }
