@@ -9,6 +9,7 @@
             "type": "static_library",
             "dependencies": [
                 "../../vendor/sqlite3pp/sqlite3pp.gyp:sqlite3pp",
+                "../../vendor/sha2/sha2.gyp:sha2",
             ],
             "sources": [
                 "int_types.h",

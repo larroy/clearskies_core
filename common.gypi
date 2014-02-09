@@ -9,14 +9,16 @@
                 "cflags": [
                     "-g",
                     "-O0",
-                    "-std=c++11",
-                    "-Wnon-virtual-dtor",
                     "-Wno-deprecated",
-                    "-D_GLIBCXX_DEBUG",
                     "-DDEBUG",
                     "-Wall",
                     "-Werror",
                     "-fmessage-length=0",
+                ],
+                "cflags_cc": [
+                    "-std=c++11",
+                    "-Wnon-virtual-dtor",
+                    "-D_GLIBCXX_DEBUG",
                 ],
                 "xcode_settings": {
                     "CLANG_CXX_LANGUAGE_STANDARD": "c++11",
@@ -37,12 +39,14 @@
             "Release": {
                 "cflags": [
                     "-O3",
-                    "-std=c++11",
-                    "-Wnon-virtual-dtor",
                     "-Wno-deprecated",
                     "-Wall",
                     "-Werror",
                     "-fmessage-length=0",
+                ],
+                "cflags_cc": [
+                    "-std=c++11",
+                    "-Wnon-virtual-dtor",
                 ],
                 "defines": [
                     "NDEBUG",
