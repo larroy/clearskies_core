@@ -19,14 +19,62 @@
 
 using namespace cs;
 
-BOOST_AUTO_TEST_CASE(vlock_test)
+BOOST_AUTO_TEST_CASE(vlock_test_01)
 {
     Vclock paren;
     Vclock desc;
 
     paren.increment("a");
+
     desc.increment("a");
     desc.increment("a");
     BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("b");
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("b");
+    paren.increment("b");
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("b");
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("a");
+    desc.increment("c");
+    BOOST_CHECK(desc.is_descendant(paren));
+}
+
+BOOST_AUTO_TEST_CASE(vlock_test_02)
+{
+    Vclock paren;
+    Vclock desc;
+
+    desc.increment("a", std::numeric_limits<u32>::max() / 2 - 1);
+    BOOST_CHECK(desc.is_descendant(paren));
+
+
+    desc.increment("a", std::numeric_limits<u32>::max() / 2 + 3);
+    paren.increment("a", std::numeric_limits<u32>::max() - 1);
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("a");
+    BOOST_CHECK(desc.is_descendant(paren));
+}
+
+BOOST_AUTO_TEST_CASE(vlock_test_03)
+{
+    Vclock paren;
+    Vclock desc;
+
+    desc.increment("a", std::numeric_limits<u32>::max() / 2 - 1);
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("a", 3);
+    paren.increment("a", 3);
+    BOOST_CHECK(desc.is_descendant(paren));
+
+    desc.increment("a", 3);
+    BOOST_CHECK(! desc.is_descendant(paren));
 
 }
