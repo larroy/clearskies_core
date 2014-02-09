@@ -18,6 +18,11 @@
 #include "share.hpp"
 #include "utils.hpp"
 #include <iostream>
+#include "int_types.h"
+namespace sha2
+{
+#include "sha2/sha2.h"
+}
 
 using namespace std;
 
@@ -33,6 +38,35 @@ void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
     file.mode = row.get<int>(4);
     file.sha256 = row.get<const char*>(5);
     file.deleted = row.get<int>(6) != 0;
+}
+
+/**
+ * will open the file and calculate sha256, @throws runtime_error in IO error
+ */
+
+std::string sha256(const bfs::path& p)
+{
+    using namespace sha2;
+    string result(SHA256_DIGEST_STRING_LENGTH, 0);
+    assert(p.is_absolute());
+
+    SHA256_CTX  c256;
+    SHA256_Init(&c256);
+
+    array<char, 65536> rbuff;
+
+    bfs::ifstream is(p, ios_base::in | ios_base::binary);
+    is.exceptions(ios::badbit);
+
+    while(is)
+    {
+        is.read(rbuff.data(), rbuff.size());
+        SHA256_Update(&c256, (const cs::u8*) rbuff.data(), is.gcount());
+    }
+
+    SHA256_End(&c256, &result[0]);
+    result.resize(result.size() - 1);
+    return result;
 }
 
 
@@ -208,7 +242,10 @@ void Share::checksum_thread()
     {
         File file;
         file_from_row(file, row);
-        file.checksum();
+
+        bfs::path fullpath = m_path / bfs::path(file.path);
+        file.sha256 = sha256(fullpath);
+
         sqlite3pp::command update_hash(m_db, "UPDATE files SET sha256 = :sha256 WHERE path = :path");
         update_hash.bind(":sha256", file.sha256);
         update_hash.bind(":path", file.path);
@@ -220,7 +257,7 @@ void Share::checksum_thread()
 void Share::scan_file(File&& file_found)
 {
     // TODO: add bytes to checksum for stats
-    unique_ptr<File> file_prev = get_file_info(file_found.path); 
+    unique_ptr<File> file_prev = get_file_info(file_found.path);
     if (file_prev)
     {
         if (file_found.mtime != file_prev->mtime

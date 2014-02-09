@@ -35,11 +35,6 @@ struct File
         , deleted()
     {}
 
-    /**
-     * will open the file and calculate sha256, @throws runtime_error in IO error
-     */
-    void checksum();
-
     std::string path;
     // UTC time in format: YYYY-MM-DDThh:mm:ss.sZ  (http://www.w3.org/TR/NOTE-datetime)
     std::string utime;

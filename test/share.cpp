@@ -64,6 +64,7 @@ void create_tree(const bfs::path& path)
     bfs::create_directory(aaa);
     bfs::path aaaf = aaa / "f";
     bfs::ofstream aaaf_os(aaaf);
+    aaaf_os << "aaaf content " << endl;
 
     bfs::path aab = path / "a" / "ab";
     bfs::create_directory(aab);
@@ -145,6 +146,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
         //cout << file.path << endl;
         ++nfiles;
         BOOST_CHECK(! file.sha256.empty());
+        //cout << file.sha256 << endl;
     }
     BOOST_CHECK_EQUAL(nfiles, 3);
 }

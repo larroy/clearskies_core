@@ -17,16 +17,13 @@
  */
 
 #include "file.hpp"
+#include <iostream>
+#include "boost_fs_fwd.hpp"
 
 using namespace std;
 
 namespace cs
 {
-
-void File::checksum()
-{
-    sha256 = ":-)";
-}
 
 
 } // end ns
