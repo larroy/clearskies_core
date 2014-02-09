@@ -147,6 +147,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
         ++nfiles;
         BOOST_CHECK(! file.sha256.empty());
         //cout << file.sha256 << endl;
+        //cout << file.mtime << endl;
     }
     BOOST_CHECK_EQUAL(nfiles, 3);
 }

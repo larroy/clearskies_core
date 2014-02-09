@@ -216,9 +216,8 @@ void Share::scan_thread()
             bfs::path fpath = get_tail(dentry.path(), it.level() + 1);
             assert(fpath.is_relative());
             f.path = fpath.string();
-            // FIXME convert to iso time
             // FIXME utime
-            f.mtime = fs(bfs::last_write_time(dentry.path()));
+            f.mtime = utils::isotime(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
             scan_file(move(f));
