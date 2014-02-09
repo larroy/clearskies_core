@@ -34,6 +34,17 @@ namespace share
 /**
  * Filesystem scan is done in two passes, first files are monitored for size and time changes, then
  * if this indicates any change or the file is new they ar marked to be checksummed
+ *
+ * Procedure to commit a file to a share:
+ *  - An updated file from another client is downloaded into a temporary directory outside the share
+ *  together with its vector clock.
+ *  - Once the file is fully downloaded, it's checksum is calculated, if it matches the file is
+ *  commited to the share (so a scan is not in place at the same time). 
+ *  - On commit if the vclock of the new file is descendant of the file we already have, it's
+ *  replaced, otherwise this file is marked as conflicted and respective copies are saved in the
+ *  share.
+ *  - The scanner should account for conflicted files not to be treated as "new files".
+ *
  */
 class Share
 {
