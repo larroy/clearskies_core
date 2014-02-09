@@ -6,6 +6,7 @@ compiler:
 
 before_install:
   # Install GYP
+  - lsb_release -a
   - svn export http://gyp.googlecode.com/svn/trunk/ -r 1845 gyp
   - export PATH=$(pwd)/gyp:${PATH}
 
