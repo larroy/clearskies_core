@@ -20,6 +20,9 @@
 #include <cassert>
 #include <cstdio>
 
+#include <algorithm>
+#include <random>
+
 using namespace std;
 
 namespace
@@ -63,6 +66,15 @@ std::string bin_to_hex(const void* b, size_t sz)
     return result;
 }
 
+
+std::string random_bytes(size_t count)
+{
+    string result;
+    random_device rng;
+    uniform_int_distribution<u8> udist8;
+    generate_n(back_inserter(result), count, [&] { return udist8(rng); });
+    return result;
+}
 
 } // end ns
 } // end ns

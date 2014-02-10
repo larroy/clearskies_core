@@ -85,7 +85,7 @@ namespace utils
 std::string isotime(std::time_t);
 
 std::string bin_to_hex(const void* b, size_t sz);
-inline std::string bin_to_hex(std::string& s)
+inline std::string bin_to_hex(const std::string& s)
 {
     return utils::bin_to_hex(reinterpret_cast<const u8*>(s.c_str()), s.size());
 }
@@ -123,6 +123,8 @@ OUT_T hex_to_bin(const std::string& xs)
     return result;
 }
 
+
+std::string random_bytes(size_t);
 
 
 } // end ns

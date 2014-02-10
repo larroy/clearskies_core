@@ -39,3 +39,12 @@ BOOST_AUTO_TEST_CASE(hex_to_binary_text)
     BOOST_CHECK_EQUAL(rx, x);
 }
 
+BOOST_AUTO_TEST_CASE(random_bytes_test)
+{
+    const auto r1 = random_bytes(128);
+    const auto r2 = random_bytes(128);
+    //cout << bin_to_hex(r1) << endl;
+    //cout << bin_to_hex(r2) << endl;
+    BOOST_CHECK(r1 != r2);
+}
+
