@@ -32,12 +32,11 @@ namespace
 void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
 {
     file.path = row.get<const char*>(0);
-    file.utime = row.get<const char*>(1);
-    file.mtime = row.get<const char*>(2);
-    file.size = row.get<long long int>(3);
-    file.mode = row.get<int>(4);
-    file.sha256 = row.get<const char*>(5);
-    file.deleted = row.get<int>(6) != 0;
+    file.mtime = row.get<const char*>(1);
+    file.size = row.get<long long int>(2);
+    file.mode = row.get<int>(3);
+    file.sha256 = row.get<const char*>(4);
+    file.deleted = row.get<int>(5) != 0;
 }
 
 /**
@@ -85,7 +84,7 @@ Share::Share_iterator::Share_iterator():
 {}
 
 Share::Share_iterator::Share_iterator(Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files ORDER BY path"))
+    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files ORDER BY path"))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
@@ -147,7 +146,6 @@ void Share::initialize_tables()
 
     sqlite3pp::command create_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
         path TEXT PRIMARY KEY,
-        utime TEXT,
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
@@ -155,6 +153,19 @@ void Share::initialize_tables()
         deleted INTEGER DEFAULT 0)
     )#");
     create_files_table.exec();
+
+    // table of peer files (manifest)
+    sqlite3pp::command create_peer_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files (
+        path TEXT PRIMARY KEY,
+        peer TEXT NOT NULL,
+        mtime TEXT,
+        size INTEGER,
+        mode INTEGER,
+        sha256 TEXT,
+        deleted INTEGER DEFAULT 0)
+    )#");
+    create_peer_files_table.exec();
+
 }
 
 
@@ -173,7 +184,7 @@ void Share::scan()
 std::unique_ptr<File> Share::get_file_info(const std::string& path)
 {
     unique_ptr<File> result;
-    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE path = :path");
+    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files WHERE path = :path");
     file_q.bind(":path", path);
 
     bool found = false;
@@ -190,14 +201,13 @@ std::unique_ptr<File> Share::get_file_info(const std::string& path)
 
 void Share::set_file_info(const File& f)
 {
-    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, utime, mtime, size, mode, sha256, deleted) VALUES (?,?,?,?,?,?,?)");
+    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, mtime, size, mode, sha256, deleted) VALUES (?,?,?,?,?,?)");
     file_i.bind(1, f.path);
-    file_i.bind(2, f.utime);
-    file_i.bind(3, f.mtime);
-    file_i.bind(4, static_cast<long long int>(f.size));
-    file_i.bind(5, static_cast<int>(f.mode));
-    file_i.bind(6, f.sha256);
-    file_i.bind(7, static_cast<int>(f.deleted));
+    file_i.bind(2, f.mtime);
+    file_i.bind(3, static_cast<long long int>(f.size));
+    file_i.bind(4, static_cast<int>(f.mode));
+    file_i.bind(5, f.sha256);
+    file_i.bind(6, static_cast<int>(f.deleted));
 
     file_i.exec();
 }
@@ -216,7 +226,6 @@ void Share::scan_thread()
             bfs::path fpath = get_tail(dentry.path(), it.level() + 1);
             assert(fpath.is_relative());
             f.path = fpath.string();
-            // FIXME utime
             f.mtime = utils::isotime(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
@@ -236,7 +245,7 @@ void Share::scan_thread()
 void Share::checksum_thread()
 {
 
-    sqlite3pp::query file_q(m_db, "SELECT path, utime, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = '' ORDER BY path");
+    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = '' ORDER BY path");
     for (const auto& row: file_q)
     {
         File file;

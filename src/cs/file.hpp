@@ -27,7 +27,6 @@ struct File
 {
     File():
         path()
-        , utime()
         , mtime()
         , size()
         , mode()
@@ -37,7 +36,6 @@ struct File
 
     std::string path;
     // UTC time in format: YYYY-MM-DDThh:mm:ss.sZ  (http://www.w3.org/TR/NOTE-datetime)
-    std::string utime;
     std::string mtime;
     u64 size;
     u16 mode;

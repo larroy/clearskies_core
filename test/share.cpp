@@ -101,7 +101,6 @@ BOOST_AUTO_TEST_CASE(share_set_file_info)
 {
     File f;
     f.path = "omg/a/path";
-    f.utime = "12391";
     f.mtime = "12392";
     f.size = 69;
     f.mode = 01777;
@@ -120,7 +119,6 @@ BOOST_AUTO_TEST_CASE(share_set_file_info)
     auto f_ = share.get_file_info(f.path);
     BOOST_CHECK(f_);
     BOOST_CHECK_EQUAL(f_->path, f.path);
-    BOOST_CHECK_EQUAL(f_->utime, f.utime);
     BOOST_CHECK_EQUAL(f_->mtime, f.mtime);
     BOOST_CHECK_EQUAL(f_->size, f.size);
     BOOST_CHECK_EQUAL(f_->mode, f.mode);
