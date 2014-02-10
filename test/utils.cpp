@@ -21,9 +21,21 @@
 
 using namespace std;
 
-using namespace utils;
+using namespace cs;
+using namespace cs::utils;
 
 BOOST_AUTO_TEST_CASE(isotime_test)
 {
     BOOST_CHECK_EQUAL(isotime(1391732661), "2014-02-07T00:24:21Z");
 }
+
+
+BOOST_AUTO_TEST_CASE(hex_to_binary_text)
+{
+    const u64 x = 0xb39acfec72f75212;
+    const string hex = bin_to_hex(&x, sizeof(uint64));
+    const string bin = hex_to_bin<std::string>(hex);
+    const u64 rx = *reinterpret_cast<const uint64*>(bin.data());
+    BOOST_CHECK_EQUAL(rx, x);
+}
+

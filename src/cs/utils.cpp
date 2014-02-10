@@ -18,6 +18,7 @@
 #include "utils.hpp"
 #include <array>
 #include <cassert>
+#include <cstdio>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ struct tm* xgmtime_r(const time_t *timep, struct tm *result)
 
 }
 
+namespace cs
+{
 namespace utils
 {
 
@@ -46,4 +49,20 @@ std::string isotime(std::time_t time)
     return result;
 }
 
+std::string bin_to_hex(const void* b, size_t sz)
+{
+    const u8* p = static_cast<const u8*>(b);
+    char tmp[5];
+    std::string result;
+    result.reserve(sz << 1);
+    for (size_t i=0; i < sz; ++i)
+    {
+        sprintf(tmp,"%02x", p[i]);
+        result += tmp;
+    }
+    return result;
 }
+
+
+} // end ns
+} // end ns

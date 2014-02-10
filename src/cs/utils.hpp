@@ -20,6 +20,9 @@
 #include <sstream>
 #include <memory>
 #include <ctime>
+#include <cassert>
+#include <cctype>
+#include "int_types.h"
 
 namespace std
 {
@@ -73,11 +76,54 @@ auto cend( const C& c ) -> decltype(c.cend())
 
 
 
+namespace cs
+{
 namespace utils
 {
 
 /// @returns time in ISO 8601 format "YYYY-MM-DDThh:mm:ssZ"  (http://www.w4.org/TR/NOTE-datetime)
 std::string isotime(std::time_t);
 
+std::string bin_to_hex(const void* b, size_t sz);
+inline std::string bin_to_hex(std::string& s)
+{
+    return utils::bin_to_hex(reinterpret_cast<const u8*>(s.c_str()), s.size());
+}
 
+template<typename OUT_T>
+OUT_T hex_to_bin(const std::string& xs)
+{
+    OUT_T result;
+    result.reserve(xs.size() * 2);
+    u8 nibble = 0;
+    for (auto x: xs)
+    {
+        assert(isxdigit(x));
+        if (isdigit(x))
+            x -= '0';
+        else if (isalpha(x))
+        {
+            if (islower(x))
+                x -= 'a';
+            else
+                x -= 'A';
+            x += 10;
+        }
+        if (nibble == 0)
+        {
+            result.push_back(x << 4);
+            ++nibble;
+        }
+        else
+        {
+            result.back() |= x;
+            nibble = 0;
+        }
+    }
+    return result;
+}
+
+
+
+} // end ns
 } // end ns
