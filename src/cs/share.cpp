@@ -172,8 +172,8 @@ void Share::initialize_tables()
     //
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files (
         path TEXT NOT NULL,
-        tmp_path TEXT DEFAULT '',
         peer TEXT NOT NULL,
+        tmp_path TEXT DEFAULT '',
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
@@ -185,6 +185,7 @@ void Share::initialize_tables()
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files_vclock (
         path TEXT NOT NULL,
+        peer TEXT NOT NULL,
         key TEXT NOT NULL,
         value INTEGER DEFAULT 0,
         FOREIGN KEY(path) REFERENCES peer_files(path)
