@@ -144,27 +144,78 @@ void Share::initialize_tables()
     for (sqlite3pp::command& cmd: performance_adjusts)
         cmd.exec();
 
-    sqlite3pp::command create_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
+    //
+    // FILES
+    //
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS files (
         path TEXT PRIMARY KEY,
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
         sha256 TEXT,
-        deleted INTEGER DEFAULT 0)
-    )#");
-    create_files_table.exec();
+        deleted INTEGER DEFAULT 0
+        )
+    )#").exec();
 
-    // table of peer files (manifest)
-    sqlite3pp::command create_peer_files_table(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files (
-        path TEXT PRIMARY KEY,
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS files_vclock (
+        path TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value INTEGER DEFAULT 0,
+        FOREIGN KEY(path) REFERENCES files(path)
+        )
+    )#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").exec();
+
+
+    //
+    // PEER FILES
+    //
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files (
+        path TEXT NOT NULL,
+        tmp_path TEXT DEFAULT '',
         peer TEXT NOT NULL,
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
         sha256 TEXT,
-        deleted INTEGER DEFAULT 0)
-    )#");
-    create_peer_files_table.exec();
+        deleted INTEGER DEFAULT 0
+        )
+    )#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_path ON peer_files(path))#").exec();
+
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files_vclock (
+        path TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value INTEGER DEFAULT 0,
+        FOREIGN KEY(path) REFERENCES peer_files(path)
+        )
+    )#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_vlock_path ON peer_files_vclock(path))#").exec();
+
+
+    //
+    // SHARE
+    //
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
+        share_id TEXT PRIMARY KEY,
+        peer_id TEXT NOT NULL,
+        psk_rw TEXT NOT NULL,
+        psk_ro TEXT NOT NULL,
+        psk_untrusted TEXT NOT NULL,
+        pkc_rw TEXT,
+        pkc_ro TEXT
+        )
+    )#").exec();
+    // manifest vclock, ours and the ones from peers
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_vclock (
+        peer_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value INTEGER DEFAULT 0,
+        FOREIGN KEY(peer_id) REFERENCES share(peer_id)
+        )
+    )#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_vlock_peer ON share_vclock(peer_id))#").exec();
+
 
 }
 
