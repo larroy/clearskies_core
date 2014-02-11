@@ -17,6 +17,7 @@
                 "share.cpp",
                 "utils.cpp",
                 "vclock.cpp",
+                "sqlite3pp.cpp",
             ],
             "include_dirs": [
                 "../src",
