@@ -106,8 +106,13 @@ namespace sqlite3pp
     class statement
     {
      public:
-        int prepare(char const* stmt);
-        int finish();
+        void prepare(char const* stmt);
+        int eprepare(char const* stmt);
+
+        // finish statement, @throws database_error
+        void finish();
+        // finish statements, @returns error code
+        int efinish();
 
         void bind(int idx, int value);
         void bind(int idx, double value);

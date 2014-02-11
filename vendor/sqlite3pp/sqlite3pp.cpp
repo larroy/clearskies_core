@@ -196,18 +196,12 @@ namespace sqlite3pp
         tail_(0)
     {
         if (stmt)
-        {
-            int rc = prepare(stmt);
-            if (rc != SQLITE_OK)
-            {
-                throw database_error(db_);
-            }
-        }
+            prepare(stmt);
     }
 
     statement::~statement()
     {
-        int rc = finish();
+        int rc = efinish();
         if (rc != SQLITE_OK)
         {
             if (std::uncaught_exception())
@@ -228,9 +222,14 @@ namespace sqlite3pp
         }
     }
 
-    int statement::prepare(char const* stmt)
+    void statement::prepare(char const* stmt)
     {
-        int rc = finish();
+        THROW_ERR(eprepare(stmt);
+    }
+
+    int statement::eprepare(char const* stmt)
+    {
+        int rc = efinish();
         if (rc != SQLITE_OK)
             return rc;
 
@@ -242,7 +241,12 @@ namespace sqlite3pp
         return sqlite3_prepare(db_.db_, stmt, strlen(stmt), &stmt_, &tail_);
     }
 
-    int statement::finish()
+    void statement::finish()
+    {
+        THROW_ERR(efinish());
+    }
+
+    int statement::efinish()
     {
         int rc = SQLITE_OK;
         if (stmt_) {
