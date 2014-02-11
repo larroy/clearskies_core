@@ -29,7 +29,7 @@ using namespace std;
 namespace
 {
 
-void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
+void mfile_from_row(MFile& file, const sqlite3pp::query::rows& row)
 {
     file.path = row.get<const char*>(0);
     file.mtime = row.get<const char*>(1);
@@ -37,6 +37,9 @@ void file_from_row(cs::File& file, const sqlite3pp::query::rows& row)
     file.mode = row.get<int>(3);
     file.sha256 = row.get<const char*>(4);
     file.deleted = row.get<int>(5) != 0;
+    file.last_changed_rev = row.get<long long int>(6);
+    file.scan_found = row.get<int>(7) != 0;
+    file.updated = row.get<int>(8) != 0;
 }
 
 /**
@@ -52,7 +55,7 @@ std::string sha256(const bfs::path& p)
     SHA256_CTX  c256;
     SHA256_Init(&c256);
 
-    array<char, 65536> rbuff;
+    array<char, > rbuff;
 
     bfs::ifstream is(p, ios_base::in | ios_base::binary);
     is.exceptions(ios::badbit);
@@ -97,11 +100,11 @@ void Share::Share_iterator::increment()
     m_file_set = false;
 }
 
-File& Share::Share_iterator::dereference() const
+MFile& Share::Share_iterator::dereference() const
 {
     if (! m_file_set)
     {
-        file_from_row(m_file, *m_query_it);
+        mfile_from_row(m_file, *m_query_it);
         m_file_set = true;
     }
     return m_file;
@@ -110,8 +113,14 @@ File& Share::Share_iterator::dereference() const
 
 Share::Share(const std::string& share_path, const std::string& dbpath):
       m_path(share_path)
+    , m_revision()
     , m_db(dbpath.c_str())
     , m_db_path(dbpath)
+    , m_scan_in_progress()
+    , m_scan_batch_sz(256)
+    , m_scan_it()
+    , m_cksum_block_sz(65536)
+    , m_cksum_batch_sz(8)
     , m_share_id()
     , m_peer_id()
     , m_psk_rw()
@@ -152,8 +161,12 @@ void Share::initialize_tables()
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
-        sha256 TEXT,
-        deleted INTEGER DEFAULT 0
+        scan_found INTEGER DEFAULT 0, /* used to find deleted files, the scanner sets this to 1 when found on fs */
+        deleted INTEGER DEFAULT 0,
+        to_checksum INTEGER DEFAULT 0,
+        sha256 TEXT DEFAULT '',
+        last_changed_rev INTEGER DEFAULT 0,
+        updated INTEGER DEFAULT 0
         )
     )#").exec();
 
@@ -208,14 +221,14 @@ void Share::initialize_tables()
         )
     )#").exec();
     // manifest vclock, ours and the ones from peers
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_vclock (
+
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_revision (
         peer_id TEXT NOT NULL,
-        key TEXT NOT NULL,
-        value INTEGER DEFAULT 0,
+        revision INTEGER DEFAULT 0,
         FOREIGN KEY(peer_id) REFERENCES share(peer_id)
         )
     )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_vlock_peer ON share_vclock(peer_id))#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_revision_peer_id ON share_revision(peer_id))#").exec();
 
 
 }
@@ -223,52 +236,31 @@ void Share::initialize_tables()
 
 void Share::scan()
 {
-    // FIXME create thread with scan_thread code.
-    // when it finishes we get some information on how much is there to checksum for progress
-    // then we checksum, when both steps are finished we need to somehow notify the main theads
-    // protocolstate so it can send updates etc. We can do this by sending commands to a control
-    // pipe or with other mechanism TBD
-    // as suggested by Jewel: http://nikhilm.github.io/uvbook/threads.html uv_async_send, etc.
+    m_scan_in_progress = true;
+    m_scan_it = make_unique<bfs::recursive_directory_iterator>(m_path);
+}
+
+void Share::step()
+{
+    const bool scan_finished = scan_step();
+    const bool cksum_finished = cksum_step();
+    const bool m_scan_in_progress = ! scan_finished || ! cksum_finished;
+    return scan_finished && cksum_finished;
 }
 
 
-
-std::unique_ptr<File> Share::get_file_info(const std::string& path)
+/**
+ * scan m_scan_batch_sz files @returns true if finished, false if more to do
+ */
+bool Share::scan_step()
 {
-    unique_ptr<File> result;
-    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files WHERE path = :path");
-    file_q.bind(":path", path);
+    if (! m_scan_it)
+        return true;
 
-    bool found = false;
-    for (const auto& row: file_q)
-    {
-        assert(! found); // path must be unique, it's pk
-        result = make_unique<File>();
-        assert(row.get<std::string>(0) == path);
-        file_from_row(*result, row);
-        found = true;
-    }
-    return move(result);
-}
-
-void Share::set_file_info(const File& f)
-{
-    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, mtime, size, mode, sha256, deleted) VALUES (?,?,?,?,?,?)");
-    file_i.bind(1, f.path);
-    file_i.bind(2, f.mtime);
-    file_i.bind(3, static_cast<long long int>(f.size));
-    file_i.bind(4, static_cast<int>(f.mode));
-    file_i.bind(5, f.sha256);
-    file_i.bind(6, static_cast<int>(f.deleted));
-
-    file_i.exec();
-}
-
-void Share::scan_thread()
-{
-    bfs::recursive_directory_iterator it(m_path);
+    size_t batch_i = 0; // number of files in this batch so far
+    bfs::recursive_directory_iterator& it = *m_scan_it;
     bfs::recursive_directory_iterator end;
-    for ( ; it != end; ++it)
+    for ( ; it != end && batch_i < m_scan_batch_sz; ++it, ++batch_i)
     {
         const auto& dentry = *it;
         if (dentry.status().type() == bfs::regular_file)
@@ -291,7 +283,57 @@ void Share::scan_thread()
             cout << endl;
 #endif
         }
+
     }
+    if (it == end)
+    {
+        m_scan_it.reset();
+        on_scan_finished();
+        return true;
+    }
+    else
+        return false;
+}
+
+void Share::on_scan_finished()
+{
+    // TODO mark not found files as deleted
+}
+
+void Share::cksum_step()
+{
+}
+
+
+std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
+{
+    unique_ptr<MFile> result;
+    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated FROM files WHERE path = :path");
+    file_q.bind(":path", path);
+
+    bool found = false;
+    for (const auto& row: file_q)
+    {
+        assert(! found); // path must be unique, it's pk
+        result = make_unique<MFile>();
+        assert(row.get<std::string>(0) == path);
+        mfile_from_row(*result, row);
+        found = true;
+    }
+    return move(result);
+}
+
+void Share::set_file_info(const MFile& f)
+{
+    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, mtime, size, mode, sha256, deleted, last_changed_rev, scan_found, updated) VALUES (?,?,?,?,?,?,?,?,?)");
+    file_i.bind(1, f.path);
+    file_i.bind(2, f.mtime);
+    file_i.bind(3, static_cast<long long int>(f.size));
+    file_i.bind(4, static_cast<int>(f.mode));
+    file_i.bind(5, f.sha256);
+    file_i.bind(6, static_cast<int>(f.deleted));
+
+    file_i.exec();
 }
 
 void Share::checksum_thread()
@@ -314,20 +356,33 @@ void Share::checksum_thread()
     // TODO: progress update
 }
 
-void Share::scan_file(File&& file_found)
+void Share::scan_found(ScanFile&& scan_file)
 {
     // TODO: add bytes to checksum for stats
-    unique_ptr<File> file_prev = get_file_info(file_found.path);
-    if (file_prev)
+    unique_ptr<MFile> mfile = get_file_info(scan_file.path);
+    if (mfile)
     {
-        if (file_found.mtime != file_prev->mtime
-            || file_found.size != file_prev->size)
+        if (scan_file.mtime != mfile->mtime
+            || scan_file.size != mfile->size)
         {
-            set_file_info(file_found);
+            *mfile = scan_file;
+            mfile->to_checksum = true;
+            set_file_info(*mfile);
+        }
+        else
+        {
+            *mfile = scan_file;
+            mfile->to_checksum = false;
+            set_file_info(*mfile);
         }
     }
     else
-        set_file_info(file_found);
+    {
+        MFile mfile_;
+        mfile_ = scan_file;
+        mfile.to_checksum = true;
+        set_file_info(mfile_);
+    }
 }
 
 
