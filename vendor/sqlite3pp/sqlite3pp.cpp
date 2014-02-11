@@ -168,7 +168,15 @@ namespace sqlite3pp
         return sqlite3_errmsg(db_);
     }
 
-    int database::execute(char const* sql)
+    void database::execute(char const* sql)
+    {
+        int rc = eexecute(sql);
+        if (rc != SQLITE_OK)
+            throw database_error(*this);
+    }
+
+
+    int database::eexecute(char const* sql)
     {
         return sqlite3_exec(db_, sql, 0, 0, 0);
     }
@@ -224,7 +232,7 @@ namespace sqlite3pp
 
     void statement::prepare(char const* stmt)
     {
-        THROW_ERR(eprepare(stmt);
+        THROW_ERR(eprepare(stmt));
     }
 
     int statement::eprepare(char const* stmt)
@@ -277,16 +285,20 @@ namespace sqlite3pp
     statement& statement::bind(int idx, int value)
     {
         THROW_ERR(sqlite3_bind_int(stmt_, idx, value));
+        return *this;
+
     }
 
     statement& statement::bind(int idx, double value)
     {
         THROW_ERR(sqlite3_bind_double(stmt_, idx, value));
+        return *this;
     }
 
     statement& statement::bind(int idx, long long int value)
     {
         THROW_ERR(sqlite3_bind_int64(stmt_, idx, value));
+        return *this;
     }
 
     statement& statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
@@ -299,26 +311,31 @@ namespace sqlite3pp
         {
                 THROW_ERR(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
         }
+        return *this;
     }
 
     statement& statement::bind(int idx, char const* value, bool fstatic)
     {
         THROW_ERR(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+        return *this;
     }
 
     statement& statement::bind(int idx, void const* value, int n, bool fstatic)
     {
         THROW_ERR(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+        return *this;
     }
 
     statement& statement::bind(int idx)
     {
         THROW_ERR(sqlite3_bind_null(stmt_, idx));
+        return *this;
     }
 
     statement& statement::bind(int idx, null_type)
     {
         bind(idx);
+        return *this;
     }
 
     statement& statement::bind(char const* name, int value)
@@ -326,6 +343,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
+        return *this;
     }
 
     statement& statement::bind(char const* name, double value)
@@ -333,6 +351,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
+        return *this;
     }
 
     statement& statement::bind(char const* name, long long int value)
@@ -340,6 +359,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
+        return *this;
     }
 
     statement& statement::bind(char const* name, const std::string& value, bool blob, bool fstatic)
@@ -347,6 +367,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, blob, fstatic);
+        return *this;
     }
 
     statement& statement::bind(char const* name, char const* value, bool fstatic)
@@ -354,6 +375,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, fstatic);
+        return *this;
     }
 
     statement& statement::bind(char const* name, void const* value, int n, bool fstatic)
@@ -361,6 +383,7 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, n, fstatic);
+        return *this;
     }
 
     statement& statement::bind(char const* name)
@@ -368,11 +391,13 @@ namespace sqlite3pp
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx);
+        return *this;
     }
 
     statement& statement::bind(char const* name, null_type)
     {
         bind(name);
+        return *this;
     }
 
 
@@ -405,7 +430,7 @@ namespace sqlite3pp
         THROW_ERR(eexecute());
     }
 
-    int command::execute()
+    int command::eexecute()
     {
         int rc = step();
         if (rc == SQLITE_DONE) rc = SQLITE_OK;

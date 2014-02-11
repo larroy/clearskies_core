@@ -75,7 +75,8 @@ namespace sqlite3pp
         int error_code() const;
         char const* error_msg() const;
 
-        int execute(char const* sql);
+        void execute(char const* sql);
+        int eexecute(char const* sql);
         int executef(char const* sql, ...);
 
         int set_busy_timeout(int ms);
