@@ -19,56 +19,12 @@
 #include "utils.hpp"
 #include <iostream>
 #include "int_types.h"
-namespace sha2
-{
-#include "sha2/sha2.h"
-}
-
 using namespace std;
 
 namespace
 {
 
-void mfile_from_row(MFile& file, const sqlite3pp::query::rows& row)
-{
-    file.path = row.get<const char*>(0);
-    file.mtime = row.get<const char*>(1);
-    file.size = row.get<long long int>(2);
-    file.mode = row.get<int>(3);
-    file.sha256 = row.get<const char*>(4);
-    file.deleted = row.get<int>(5) != 0;
-    file.last_changed_rev = row.get<long long int>(6);
-    file.scan_found = row.get<int>(7) != 0;
-    file.updated = row.get<int>(8) != 0;
-}
 
-/**
- * will open the file and calculate sha256, @throws std::ifstream::failure in IO error
- */
-std::string sha256(const bfs::path& p)
-{
-    using namespace sha2;
-    string result(SHA256_DIGEST_STRING_LENGTH, 0);
-    assert(p.is_absolute());
-
-    SHA256_CTX  c256;
-    SHA256_Init(&c256);
-
-    array<char, > rbuff;
-
-    bfs::ifstream is(p, ios_base::in | ios_base::binary);
-    is.exceptions(ios::badbit);
-
-    while(is)
-    {
-        is.read(rbuff.data(), rbuff.size());
-        SHA256_Update(&c256, (const cs::u8*) rbuff.data(), is.gcount());
-    }
-
-    SHA256_End(&c256, &result[0]);
-    result.resize(result.size() - 1);
-    return result;
-}
 
 
 } // end anon ns
@@ -77,6 +33,33 @@ namespace cs
 {
 namespace share
 {
+
+
+void MFile::from_row(const sqlite3pp::query::rows& row)
+{
+    path = row.get<const char*>(0);
+    mtime = row.get<const char*>(1);
+    size = row.get<long long int>(2);
+    mode = row.get<int>(3);
+    sha256 = row.get<const char*>(4);
+    deleted = row.get<int>(5) != 0;
+    last_changed_rev = row.get<long long int>(6);
+    scan_found = row.get<int>(7) != 0;
+    updated = row.get<int>(8) != 0;
+}
+
+void MFile::gone(u64* share_rev)
+{
+    assert(share_rev);
+    // file disappeared
+    size = 0;
+    mode = 0;
+    scan_found = true;
+    deleted = true;
+    to_checksum = false;
+    sha256.clear();
+    last_changed_rev = ++*share_rev;
+}
 
 Share::Share_iterator::Share_iterator():
     m_query()
@@ -103,12 +86,83 @@ MFile& Share::Share_iterator::dereference() const
 {
     if (! m_file_set)
     {
-        mfile_from_row(m_file, *m_query_it);
+        m_file.from_row(*m_query_it);
         m_file_set = true;
     }
     return m_file;
 }
 
+
+Share::Checksummer::Checksummer(Share& share):
+     r_share(share)
+    , m_to_cksum_it()
+    , m_c256()
+    , m_file()
+    , m_is()
+
+{
+    sha2::SHA256_Init(&m_c256);
+}
+
+
+
+bool Share::Checksummer::step()
+{
+    for(size_t nblock = 0; nblock < r_share.m_cksum_batch_sz;)
+    {
+        if (m_is)
+        {
+            do_block();
+            ++nblock;
+        }
+        else
+        {
+            bool more = next_file();
+            if (! more)
+                return false;
+        }
+    }
+    return true;
+}
+
+void Share::Checksummer::do_block()
+{
+    assert(m_is);
+    std::array<char, Share::s_cksum_block_sz> rbuff;
+    m_is->read(rbuff.data(), rbuff.size());
+    sha2::SHA256_Update(&m_c256, (const cs::u8*) rbuff.data(), m_is->gcount());
+    if (! *m_is)
+    {
+        // EOF 
+        string sha256(SHA256_DIGEST_STRING_LENGTH, 0);
+        sha2::SHA256_End(&m_c256, &sha256[0]);
+        sha256.resize(sha256.size() - 1);
+        // FIXME check if file vanished!!
+        r_share.m_update_hash_q.reset().bind(":sha256", sha256).bind(":path", m_file.path);
+        r_share.m_update_hash_q.execute();
+    }
+}
+
+
+bool Share::Checksummer::next_file()
+{
+    r_share.m_to_cksum_q.reset();
+    m_to_cksum_it = r_share.m_to_cksum_q.begin();
+    if (m_to_cksum_it == r_share.m_to_cksum_q.end())
+        return false;
+    m_file.from_row(*m_to_cksum_it);
+    bfs::path fullpath = r_share.m_path / bfs::path(m_file.path);
+    m_is = make_unique<bfs::ifstream>(fullpath, ios_base::in | ios_base::binary);
+    if (! *m_is)
+    {
+        m_file.gone(&r_share.m_revision);
+        r_share.set_file_info(m_file);
+        m_is.reset();
+    }
+    m_is->exceptions(ios::badbit);
+    sha2::SHA256_Init(&m_c256);
+    return true;
+}
 
 Share::Share(const std::string& share_path, const std::string& dbpath):
       m_path(share_path)
@@ -118,8 +172,13 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_scan_in_progress()
     , m_scan_batch_sz(256)
     , m_scan_it()
-    , m_cksum_block_sz(65536)
+    , m_scan_found_count()
+    , m_scan_duration_s()
+    , m_set_file_info_q(m_db)
     , m_cksum_batch_sz(8)
+    , m_to_cksum_q(m_db)
+    , m_cksummer(*this)
+    , m_update_hash_q(m_db)
     , m_share_id()
     , m_peer_id()
     , m_psk_rw()
@@ -136,6 +195,7 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
         throw std::runtime_error(fs("Share::Share error: " << share_path_ << " not a directory"));
 
     initialize_tables();
+    initialize_statements();
 }
 
 
@@ -150,7 +210,7 @@ void Share::initialize_tables()
     // performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA journal_mode = OFF"));
 
     for (sqlite3pp::command& cmd: performance_adjusts)
-        cmd.exec();
+        cmd.execute();
 
     //
     // FILES
@@ -167,7 +227,7 @@ void Share::initialize_tables()
         last_changed_rev INTEGER DEFAULT 0,
         updated INTEGER DEFAULT 0
         )
-    )#").exec();
+    )#").execute();
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS files_vclock (
         path TEXT NOT NULL,
@@ -175,8 +235,8 @@ void Share::initialize_tables()
         value INTEGER DEFAULT 0,
         FOREIGN KEY(path) REFERENCES files(path)
         )
-    )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").exec();
+    )#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").execute();
 
 
     //
@@ -192,8 +252,8 @@ void Share::initialize_tables()
         sha256 TEXT,
         deleted INTEGER DEFAULT 0
         )
-    )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_path ON peer_files(path))#").exec();
+    )#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_path ON peer_files(path))#").execute();
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files_vclock (
         path TEXT NOT NULL,
@@ -202,8 +262,8 @@ void Share::initialize_tables()
         value INTEGER DEFAULT 0,
         FOREIGN KEY(path) REFERENCES peer_files(path)
         )
-    )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_vlock_path ON peer_files_vclock(path))#").exec();
+    )#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_vlock_path ON peer_files_vclock(path))#").execute();
 
 
     //
@@ -218,7 +278,7 @@ void Share::initialize_tables()
         pkc_rw TEXT,
         pkc_ro TEXT
         )
-    )#").exec();
+    )#").execute();
     // manifest vclock, ours and the ones from peers
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_revision (
@@ -226,25 +286,45 @@ void Share::initialize_tables()
         revision INTEGER DEFAULT 0,
         FOREIGN KEY(peer_id) REFERENCES share(peer_id)
         )
-    )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_revision_peer_id ON share_revision(peer_id))#").exec();
+    )#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_revision_peer_id ON share_revision(peer_id))#").execute();
 
 
 }
 
 
+void Share::initialize_statements()
+{
+    m_set_file_info_q.prepare("INSERT INTO files (path, mtime, size, mode, sha256, deleted, last_changed_rev, scan_found, updated) VALUES (?,?,?,?,?,?,?,?,?)");
+    m_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
+    m_update_hash_q.prepare("UPDATE files SET sha256 = :sha256, to_checksum = 0 WHERE path = :path");
+}
+
+
+/**
+ * Initialize the directory iterator, so scan_step does work
+ */
 void Share::scan()
 {
     m_scan_in_progress = true;
     m_scan_it = make_unique<bfs::recursive_directory_iterator>(m_path);
+    m_scan_found_count = 0;
+    time(&m_scan_duration_s);
 }
 
-void Share::step()
+bool Share::step()
 {
-    const bool scan_finished = scan_step();
-    const bool cksum_finished = cksum_step();
-    const bool m_scan_in_progress = ! scan_finished || ! cksum_finished;
-    return scan_finished && cksum_finished;
+    if (m_scan_in_progress == false)
+    {
+        assert(false);
+        return false;
+    }
+    const bool scan_more = scan_step();
+    const bool cksum_more = m_cksummer.step();
+    const bool m_scan_in_progress = scan_more || cksum_more;
+    if (! m_scan_in_progress)
+        on_scan_finished();
+    return m_scan_in_progress;
 }
 
 
@@ -254,7 +334,7 @@ void Share::step()
 bool Share::scan_step()
 {
     if (! m_scan_it)
-        return true;
+        return false;
 
     size_t batch_i = 0; // number of files in this batch so far
     bfs::recursive_directory_iterator& it = *m_scan_it;
@@ -264,7 +344,7 @@ bool Share::scan_step()
         const auto& dentry = *it;
         if (dentry.status().type() == bfs::regular_file)
         {
-            File f;
+            ScanFile f;
             // we get the path relative to the share
             bfs::path fpath = get_tail(dentry.path(), it.level() + 1);
             assert(fpath.is_relative());
@@ -272,7 +352,7 @@ bool Share::scan_step()
             f.mtime = utils::isotime(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
-            scan_file(move(f));
+            scan_found(f);
 
 #if 0
             cout << f.path << endl;
@@ -284,30 +364,28 @@ bool Share::scan_step()
         }
 
     }
+    // scan finished
     if (it == end)
     {
         m_scan_it.reset();
-        on_scan_finished();
-        return true;
+        return false;
     }
     else
-        return false;
+        return true;
 }
 
 void Share::on_scan_finished()
 {
+    time_t scan_end = 0;
+    time(&scan_end);
+    m_scan_duration_s = scan_end - m_scan_duration_s;
     // TODO mark not found files as deleted
 }
-
-void Share::cksum_step()
-{
-}
-
 
 std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
 {
     unique_ptr<MFile> result;
-    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated FROM files WHERE path = :path");
+    sqlite3pp::query file_q(m_db, "SELECT * FROM files WHERE path = :path");
     file_q.bind(":path", path);
 
     bool found = false;
@@ -316,7 +394,7 @@ std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
         assert(! found); // path must be unique, it's pk
         result = make_unique<MFile>();
         assert(row.get<std::string>(0) == path);
-        mfile_from_row(*result, row);
+        result->from_row(row);
         found = true;
     }
     return move(result);
@@ -324,41 +402,21 @@ std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
 
 void Share::set_file_info(const MFile& f)
 {
-    sqlite3pp::command file_i(m_db, "INSERT INTO files (path, mtime, size, mode, sha256, deleted, last_changed_rev, scan_found, updated) VALUES (?,?,?,?,?,?,?,?,?)");
-    file_i.bind(1, f.path);
-    file_i.bind(2, f.mtime);
-    file_i.bind(3, static_cast<long long int>(f.size));
-    file_i.bind(4, static_cast<int>(f.mode));
-    file_i.bind(5, f.sha256);
-    file_i.bind(6, static_cast<int>(f.deleted));
-
-    file_i.exec();
+    m_set_file_info_q.reset();
+    m_set_file_info_q.bind(1, f.path);
+    m_set_file_info_q.bind(2, f.mtime);
+    m_set_file_info_q.bind(3, static_cast<long long int>(f.size));
+    m_set_file_info_q.bind(4, static_cast<int>(f.mode));
+    m_set_file_info_q.bind(5, f.sha256);
+    m_set_file_info_q.bind(6, static_cast<int>(f.deleted));
+    m_set_file_info_q.execute();
 }
 
-void Share::checksum_thread()
-{
-
-    sqlite3pp::query file_q(m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files WHERE sha256 = '' ORDER BY path");
-    for (const auto& row: file_q)
-    {
-        File file;
-        file_from_row(file, row);
-
-        bfs::path fullpath = m_path / bfs::path(file.path);
-        file.sha256 = sha256(fullpath);
-
-        sqlite3pp::command update_hash(m_db, "UPDATE files SET sha256 = :sha256 WHERE path = :path");
-        update_hash.bind(":sha256", file.sha256);
-        update_hash.bind(":path", file.path);
-        update_hash.exec();
-    }
-    // TODO: progress update
-}
-
-void Share::scan_found(ScanFile&& scan_file)
+void Share::scan_found(const ScanFile& scan_file)
 {
     // TODO: add bytes to checksum for stats
     unique_ptr<MFile> mfile = get_file_info(scan_file.path);
+    ++m_scan_found_count;
     if (mfile)
     {
         if (scan_file.mtime != mfile->mtime
