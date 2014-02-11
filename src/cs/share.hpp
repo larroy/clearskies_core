@@ -31,6 +31,49 @@ namespace cs
 namespace share
 {
 
+struct ScanFile 
+{
+    ScanFile():
+        path()
+        , mtime()
+        , size()
+        , mode()
+        , scan_found(true)
+    {}
+    std::string path;
+    std::string mtime;
+    u64 size;
+    u16 mode;
+    bool scan_found;
+};
+
+struct MFile: ScanFile
+{
+    MFile():
+        deleted()
+        , to_checksum()
+        , sha256()
+        , last_changed_rev()
+        , updated()
+    {}
+
+    MFile& operator=(const Scanfile& x)
+    {
+        if (&x == this)
+            return *this;
+
+        std::tie(path, mtime, size, mode, scan_found) =
+            std::tie(x.path, x.mtime, x.size, x.mode, x.scan_found);
+        return *this;
+    }
+
+    bool deleted;
+    bool to_checksum;
+    std::string sha256;
+    u64 last_changed_rev;
+    bool updated;
+};
+
 /**
  * Filesystem scan is done in two passes, first files are monitored for size and time changes, then
  * if this indicates any change or the file is new they ar marked to be checksummed
@@ -44,6 +87,13 @@ namespace share
  *  replaced, otherwise this file is marked as conflicted and respective copies are saved in the
  *  share.
  *  - The scanner should account for conflicted files not to be treated as "new files".
+ *
+ * Scan steps:
+ * 1: mark scan_found = 0
+ * 1: scan
+ *  1.1: cksum & rescan
+ *  1.2: send updates
+ * mark remaining scan_found = 0 files as deleted
  *
  */
 class Share
@@ -67,11 +117,11 @@ public:
             return m_query_it == other.m_query_it;
         }
 
-        File& dereference() const;
+        MFile& dereference() const;
 
         std::unique_ptr<sqlite3pp::query> m_query;
         sqlite3pp::query::query_iterator m_query_it;
-        mutable File m_file;
+        mutable MFile m_file;
         mutable bool m_file_set;
     };
 
@@ -95,38 +145,55 @@ public:
 
     void scan();
 
-// FIXME: TODO, progress indicators
-    bool scan_in_progress() const { assert(0); }
+    /// @returns true if there's more to do, false otherwise, meaning scan and cksum finished
+    bool step();
+private:
+    bool scan_step();
+    void on_scan_finished();
+    bool cksum_step();
+
+    /// @returns true if a scan is in progress
+    bool scan_in_progress() const { return m_scan_in_progress; }
+
+#if 0
     size_t scan_total() const { assert(0); }
     size_t scan_done() const { assert(0); }
-
     bool checksum_in_progress() const { assert(0); }
     size_t checksum_total() const { assert(0); }
     size_t checksum_done() const { assert(0); }
+#endif
 
     /// @returns file metadata given a path, null if there's no such file
-    std::unique_ptr<File> get_file_info(const std::string& path);
+    std::unique_ptr<MFile> get_file_info(const std::string& path);
     /// save File metadata on the Share
-    void set_file_info(const File&);
+    void set_file_info(const MFile&);
 
 
 // FIXME: to make non public / testable
 
-    /// first pass, "stat"
-    void scan_thread();
     /// second pass, "checksum"
     void checksum_thread();
 
     /// actions to perform for each scanned file
-    void scan_file(File&& file);
+    void scan_found(ScanFile&& file);
 
-private:
-    std::thread m_scan_thread;
 
 public:
     std::string m_path;
+    u64 revision;
     sqlite3pp::database m_db;
     std::string m_db_path;
+
+    bool m_scan_in_progress;
+    /// number of files to scan at once
+    size_t m_scan_batch_sz;
+    std::unique_ptr<bfs::recursive_directory_iterator> m_scan_it;
+
+    /// cksum buffer size
+    size_t m_cksum_block_sz;
+    /// number of buffers to cksum at once, total m_cksum_block_sz * m_cksum_batch_sz bytes will be
+    /// read from disk before yielding
+    size_t m_cksum_batch_sz;
 
     /// share id, shared publicly
     std::array<u8, 32> m_share_id;
