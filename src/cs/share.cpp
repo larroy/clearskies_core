@@ -43,9 +43,8 @@ void mfile_from_row(MFile& file, const sqlite3pp::query::rows& row)
 }
 
 /**
- * will open the file and calculate sha256, @throws runtime_error in IO error
+ * will open the file and calculate sha256, @throws std::ifstream::failure in IO error
  */
-
 std::string sha256(const bfs::path& p)
 {
     using namespace sha2;
