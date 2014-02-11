@@ -207,14 +207,13 @@ void Share::initialize_tables()
         )
     )#").exec();
     // manifest vclock, ours and the ones from peers
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_vclock (
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_version (
         peer_id TEXT NOT NULL,
-        key TEXT NOT NULL,
-        value INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 0,
         FOREIGN KEY(peer_id) REFERENCES share(peer_id)
         )
     )#").exec();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_vlock_peer ON share_vclock(peer_id))#").exec();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_version_peer_id ON share_version(peer_id))#").exec();
 
 
 }
