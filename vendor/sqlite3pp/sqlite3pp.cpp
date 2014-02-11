@@ -264,9 +264,9 @@ namespace sqlite3pp
         return sqlite3_step(stmt_);
     }
 
-    int statement::reset()
+    void statement::reset()
     {
-        return sqlite3_reset(stmt_);
+        THROW_ERR(sqlite3_reset(stmt_));
     }
 
     void statement::bind(int idx, int value)

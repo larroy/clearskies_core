@@ -128,7 +128,7 @@ namespace sqlite3pp
         void bind(char const* name, null_type);
 
         int step();
-        int reset();
+        void reset();
 
         statement(statement&&);
 
