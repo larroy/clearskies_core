@@ -114,26 +114,26 @@ namespace sqlite3pp
         // finish statements, @returns error code
         int efinish();
 
-        void bind(int idx, int value);
-        void bind(int idx, double value);
-        void bind(int idx, long long int value);
-        void bind(int idx, const std::string&, bool blob = false, bool fstatic = true);
-        void bind(int idx, char const* value, bool fstatic = true);
-        void bind(int idx, void const* value, int n, bool fstatic = true);
-        void bind(int idx);
-        void bind(int idx, null_type);
+        statement& bind(int idx, int value);
+        statement& bind(int idx, double value);
+        statement& bind(int idx, long long int value);
+        statement& bind(int idx, const std::string&, bool blob = false, bool fstatic = true);
+        statement& bind(int idx, char const* value, bool fstatic = true);
+        statement& bind(int idx, void const* value, int n, bool fstatic = true);
+        statement& bind(int idx);
+        statement& bind(int idx, null_type);
 
-        void bind(char const* name, int value);
-        void bind(char const* name, double value);
-        void bind(char const* name, long long int value);
-        void bind(char const* name, const std::string&, bool blob = false, bool fstatic = true);
-        void bind(char const* name, char const* value, bool fstatic = true);
-        void bind(char const* name, void const* value, int n, bool fstatic = true);
-        void bind(char const* name);
-        void bind(char const* name, null_type);
+        statement& bind(char const* name, int value);
+        statement& bind(char const* name, double value);
+        statement& bind(char const* name, long long int value);
+        statement& bind(char const* name, const std::string&, bool blob = false, bool fstatic = true);
+        statement& bind(char const* name, char const* value, bool fstatic = true);
+        statement& bind(char const* name, void const* value, int n, bool fstatic = true);
+        statement& bind(char const* name);
+        statement& bind(char const* name, null_type);
 
         int step();
-        void reset();
+        statement& reset();
 
         statement(statement&&);
 
@@ -186,8 +186,8 @@ namespace sqlite3pp
         bindstream binder(int idx = 1);
 
         /// @throws database_error if execute fails
-        void exec();
-        int execute();
+        void execute();
+        int eexecute();
         int execute_all();
     };
 

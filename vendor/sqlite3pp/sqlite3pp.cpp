@@ -180,7 +180,7 @@ namespace sqlite3pp
         std::unique_ptr<char, void (*)(void *)> msql(sqlite3_vmprintf(sql, ap), sqlite3_free);
         va_end(ap);
 
-        return execute(msql.get());
+        return eexecute(msql.get());
     }
 
     int database::set_busy_timeout(int ms)
@@ -268,27 +268,28 @@ namespace sqlite3pp
         return sqlite3_step(stmt_);
     }
 
-    void statement::reset()
+    statement& statement::reset()
     {
         THROW_ERR(sqlite3_reset(stmt_));
+        return *this;
     }
 
-    void statement::bind(int idx, int value)
+    statement& statement::bind(int idx, int value)
     {
         THROW_ERR(sqlite3_bind_int(stmt_, idx, value));
     }
 
-    void statement::bind(int idx, double value)
+    statement& statement::bind(int idx, double value)
     {
         THROW_ERR(sqlite3_bind_double(stmt_, idx, value));
     }
 
-    void statement::bind(int idx, long long int value)
+    statement& statement::bind(int idx, long long int value)
     {
         THROW_ERR(sqlite3_bind_int64(stmt_, idx, value));
     }
 
-    void statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
+    statement& statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
     {
         if (blob)
         {
@@ -300,76 +301,76 @@ namespace sqlite3pp
         }
     }
 
-    void statement::bind(int idx, char const* value, bool fstatic)
+    statement& statement::bind(int idx, char const* value, bool fstatic)
     {
         THROW_ERR(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
     }
 
-    void statement::bind(int idx, void const* value, int n, bool fstatic)
+    statement& statement::bind(int idx, void const* value, int n, bool fstatic)
     {
         THROW_ERR(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
     }
 
-    void statement::bind(int idx)
+    statement& statement::bind(int idx)
     {
         THROW_ERR(sqlite3_bind_null(stmt_, idx));
     }
 
-    void statement::bind(int idx, null_type)
+    statement& statement::bind(int idx, null_type)
     {
         bind(idx);
     }
 
-    void statement::bind(char const* name, int value)
+    statement& statement::bind(char const* name, int value)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
     }
 
-    void statement::bind(char const* name, double value)
+    statement& statement::bind(char const* name, double value)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
     }
 
-    void statement::bind(char const* name, long long int value)
+    statement& statement::bind(char const* name, long long int value)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value);
     }
 
-    void statement::bind(char const* name, const std::string& value, bool blob, bool fstatic)
+    statement& statement::bind(char const* name, const std::string& value, bool blob, bool fstatic)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, blob, fstatic);
     }
 
-    void statement::bind(char const* name, char const* value, bool fstatic)
+    statement& statement::bind(char const* name, char const* value, bool fstatic)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, fstatic);
     }
 
-    void statement::bind(char const* name, void const* value, int n, bool fstatic)
+    statement& statement::bind(char const* name, void const* value, int n, bool fstatic)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx, value, n, fstatic);
     }
 
-    void statement::bind(char const* name)
+    statement& statement::bind(char const* name)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
         bind(idx);
     }
 
-    void statement::bind(char const* name, null_type)
+    statement& statement::bind(char const* name, null_type)
     {
         bind(name);
     }
@@ -399,11 +400,9 @@ namespace sqlite3pp
         return bindstream(*this, idx);
     }
 
-    void command::exec()
+    void command::execute()
     {
-        const auto rc = execute();
-        if (rc != SQLITE_OK)
-            throw database_error(sqlite3_errstr(rc));
+        THROW_ERR(eexecute());
     }
 
     int command::execute()
@@ -416,7 +415,7 @@ namespace sqlite3pp
 
     int command::execute_all()
     {
-        int rc = execute();
+        int rc = eexecute();
         if (rc != SQLITE_OK) return rc;
 
         char const* sql = tail_;
@@ -430,7 +429,7 @@ namespace sqlite3pp
 
             finish_impl(old_stmt);
 
-            if ((rc = execute()) != SQLITE_OK) return rc;
+            if ((rc = eexecute()) != SQLITE_OK) return rc;
 
             sql = tail_;
         }
@@ -563,13 +562,13 @@ namespace sqlite3pp
 
     transaction::transaction(database& db, bool fcommit, bool freserve) : db_(&db), fcommit_(fcommit)
     {
-        db_->execute(freserve ? "BEGIN IMMEDIATE" : "BEGIN");
+        db_->eexecute(freserve ? "BEGIN IMMEDIATE" : "BEGIN");
     }
 
     transaction::~transaction()
     {
         if (db_) {
-            int rc = db_->execute(fcommit_ ? "COMMIT" : "ROLLBACK");
+            int rc = db_->eexecute(fcommit_ ? "COMMIT" : "ROLLBACK");
             if (rc != SQLITE_OK)
             {
                 if (std::uncaught_exception())
@@ -590,7 +589,7 @@ namespace sqlite3pp
     {
         database* db = db_;
         db_ = 0;
-        int rc = db->execute("COMMIT");
+        int rc = db->eexecute("COMMIT");
         return rc;
     }
 
@@ -598,7 +597,7 @@ namespace sqlite3pp
     {
         database* db = db_;
         db_ = 0;
-        int rc = db->execute("ROLLBACK");
+        int rc = db->eexecute("ROLLBACK");
         return rc;
     }
 
