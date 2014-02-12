@@ -222,19 +222,19 @@ namespace sqlite3pp
                 std::fputs(statement_, stderr);
                 std::fputs("\n", stderr);
                 std::fputs("sqlite error: ", stderr);
-#if SQLITE3_HAS_ERRMSG
+#ifdef SQLITE3_HAS_ERRMSG
                 std::fputs(sqlite3_errstr(rc), stderr);
 #else
-                std::fputs(sqlite3_errmsg(db_), stderr);
+                std::fputs(sqlite3_errmsg(db_.db_), stderr);
 #endif
                 std::fputs("\n", stderr);
             }
             else
             {
-#if SQLITE3_HAS_ERRMSG
+#ifdef SQLITE3_HAS_ERRMSG
                 throw database_error(sqlite3_errstr(rc));
 #else
-                throw database_error(sqlite3_errmsg(db_));
+                throw database_error(sqlite3_errmsg(db_.db_));
 #endif
             }
         }
