@@ -22,6 +22,11 @@
 #include <string>
 #include <stdexcept>
 
+/**
+ * @file messagecoder.hpp
+ * Encoding and decoding of messages, implementation uses the private implementation technique to
+ * hide the particular message coding format.
+ */
 
 namespace cs
 {
