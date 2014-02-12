@@ -210,6 +210,11 @@ public:
     /// @returns true if a scan is in progress
     bool scan_in_progress() const { return m_scan_in_progress; }
 
+    bfs::path fullpath(const bfs::path& relative_to_share)
+    {
+        assert(relative_to_share.is_relative());
+        return m_path / relative_to_share;
+    }
 private:
     /// @returns true if there's more to do, this does one step in the scan part
     bool fs_scan_step();

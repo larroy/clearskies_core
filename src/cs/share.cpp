@@ -137,9 +137,14 @@ void Share::Checksummer::do_block()
         string sha256(SHA256_DIGEST_STRING_LENGTH, 0);
         sha2::SHA256_End(&m_c256, &sha256[0]);
         sha256.resize(sha256.size() - 1);
-        // FIXME check if file vanished!!
-        r_share.m_update_hash_q.reset().bind(":sha256", sha256).bind(":path", m_file.path);
-        r_share.m_update_hash_q.execute();
+        if (! bfs::exists(r_share.fullpath(m_file.path)))
+            // check if file vanished one last time
+            m_file.gone(&r_share.m_revision);
+        else
+        {
+            r_share.m_update_hash_q.reset().bind(":sha256", sha256).bind(":path", m_file.path);
+            r_share.m_update_hash_q.execute();
+        }
         m_is.reset();
     }
 }
@@ -152,8 +157,7 @@ bool Share::Checksummer::next_file()
     if (m_to_cksum_it == r_share.m_to_cksum_q.end())
         return false;
     m_file.from_row(*m_to_cksum_it);
-    bfs::path fullpath = r_share.m_path / bfs::path(m_file.path);
-    m_is = make_unique<bfs::ifstream>(fullpath, ios_base::in | ios_base::binary);
+    m_is = make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
     if (! *m_is)
     {
         m_file.gone(&r_share.m_revision);
