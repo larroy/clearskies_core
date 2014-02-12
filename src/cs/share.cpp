@@ -37,15 +37,16 @@ namespace share
 
 void MFile::from_row(const sqlite3pp::query::rows& row)
 {
-    path = row.get<const char*>(0);
-    mtime = row.get<const char*>(1);
-    size = row.get<long long int>(2);
+    path = row.get<string>(0);
+    mtime = row.get<string>(1);
+    size = row.get<u64>(2);
     mode = row.get<int>(3);
-    sha256 = row.get<const char*>(4);
-    deleted = row.get<int>(5) != 0;
-    last_changed_rev = row.get<long long int>(6);
-    scan_found = row.get<int>(7) != 0;
-    updated = row.get<int>(8) != 0;
+    scan_found = row.get<bool>(4);
+    deleted = row.get<bool>(5);
+    to_checksum = row.get<bool>(6);
+    sha256 = row.get<string>(7);
+    last_changed_rev = row.get<u64>(8);
+    updated = row.get<bool>(9);
 }
 
 void MFile::gone(u64* share_rev)
@@ -69,7 +70,7 @@ Share::Share_iterator::Share_iterator():
 {}
 
 Share::Share_iterator::Share_iterator(Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT path, mtime, size, mode, sha256, deleted FROM files ORDER BY path"))
+    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT * FROM files ORDER BY path"))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
@@ -295,10 +296,43 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_set_file_info_q.prepare("INSERT INTO files (path, mtime, size, mode, sha256, deleted, last_changed_rev, scan_found, updated) VALUES (?,?,?,?,?,?,?,?,?)");
+    m_set_file_info_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated) VALUES (?,?,?,?,?,?,?,?,?,?)");
     m_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
     m_update_hash_q.prepare("UPDATE files SET sha256 = :sha256, to_checksum = 0 WHERE path = :path");
 }
+
+std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
+{
+    unique_ptr<MFile> result;
+    sqlite3pp::query file_q(m_db, "SELECT * FROM files WHERE path = :path");
+    file_q.bind(":path", path);
+
+    bool found = false;
+    for (const auto& row: file_q)
+    {
+        assert(! found); // path must be unique, it's pk
+        result = make_unique<MFile>();
+        assert(row.get<std::string>(0) == path);
+        result->from_row(row);
+        found = true;
+    }
+    return move(result);
+}
+
+void Share::set_file_info(const MFile& f)
+{
+    m_set_file_info_q.reset();
+    m_set_file_info_q.bind(1, f.path);
+    m_set_file_info_q.bind(2, f.mtime);
+    m_set_file_info_q.bind(3, f.size);
+    m_set_file_info_q.bind(4, f.mode);
+    m_set_file_info_q.bind(5, f.mode);
+    m_set_file_info_q.bind(5, f.sha256);
+    m_set_file_info_q.bind(6, f.deleted);
+    m_set_file_info_q.execute();
+}
+
+
 
 
 /**
@@ -312,14 +346,14 @@ void Share::scan()
     time(&m_scan_duration_s);
 }
 
-bool Share::step()
+bool Share::scan_step()
 {
     if (m_scan_in_progress == false)
     {
         assert(false);
         return false;
     }
-    const bool scan_more = scan_step();
+    const bool scan_more = fs_scan_step();
     const bool cksum_more = m_cksummer.step();
     const bool m_scan_in_progress = scan_more || cksum_more;
     if (! m_scan_in_progress)
@@ -331,7 +365,7 @@ bool Share::step()
 /**
  * scan m_scan_batch_sz files @returns true if finished, false if more to do
  */
-bool Share::scan_step()
+bool Share::fs_scan_step()
 {
     if (! m_scan_it)
         return false;
@@ -382,35 +416,6 @@ void Share::on_scan_finished()
     // TODO mark not found files as deleted
 }
 
-std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
-{
-    unique_ptr<MFile> result;
-    sqlite3pp::query file_q(m_db, "SELECT * FROM files WHERE path = :path");
-    file_q.bind(":path", path);
-
-    bool found = false;
-    for (const auto& row: file_q)
-    {
-        assert(! found); // path must be unique, it's pk
-        result = make_unique<MFile>();
-        assert(row.get<std::string>(0) == path);
-        result->from_row(row);
-        found = true;
-    }
-    return move(result);
-}
-
-void Share::set_file_info(const MFile& f)
-{
-    m_set_file_info_q.reset();
-    m_set_file_info_q.bind(1, f.path);
-    m_set_file_info_q.bind(2, f.mtime);
-    m_set_file_info_q.bind(3, static_cast<long long int>(f.size));
-    m_set_file_info_q.bind(4, static_cast<int>(f.mode));
-    m_set_file_info_q.bind(5, f.sha256);
-    m_set_file_info_q.bind(6, static_cast<int>(f.deleted));
-    m_set_file_info_q.execute();
-}
 
 void Share::scan_found(const ScanFile& scan_file)
 {
@@ -437,7 +442,7 @@ void Share::scan_found(const ScanFile& scan_file)
     {
         MFile mfile_;
         mfile_ = scan_file;
-        mfile.to_checksum = true;
+        mfile_.to_checksum = true;
         set_file_info(mfile_);
     }
 }

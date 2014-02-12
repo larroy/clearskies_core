@@ -16,6 +16,7 @@
  */
 #include <boost/test/unit_test.hpp>
 #include "sqlite3pp/sqlite3pp.h" 
+#include <cstdint>
 
 using namespace std;
 using namespace sqlite3pp;
@@ -26,7 +27,7 @@ BOOST_AUTO_TEST_CASE(test_get)
     database db(":memory:");
     command(db, "CREATE TABLE test (i INTEGER, t TEXT, b BLOB)").execute();
 
-    int i = 5;
+    uint64_t i = std::numeric_limits<uint64_t>::max();
     (void) i;
     string t;
     t.push_back(0);
@@ -45,7 +46,7 @@ BOOST_AUTO_TEST_CASE(test_get)
     t.push_back(0xa1);
 
     command ins(db, "INSERT INTO test (i,t,b) VALUES (:v1, :v2, :v3)");
-    ins.bind(":v1", i).bind(":v2", t).bind(":v3", b);
+    ins.bind(":v1", i).bind(":v2", t).bind(":v3", b.c_str(), b.size());
     ins.execute();
 
     query q(db, "SELECT * FROM test");
@@ -57,6 +58,8 @@ BOOST_AUTO_TEST_CASE(test_get)
         BOOST_CHECK_EQUAL(i, ri);
         string rt = r.get<string>(1);
         BOOST_CHECK_EQUAL(t,rt);
+        string rb = r.get<string>(2);
+        BOOST_CHECK_EQUAL(b,rb);
     }
 }
 

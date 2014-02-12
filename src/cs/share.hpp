@@ -113,7 +113,7 @@ public:
     /**
      * Iterator to allow for(const auto& file: share) idiom
      */
-    class Share_iterator: public boost::iterator_facade<Share_iterator, File, boost::single_pass_traversal_tag>
+    class Share_iterator: public boost::iterator_facade<Share_iterator, MFile, boost::single_pass_traversal_tag>
     {
     public:
         Share_iterator();
@@ -171,14 +171,21 @@ public:
         return Share_iterator();
     }
 
+    /// @returns file metadata given a path, null if there's no such file
+    std::unique_ptr<MFile> get_file_info(const std::string& path);
+
+    /// save File metadata on the Share
+    void set_file_info(const MFile&);
+
     void scan();
 
     /// @returns true if there's more to do, false otherwise, meaning scan and cksum finished
-    bool step();
+    bool scan_step();
+
 
 private:
     /// @returns true if there's more to do, this does one step in the scan part
-    bool scan_step();
+    bool fs_scan_step();
 
     // called once after scanning and checksumming finishes
     void on_scan_finished();
@@ -193,11 +200,6 @@ private:
     size_t checksum_total() const { assert(0); }
     size_t checksum_done() const { assert(0); }
 #endif
-
-    /// @returns file metadata given a path, null if there's no such file
-    std::unique_ptr<MFile> get_file_info(const std::string& path);
-    /// save File metadata on the Share
-    void set_file_info(const MFile&);
 
     /// actions to perform for each scanned file
     void scan_found(const ScanFile& file);
