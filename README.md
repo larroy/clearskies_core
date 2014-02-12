@@ -11,6 +11,7 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
+  See [CONTRIBUTING](CONTRIBUTING.md)
 
 # Dependencies:
 
