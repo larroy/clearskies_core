@@ -14,6 +14,7 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 
 # Dependencies:
 
+* boost
 * libboost-test-dev
 * libboost-filesystem (v3)
 * libsqlite3-dev
@@ -22,8 +23,8 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 
 # Supported compilers:
 
-Development is done with **GCC 4.8**, so far this is the only compiler guaranteed to be able to
-build the project.
+Development is done with **GCC 4.8** and boost 1.54, so far this is the only compiler guaranteed to be able to
+build the project. (My development machine runs Debian GNU/Linux testing (jessie))
 
 The project is implemented in C++11, the compiler should support the features used from this
 standard. The following compilers should also work:
