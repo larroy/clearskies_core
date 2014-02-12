@@ -1,11 +1,11 @@
 language: cpp
 
 compiler:
-  #- clang
+#  - clang
   - gcc
 
 before_install:
-  - lsb_release -a
+#  - lsb_release -a
   - sudo scripts/setup_environment_ubuntu_12.04.sh
   - export PATH=$(pwd)/gyp:${PATH}
   - export CXX="g++-4.8" CC="gcc-4.8"
