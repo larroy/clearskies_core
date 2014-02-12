@@ -326,9 +326,12 @@ void Share::set_file_info(const MFile& f)
     m_set_file_info_q.bind(2, f.mtime);
     m_set_file_info_q.bind(3, f.size);
     m_set_file_info_q.bind(4, f.mode);
-    m_set_file_info_q.bind(5, f.mode);
-    m_set_file_info_q.bind(5, f.sha256);
+    m_set_file_info_q.bind(5, f.scan_found);
     m_set_file_info_q.bind(6, f.deleted);
+    m_set_file_info_q.bind(7, f.to_checksum);
+    m_set_file_info_q.bind(8, f.sha256);
+    m_set_file_info_q.bind(9, f.last_changed_rev);
+    m_set_file_info_q.bind(10, f.updated);
     m_set_file_info_q.execute();
 }
 
