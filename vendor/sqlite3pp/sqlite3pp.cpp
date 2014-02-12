@@ -32,9 +32,6 @@
 
 namespace sqlite3pp
 {
-
-    null_type ignore;
-
     namespace
     {
         int busy_handler_impl(void* p, int cnt)
@@ -153,7 +150,7 @@ namespace sqlite3pp
         sqlite3_set_authorizer(db_, ah_ ? authorizer_impl : 0, &ah_);
     }
 
-    long long int database::last_insert_rowid() const
+    int64_t database::last_insert_rowid() const
     {
         return sqlite3_last_insert_rowid(db_);
     }
@@ -295,11 +292,19 @@ namespace sqlite3pp
         return *this;
     }
 
-    statement& statement::bind(int idx, long long int value)
+    statement& statement::bind(int idx, int64_t value)
     {
         THROW_ERR(sqlite3_bind_int64(stmt_, idx, value));
         return *this;
     }
+
+    statement& statement::bind(int idx, uint64_t value)
+    {
+        THROW_ERR(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)));
+        return *this;
+    }
+
+
 
     statement& statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
     {
@@ -332,7 +337,7 @@ namespace sqlite3pp
         return *this;
     }
 
-    statement& statement::bind(int idx, null_type)
+    statement& statement::bind(int idx, std::nullptr_t)
     {
         bind(idx);
         return *this;
@@ -354,7 +359,15 @@ namespace sqlite3pp
         return *this;
     }
 
-    statement& statement::bind(char const* name, long long int value)
+    statement& statement::bind(char const* name, int64_t value)
+    {
+        const int idx = sqlite3_bind_parameter_index(stmt_, name);
+        assert(idx);
+        bind(idx, value);
+        return *this;
+    }
+
+    statement& statement::bind(char const* name, uint64_t value)
     {
         const int idx = sqlite3_bind_parameter_index(stmt_, name);
         assert(idx);
@@ -394,7 +407,7 @@ namespace sqlite3pp
         return *this;
     }
 
-    statement& statement::bind(char const* name, null_type)
+    statement& statement::bind(char const* name, std::nullptr_t)
     {
         bind(name);
         return *this;
@@ -481,34 +494,58 @@ namespace sqlite3pp
         return sqlite3_column_type(stmt_, idx);
     }
 
+    int query::rows::column_count() const
+    {
+        return sqlite3_column_count(stmt_);
+    }
+
     int query::rows::column_bytes(int idx) const
     {
         return sqlite3_column_bytes(stmt_, idx);
     }
 
+    bool query::rows::get(int idx, bool) const
+    {
+        assert(column_type(idx) == SQLITE_INTEGER);
+        return sqlite3_column_int(stmt_, idx) != 0;
+    }
+
     int query::rows::get(int idx, int) const
     {
+        assert(column_type(idx) == SQLITE_INTEGER);
         return sqlite3_column_int(stmt_, idx);
     }
 
     double query::rows::get(int idx, double) const
     {
+        assert(column_type(idx) == SQLITE_FLOAT);
         return sqlite3_column_double(stmt_, idx);
     }
 
-    long long int query::rows::get(int idx, long long int) const
+    int64_t query::rows::get(int idx, int64_t) const
     {
+        assert(column_type(idx) == SQLITE_INTEGER);
         return sqlite3_column_int64(stmt_, idx);
     }
 
+    uint64_t query::rows::get(int idx, uint64_t) const
+    {
+        assert(column_type(idx) == SQLITE_INTEGER);
+        return static_cast<uint64_t>(sqlite3_column_int64(stmt_, idx));
+    }
+
+
+
     char const* query::rows::get(int idx, char const*) const
     {
+        assert(column_type(idx) == SQLITE_TEXT);
         return reinterpret_cast<char const*>(sqlite3_column_text(stmt_, idx));
     }
 
     std::string query::rows::get(int idx, std::string) const
     {
-        return get(idx, (char const*)0);
+        assert(column_type(idx) == SQLITE_TEXT || column_type(idx) == SQLITE_BLOB);
+        return std::string(static_cast<const char*>(sqlite3_column_blob(stmt_, idx)), static_cast<size_t>(column_bytes(idx)));
     }
 
     void const* query::rows::get(int idx, void const*) const
@@ -516,9 +553,9 @@ namespace sqlite3pp
         return sqlite3_column_blob(stmt_, idx);
     }
 
-    null_type query::rows::get(int idx, null_type) const
+    std::nullptr_t query::rows::get(int idx, std::nullptr_t) const
     {
-        return ignore;
+        return nullptr;
     }
     query::rows::getstream query::rows::getter(int idx)
     {

@@ -32,6 +32,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/function.hpp>
+#include <cstdint>
 
 namespace sqlite3pp
 {
@@ -41,8 +42,6 @@ namespace sqlite3pp
         class aggregate;
     }
 
-    class null_type {};
-    extern null_type ignore;
 
     int enable_shared_cache(bool fenable);
 
@@ -70,7 +69,7 @@ namespace sqlite3pp
         int attach(char const* dbname, char const* name);
         int detach(char const* name);
 
-        long long int last_insert_rowid() const;
+        int64_t last_insert_rowid() const;
 
         int error_code() const;
         char const* error_msg() const;
@@ -117,21 +116,23 @@ namespace sqlite3pp
 
         statement& bind(int idx, int value);
         statement& bind(int idx, double value);
-        statement& bind(int idx, long long int value);
+        statement& bind(int idx, int64_t value);
+        statement& bind(int idx, uint64_t value);
         statement& bind(int idx, const std::string&, bool blob = false, bool fstatic = true);
         statement& bind(int idx, char const* value, bool fstatic = true);
         statement& bind(int idx, void const* value, int n, bool fstatic = true);
         statement& bind(int idx);
-        statement& bind(int idx, null_type);
+        statement& bind(int idx, std::nullptr_t);
 
         statement& bind(char const* name, int value);
         statement& bind(char const* name, double value);
-        statement& bind(char const* name, long long int value);
+        statement& bind(char const* name, int64_t value);
+        statement& bind(char const* name, uint64_t value);
         statement& bind(char const* name, const std::string&, bool blob = false, bool fstatic = true);
         statement& bind(char const* name, char const* value, bool fstatic = true);
         statement& bind(char const* name, void const* value, int n, bool fstatic = true);
         statement& bind(char const* name);
-        statement& bind(char const* name, null_type);
+        statement& bind(char const* name, std::nullptr_t);
 
         int step();
         statement& reset();
@@ -219,6 +220,7 @@ namespace sqlite3pp
 
             int data_count() const;
             int column_type(int idx) const;
+            int column_count() const;
 
             int column_bytes(int idx) const;
 
@@ -269,13 +271,15 @@ namespace sqlite3pp
             getstream getter(int idx = 0);
 
          private:
+            bool get(int idx, bool) const;
             int get(int idx, int) const;
             double get(int idx, double) const;
-            long long int get(int idx, long long int) const;
+            int64_t get(int idx, int64_t) const;
+            uint64_t get(int idx, uint64_t) const;
             char const* get(int idx, char const*) const;
             std::string get(int idx, std::string) const;
             void const* get(int idx, void const*) const;
-            null_type get(int idx, null_type) const;
+            std::nullptr_t get(int idx, std::nullptr_t) const;
 
          private:
             sqlite3_stmt* stmt_;
