@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(tail_test)
     BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/d"), 1).string(), "d");
 }
 
-BOOST_AUTO_TEST_CASE(share_set_file_info)
+BOOST_AUTO_TEST_CASE(share_save_mfile)
 {
     MFile f;
     f.path = "omg/a/path";
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(share_set_file_info)
     auto f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);
 
-    share.set_file_info(f);
+    share.save_mfile(f);
 
     f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);

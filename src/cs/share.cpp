@@ -26,7 +26,6 @@ namespace
 
 
 
-
 } // end anon ns
 
 namespace cs
@@ -158,7 +157,7 @@ bool Share::Checksummer::next_file()
     if (! *m_is)
     {
         m_file.gone(&r_share.m_revision);
-        r_share.set_file_info(m_file);
+        r_share.save_mfile(m_file);
         m_is.reset();
     }
     m_is->exceptions(ios::badbit);
@@ -171,12 +170,12 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_revision()
     , m_db(dbpath.c_str())
     , m_db_path(dbpath)
+    , m_save_mfile_q(m_db)
     , m_scan_in_progress()
     , m_scan_batch_sz(256)
     , m_scan_it()
     , m_scan_found_count()
     , m_scan_duration_s()
-    , m_set_file_info_q(m_db)
     , m_cksum_batch_sz(8)
     , m_to_cksum_q(m_db)
     , m_cksummer(*this)
@@ -297,7 +296,7 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_set_file_info_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated) VALUES (?,?,?,?,?,?,?,?,?,?)");
+    m_save_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated) VALUES (?,?,?,?,?,?,?,?,?,?)");
     m_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
     m_update_hash_q.prepare("UPDATE files SET sha256 = :sha256, to_checksum = 0 WHERE path = :path");
 }
@@ -320,23 +319,21 @@ std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
     return move(result);
 }
 
-void Share::set_file_info(const MFile& f)
+void Share::save_mfile(const MFile& f)
 {
-    m_set_file_info_q.reset();
-    m_set_file_info_q.bind(1, f.path);
-    m_set_file_info_q.bind(2, f.mtime);
-    m_set_file_info_q.bind(3, f.size);
-    m_set_file_info_q.bind(4, f.mode);
-    m_set_file_info_q.bind(5, f.scan_found);
-    m_set_file_info_q.bind(6, f.deleted);
-    m_set_file_info_q.bind(7, f.to_checksum);
-    m_set_file_info_q.bind(8, f.sha256);
-    m_set_file_info_q.bind(9, f.last_changed_rev);
-    m_set_file_info_q.bind(10, f.updated);
-    m_set_file_info_q.execute();
+    m_save_mfile_q.reset();
+    m_save_mfile_q.bind(1, f.path);
+    m_save_mfile_q.bind(2, f.mtime);
+    m_save_mfile_q.bind(3, f.size);
+    m_save_mfile_q.bind(4, f.mode);
+    m_save_mfile_q.bind(5, f.scan_found);
+    m_save_mfile_q.bind(6, f.deleted);
+    m_save_mfile_q.bind(7, f.to_checksum);
+    m_save_mfile_q.bind(8, f.sha256);
+    m_save_mfile_q.bind(9, f.last_changed_rev);
+    m_save_mfile_q.bind(10, f.updated);
+    m_save_mfile_q.execute();
 }
-
-
 
 
 /**
@@ -433,13 +430,13 @@ void Share::scan_found(const ScanFile& scan_file)
         {
             *mfile = scan_file;
             mfile->to_checksum = true;
-            set_file_info(*mfile);
+            save_mfile(*mfile);
         }
         else
         {
             *mfile = scan_file;
             mfile->to_checksum = false;
-            set_file_info(*mfile);
+            save_mfile(*mfile);
         }
     }
     else
@@ -447,7 +444,7 @@ void Share::scan_found(const ScanFile& scan_file)
         MFile mfile_;
         mfile_ = scan_file;
         mfile_.to_checksum = true;
-        set_file_info(mfile_);
+        save_mfile(mfile_);
     }
 }
 

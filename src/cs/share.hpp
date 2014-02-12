@@ -31,6 +31,13 @@ namespace sha2
 }
 
 
+/*
+ *
+ * /!\ Keep the same order of functions in the .hpp and .cpp file
+ * /!\ Keep the same order of member variables in the db table and C++ data structure
+ *
+ */
+
 
 namespace cs
 {
@@ -75,6 +82,7 @@ struct MFile: ScanFile
 
     void from_row(const sqlite3pp::query::rows& row);
 
+    /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
     void gone(u64* share_rev);
 
     bool deleted;
@@ -85,8 +93,13 @@ struct MFile: ScanFile
 };
 
 /**
- * Filesystem scan is done in two passes, first files are monitored for size and time changes, then
- * if this indicates any change or the file is new they ar marked to be checksummed
+ * Filesystem scan is done in two passes, first files are checked for size and time changes, then
+ * if this indicates any change or the file is new they ar marked to be checksummed (to_checksum).
+ *
+ * Filesystem scan and cheksum are done in steps in order not to starve the event loop.
+ *
+ * Once a scan is started through Share::scan(), Share::scan_step should be called until it returns
+ * false.
  *
  * Procedure to commit a file to a share:
  *  - An updated file from another client is downloaded into a temporary directory outside the share
@@ -111,7 +124,14 @@ class Share
 public:
 
     /**
-     * Iterator to allow for(const auto& file: share) idiom
+     * Iterate through all the files in the share database. 
+     * Changes to files through the iterator don't change the database or produce any side-effects. @sa Share::m_query
+     * @code
+     * for(const auto& file: share)
+     * {
+     *      // do something with file
+     * }
+     * @endcode
      */
     class Share_iterator: public boost::iterator_facade<Share_iterator, MFile, boost::single_pass_traversal_tag>
     {
@@ -135,10 +155,16 @@ public:
         mutable bool m_file_set;
     };
 
+    /**
+     * Incremental checksum of files.
+     * Files marked with to_checksum != 0 will be processed in batches controlled by
+     * Share::m_cksum_batch_sz and Share::s_cksum_block_sz
+     */
     class Checksummer
     {
     public:
         Checksummer(Share&);
+        /// step should be called until it returns false, then all the files to_checksum are processed
         bool step();
 
     private:
@@ -157,15 +183,13 @@ public:
     void initialize_tables();
     void initialize_statements();
 
-    /**
-     * get an iterator to traverse all the files in the share, changes to the file _don't_ update the
-     * database, so the iterator behaves as const
-     */
+    /// @sa Share_iterator
     Share_iterator begin()
     {
         return Share_iterator(*this);
     }
 
+    /// @sa Share_iterator
     Share_iterator end()
     {
         return Share_iterator();
@@ -175,13 +199,16 @@ public:
     std::unique_ptr<MFile> get_file_info(const std::string& path);
 
     /// save File metadata on the Share
-    void set_file_info(const MFile&);
+    void save_mfile(const MFile&);
 
+    /// starts a filesystem scan to detect file changes and checksum files that were modified.
     void scan();
 
     /// @returns true if there's more to do, false otherwise, meaning scan and cksum finished
     bool scan_step();
 
+    /// @returns true if a scan is in progress
+    bool scan_in_progress() const { return m_scan_in_progress; }
 
 private:
     /// @returns true if there's more to do, this does one step in the scan part
@@ -189,9 +216,6 @@ private:
 
     // called once after scanning and checksumming finishes
     void on_scan_finished();
-
-    /// @returns true if a scan is in progress
-    bool scan_in_progress() const { return m_scan_in_progress; }
 
 #if 0
     size_t scan_total() const { assert(0); }
@@ -207,26 +231,40 @@ private:
 public:
     std::string m_path;
     u64 m_revision;
+
     sqlite3pp::database m_db;
+    /// path to the sqlite database of the share
     std::string m_db_path;
+    sqlite3pp::command m_save_mfile_q;
+
+
+    /********* SCAN ************/
 
     bool m_scan_in_progress;
-    /// number of files to scan at once
+    /// number of files to scan (stat) at once. We should target <= 0.5s
     size_t m_scan_batch_sz;
     std::unique_ptr<bfs::recursive_directory_iterator> m_scan_it;
     size_t m_scan_found_count;
     std::time_t m_scan_duration_s;
 
-    sqlite3pp::command m_set_file_info_q;
 
-    /// cksum buffer size
+    /********** CKSUM *************/
+
+    /// cksum buffer size, amount to read at once when cksumming files
     static const size_t s_cksum_block_sz = 65536;
-    /// number of buffers to cksum at once, total s_cksum_block_sz * m_cksum_batch_sz bytes will be
-    /// read from disk before yielding
+    /**
+     * number of reads to perform while calculating checksum in each step
+     * total s_cksum_block_sz * m_cksum_batch_sz bytes will be read from disk before returning, target <= 0.5s
+     */
     size_t m_cksum_batch_sz;
+
+    /// query that returns the files that need to be cksummed
     sqlite3pp::query m_to_cksum_q;
     Checksummer m_cksummer;
+    /// query to update the sha256 and set to_checksum = 0
     sqlite3pp::command m_update_hash_q;
+
+    /********** SHARE IDENTITY, KEYS ***********/
 
     /// share id, shared publicly
     std::array<u8, 32> m_share_id;
