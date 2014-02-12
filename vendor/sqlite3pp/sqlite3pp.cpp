@@ -30,6 +30,11 @@
 
 #define THROW_ERR(ret) do { if ((ret) != SQLITE_OK) throw database_error(db_); } while(0);
 
+#if SQLITE_VERSION_NUMBER >= 3007015
+#define SQLITE3_HAS_ERRMSG
+#endif
+
+
 namespace sqlite3pp
 {
     namespace
@@ -217,12 +222,20 @@ namespace sqlite3pp
                 std::fputs(statement_, stderr);
                 std::fputs("\n", stderr);
                 std::fputs("sqlite error: ", stderr);
+#if SQLITE3_HAS_ERRMSG
                 std::fputs(sqlite3_errstr(rc), stderr);
+#else
+                std::fputs(sqlite3_errmsg(db_), stderr);
+#endif
                 std::fputs("\n", stderr);
             }
             else
             {
+#if SQLITE3_HAS_ERRMSG
                 throw database_error(sqlite3_errstr(rc));
+#else
+                throw database_error(sqlite3_errmsg(db_));
+#endif
             }
         }
     }
