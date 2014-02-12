@@ -85,7 +85,6 @@ BOOST_AUTO_TEST_CASE(Share_test_01)
     Tmpdir tmp;
     Share share(tmp.tmpdir);
     create_tree(tmp.tmpdir);
-    share.scan_thread();
 }
 
 BOOST_AUTO_TEST_CASE(tail_test)
@@ -99,7 +98,7 @@ BOOST_AUTO_TEST_CASE(tail_test)
 
 BOOST_AUTO_TEST_CASE(share_set_file_info)
 {
-    File f;
+    MFile f;
     f.path = "omg/a/path";
     f.mtime = "12392";
     f.size = 69;
@@ -133,11 +132,13 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
     Tmpdir tmp;
     Share share(tmp.tmpdir);
     create_tree(tmp.tmpdir);
-    share.scan_thread();
+
     for (const auto& file: share)
         BOOST_CHECK(file.sha256.empty());
 
-    share.checksum_thread();
+    share.scan();
+    while(share.scan_step());
+
     size_t nfiles = 0;
     for (const auto& file: share)
     {
