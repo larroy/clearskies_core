@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 # GYP (conflicts with the installed version of gyp)
 svn export -q http://gyp.googlecode.com/svn/trunk/ -r 1845 gyp
