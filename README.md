@@ -15,11 +15,11 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 
 # Dependencies:
 
-* boost
+* boost >= 1.49
 * libboost-test-dev
 * libboost-filesystem (v3)
 * libsqlite3-dev
-* gyp
+* gyp (for older versions of gyp that doesn't support ninja, check .travis.yml)
 * ninja  (ninja-build on debian)
 
 # Supported compilers:

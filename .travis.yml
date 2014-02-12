@@ -14,7 +14,6 @@ before_install:
   - wget https://github.com/martine/ninja/releases/download/v1.4.0/ninja-linux.zip
   - sudo unzip -d /usr/bin/ ninja-linux.zip
   
-  # Install boost
   #- sudo apt-get install libboost-test-dev
   - sudo apt-get install libboost-test1.48-dev
   - sudo apt-get install libboost-filesystem1.48-dev
@@ -22,7 +21,13 @@ before_install:
 
   # g++
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+
+  # Install boost
+  - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo apt-get update -qq
+  - sudo apt-get install libboost-filesystem1.55-dev libboost-test1.55-dev
+
+  # g++
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8" CC="gcc-4.8"
 
