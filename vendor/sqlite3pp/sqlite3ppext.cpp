@@ -145,7 +145,7 @@ namespace sqlite3pp
       sqlite3_result_null(ctx_);
     }
 
-    void context::result(null_type)
+    void context::result(std::nullptr_t)
     {
       sqlite3_result_null(ctx_);
     }

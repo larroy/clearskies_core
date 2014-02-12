@@ -55,7 +55,7 @@ namespace sqlite3pp
       void result(char const* value, bool fstatic = true);
       void result(void const* value, int n, bool fstatic = true);
       void result();
-      void result(null_type);
+      void result(std::nullptr_t);
       void result_copy(int idx);
       void result_error(char const* msg);
 
