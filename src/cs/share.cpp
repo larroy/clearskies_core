@@ -141,6 +141,7 @@ void Share::Checksummer::do_block()
         // FIXME check if file vanished!!
         r_share.m_update_hash_q.reset().bind(":sha256", sha256).bind(":path", m_file.path);
         r_share.m_update_hash_q.execute();
+        m_is.reset();
     }
 }
 
