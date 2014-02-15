@@ -76,5 +76,6 @@ std::string random_bytes(size_t count)
     return result;
 }
 
+
 } // end ns
 } // end ns

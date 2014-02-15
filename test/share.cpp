@@ -18,6 +18,7 @@
 #include "cs/share.hpp"
 #include "cs/boost_fs_fwd.hpp"
 #include <utility>
+#include "cs/utils.hpp"
 
 using namespace std;
 using namespace cs::share;
@@ -31,29 +32,23 @@ enum
 
 struct Tmpdir
 {
-    Tmpdir()
+    Tmpdir():
+        tmpdir(cs::utils::tmpdir())
+        , dbpath(tmpdir.string() + "__cs.db")
     {
-        tmpdir_ = bfs::temp_directory_path();
-        tmpdir_ /= bfs::unique_path("clearskies-%%%%-%%%%-%%%%-%%%%");
-        // cout << tmpdir_.string() << endl;
-        assert(! bfs::exists(tmpdir_));
-        bfs::create_directory(tmpdir_);
-        assert(bfs::exists(tmpdir_));
-        dbpath_ = (tmpdir_.string() + "__cs.db");
-        assert(! bfs::exists(dbpath_));
-
-        tmpdir = tmpdir_.string();
-        dbpath = dbpath_.string();
+        // cout << tmpdir.string() << endl;
+        assert(! bfs::exists(tmpdir));
+        bfs::create_directory(tmpdir);
+        assert(bfs::exists(tmpdir));
+        assert(! bfs::exists(dbpath));
     }
-    bfs::path tmpdir_;
-    bfs::path dbpath_;
-    string tmpdir;
-    string dbpath;
     ~Tmpdir()
     {
-        remove_all(tmpdir_);
-        remove_all(dbpath_);
+        bfs::remove_all(tmpdir);
+        bfs::remove(dbpath);
     }
+    bfs::path tmpdir;
+    bfs::path dbpath;
 };
 
 
@@ -83,7 +78,7 @@ void create_tree(const bfs::path& path)
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
     Tmpdir tmp;
-    Share share(tmp.tmpdir);
+    Share share(tmp.tmpdir.string());
     create_tree(tmp.tmpdir);
 }
 
@@ -105,7 +100,7 @@ BOOST_AUTO_TEST_CASE(share_save_mfile)
     f.mode = 01777;
 
     Tmpdir tmp;
-    Share share(tmp.tmpdir);
+    Share share(tmp.tmpdir.string());
 
     auto f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);
@@ -130,7 +125,7 @@ BOOST_AUTO_TEST_CASE(share_save_mfile)
 BOOST_AUTO_TEST_CASE(share_checksum_thread)
 {
     Tmpdir tmp;
-    Share share(tmp.tmpdir);
+    Share share(tmp.tmpdir.string());
     create_tree(tmp.tmpdir);
 
     for (const auto& file: share)

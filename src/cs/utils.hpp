@@ -23,6 +23,8 @@
 #include <cassert>
 #include <cctype>
 #include "int_types.h"
+#include "boost_fs_fwd.hpp"
+#include "config.hpp"
 
 namespace std
 {
@@ -125,6 +127,92 @@ OUT_T hex_to_bin(const std::string& xs)
 
 
 std::string random_bytes(size_t);
+
+/**
+ * create a temporary directory in TMPDIR, TMP, TEMP, TEMPDIR. If none of these are found, "/tmp".
+ */
+inline bfs::path tmpdir(const std::string& pattern = "clearskies-%%%%-%%%%-%%%%-%%%%")
+{
+    return bfs::temp_directory_path() / bfs::unique_path(pattern);
+}
+
+
+struct Tmpdir
+{
+    Tmpdir():
+        path(tmpdir())
+    {
+        assert(! bfs::exists(path));
+        bfs::create_directory(path);
+        assert(bfs::exists(path));
+    }
+
+    ~Tmpdir()
+    {
+        bfs::remove_all(path);
+    }
+
+    Tmpdir(const Tmpdir&) = delete;
+    Tmpdir& operator=(const Tmpdir&) = delete;
+    Tmpdir(Tmpdir&&) = delete;
+    Tmpdir& operator=(Tmpdir&&) = delete;
+
+    bfs::path path;
+};
+
+class GCC_ATTRIBUTE(unused) ScopeGuardBase : private boost::noncopyable
+{
+public:
+    ScopeGuardBase():
+        m_enabled(true)
+    {}
+
+    void disable() const
+    {
+        m_enabled = false;
+    }
+protected:
+    mutable bool m_enabled;
+};
+
+typedef GCC_ATTRIBUTE(unused) const ScopeGuardBase& ScopeGuard;
+
+template<typename T>
+class ScopeGuardTemplate : public ScopeGuardBase
+{
+public:
+    explicit ScopeGuardTemplate(T&& function):
+        m_function(function)
+    {
+    }
+
+    ScopeGuardTemplate(ScopeGuardTemplate&& other)
+        :m_function(other.m_function)
+    {
+        other.disable();
+    }
+
+    ~ScopeGuardTemplate()
+    {
+        if (m_enabled)
+            m_function();
+    }
+private:
+
+    ScopeGuardTemplate(const ScopeGuardTemplate& other);
+
+    ScopeGuardTemplate(T& function); // prevent modifying the lambda after creating the guard
+
+    T m_function;
+
+};
+
+template<typename T>
+static inline ScopeGuardTemplate<T> make_scope_guard(T&& function)
+{
+    return ScopeGuardTemplate<T>(std::forward<T>(function));
+}
+
 
 
 } // end ns

@@ -48,3 +48,45 @@ BOOST_AUTO_TEST_CASE(random_bytes_test)
     BOOST_CHECK(r1 != r2);
 }
 
+
+BOOST_AUTO_TEST_CASE(ScopeGuardTest)
+{
+    int a = 0;
+    {
+        ScopeGuard guard = make_scope_guard([&]{ a++; });
+        BOOST_CHECK_EQUAL(a, 0);
+    }
+    BOOST_CHECK_EQUAL(a, 1);
+    {
+        auto guard = make_scope_guard([&]{ a++; });
+        BOOST_CHECK_EQUAL(a, 1);
+    }
+    BOOST_CHECK_EQUAL(a, 2);
+    {
+        ScopeGuard guard = make_scope_guard([&]{ a++; });
+        guard.disable();
+        BOOST_CHECK_EQUAL(a, 2);
+    }
+    BOOST_CHECK_EQUAL(a, 2);
+    {
+        for (int i = 0; i < 3; i++ ) {
+            ScopeGuard guard = make_scope_guard([&]{ a++; });
+            if ( i == 1 )
+                continue;
+            ScopeGuard guard2 = make_scope_guard([&]{ a++; });
+        }
+    }
+    BOOST_CHECK_EQUAL(a, 7);
+}
+
+BOOST_AUTO_TEST_CASE(Tmpdir_test)
+{
+    bfs::path p;
+    {
+        Tmpdir tmpdir;
+        assert(bfs::exists(tmpdir.path));
+        p = tmpdir.path;
+    }
+    assert(! bfs::exists(p));
+}
+
