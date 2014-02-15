@@ -1,6 +1,5 @@
 /*
- *  This file is part of clearskies_core file synchronization program
- *  Copyright (C) 2014 Pedro Larroy
+ *  This file is part of clearskies_core.
 
  *  clearskies_core is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -15,32 +14,17 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <boost/test/unit_test.hpp>
+#include "cs/daemon.hpp"
+#include "cs/config.hpp"
 
-#pragma once
+using namespace std;
+using namespace cs::daemon;
 
 
-// gcc -E -dM - < /dev/null
-//
-#ifdef __GNUC__
+BOOST_AUTO_TEST_CASE(daemon_test_01)
+{
+    Daemon d;
+    UNUSED(d);
+}
 
-#define likely(x) __builtin_expect((x),1)
-#define unlikely(x) __builtin_expect((x),0)
-#define GCC_ATTRIBUTE(x) __attribute__((x))
-
-#elif _WINDOWS
-
-#define likely(x) (x)
-#define unlikely(x) (x)
-#define GCC_ATTRIBUTE(x)
-
-#else
-
-#define likely(x) (x)
-#define unlikely(x) (x)
-#define GCC_ATTRIBUTE(x)
-
-#endif
-
-#define UNUSED(x) ((void)(x))
-
-#include "int_types.h"

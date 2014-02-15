@@ -16,31 +16,14 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "daemon.hpp"
+
+namespace cs
+{
+namespace daemon
+{
 
 
-// gcc -E -dM - < /dev/null
-//
-#ifdef __GNUC__
+} // end ns
+} // end ns
 
-#define likely(x) __builtin_expect((x),1)
-#define unlikely(x) __builtin_expect((x),0)
-#define GCC_ATTRIBUTE(x) __attribute__((x))
-
-#elif _WINDOWS
-
-#define likely(x) (x)
-#define unlikely(x) (x)
-#define GCC_ATTRIBUTE(x)
-
-#else
-
-#define likely(x) (x)
-#define unlikely(x) (x)
-#define GCC_ATTRIBUTE(x)
-
-#endif
-
-#define UNUSED(x) ((void)(x))
-
-#include "int_types.h"

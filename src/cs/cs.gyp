@@ -15,6 +15,8 @@
                 "int_types.h",
                 "clearskiesprotocol.cpp",
                 "clearskiesprotocol.hpp",
+                "daemon.hpp",
+                "daemon.cpp",
                 "message.cpp",
                 "message.hpp",
                 "messagecoder.cpp",
