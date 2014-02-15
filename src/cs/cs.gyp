@@ -32,6 +32,9 @@
                 "file.cpp",
                 "vclock.hpp",
                 "vclock.cpp",
+                "conf.hpp",
+                "conf.cpp",
+                "config.hpp",
             ],
             "include_dirs": [
                 "../",

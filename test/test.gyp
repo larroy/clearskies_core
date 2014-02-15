@@ -19,6 +19,7 @@
                 "vclock.cpp",
                 "sqlite3pp.cpp",
                 "daemon.cpp",
+                "conf.cpp",
             ],
             "include_dirs": [
                 "../src",
