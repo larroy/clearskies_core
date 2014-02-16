@@ -95,7 +95,6 @@ MFile& Share::Share_iterator::dereference() const
 
 Share::Checksummer::Checksummer(Share& share):
      r_share(share)
-    , m_to_cksum_it()
     , m_c256()
     , m_file()
     , m_is()
@@ -152,14 +151,21 @@ void Share::Checksummer::do_block()
 
 bool Share::Checksummer::next_file()
 {
+    // the query needs to be rerun, since checksumming runs interwinded with file scanning, so there
+    // could be new files to checksum added on every step. Another solution is to first scan then
+    // checksum, but this way we should be utilizing the CPU more.
     r_share.m_to_cksum_q.reset();
-    m_to_cksum_it = r_share.m_to_cksum_q.begin();
-    if (m_to_cksum_it == r_share.m_to_cksum_q.end())
+    const auto to_cksum_it = r_share.m_to_cksum_q.begin();
+
+    // There are no more files to checksum
+    if (to_cksum_it == r_share.m_to_cksum_q.end())
         return false;
-    m_file.from_row(*m_to_cksum_it);
+
+    m_file.from_row(*to_cksum_it);
     m_is = make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
-    if (! *m_is)
+    if (! *m_is) // note that we are not checking the pointer, but the stream
     {
+        // file can't be opened, it has been deleted
         m_file.gone(&r_share.m_revision);
         r_share.save_mfile(m_file);
         m_is.reset();

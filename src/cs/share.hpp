@@ -164,17 +164,25 @@ public:
     {
     public:
         Checksummer(Share&);
-        /// step should be called until it returns false, then all the files to_checksum are processed
+        /**
+         * step should be called until it returns false, then all the files to_checksum are processed. 
+         * It checksums Share::m_cksum_batch_sz blocks or less. @returns false if there are no more
+         * blocks or files to checksum, true otherwise.
+         */
         bool step();
 
     private:
+        /**
+         * reads a single block from a file and updates the m_c256 context, on EOF we update the db
+         * and reset m_is
+         */
         void do_block();
         /// @returns true if there's more
         bool next_file();
         Share& r_share;
-        sqlite3pp::query::query_iterator m_to_cksum_it;
         sha2::SHA256_CTX  m_c256;
         MFile m_file;
+        /// when it's set means we are in the middle of checksumming a file
         std::unique_ptr<bfs::ifstream> m_is;
     };
 
