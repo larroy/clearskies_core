@@ -191,6 +191,11 @@ public:
     void initialize_tables();
     void initialize_statements();
 
+private:
+    void init_or_read_share_identity();
+
+public:
+
     /// @sa Share_iterator
     Share_iterator begin()
     {

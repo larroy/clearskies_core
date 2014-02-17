@@ -231,6 +231,23 @@ void Share::initialize_tables()
     for (sqlite3pp::command& cmd: performance_adjusts)
         cmd.execute();
 
+
+    //
+    // SHARE IDENTITY, KEYS
+    //
+    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
+        share_id TEXT PRIMARY KEY,
+        peer_id TEXT NOT NULL,
+        psk_rw TEXT NOT NULL,
+        psk_ro TEXT NOT NULL,
+        psk_untrusted TEXT NOT NULL,
+        pkc_rw TEXT,
+        pkc_ro TEXT
+        )
+    )#").execute();
+
+    init_or_read_share_identity();
+
     //
     // FILES
     //
@@ -243,7 +260,8 @@ void Share::initialize_tables()
         deleted INTEGER DEFAULT 0,
         to_checksum INTEGER DEFAULT 0,
         sha256 TEXT DEFAULT '',
-        last_changed_rev INTEGER DEFAULT 0,
+        last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
+        last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
         updated INTEGER DEFAULT 0
         )
     )#").execute();
@@ -285,30 +303,6 @@ void Share::initialize_tables()
     sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_vlock_path ON peer_files_vclock(path))#").execute();
 
 
-    //
-    // SHARE
-    //
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
-        share_id TEXT PRIMARY KEY,
-        peer_id TEXT NOT NULL,
-        psk_rw TEXT NOT NULL,
-        psk_ro TEXT NOT NULL,
-        psk_untrusted TEXT NOT NULL,
-        pkc_rw TEXT,
-        pkc_ro TEXT
-        )
-    )#").execute();
-    // manifest vclock, ours and the ones from peers
-
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share_revision (
-        peer_id TEXT NOT NULL,
-        revision INTEGER DEFAULT 0,
-        FOREIGN KEY(peer_id) REFERENCES share(peer_id)
-        )
-    )#").execute();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_share_revision_peer_id ON share_revision(peer_id))#").execute();
-
-
 }
 
 
@@ -332,6 +326,40 @@ void Share::initialize_statements()
     m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
     m_select_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
 }
+
+
+void Share::init_or_read_share_identity()
+{
+    assert(m_share_id.empty());
+    assert(m_peer_id.empty());
+
+#if 0
+    sqlite3pp::query q(m_db, R"#(SELECT 
+        share_id,
+        peer_id,
+        psk_rw,
+        psk_ro,
+        psk_untrusted,
+        pkc_rw,
+        pkc_ro
+    FROM share)#");
+    bool found = false;
+    for (const auto& row: file_q)
+    {
+        assert(! found); // path must be unique, it's pk
+        m_share_id = row.get<string>(0);
+        m_peer_id = row.get<string>(0);
+        m_psk_rw = row.get<string>(0);
+        m_psk_row = row.get<string>(0);
+        m_psk_untrusted = row.get<string>(0);
+        m_pkc_rw = row.get<string>(0);
+        m_pkc_ro = row.get<string>(0);
+
+        // FIXME
+    }
+#endif
+}
+
 
 std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
 {
