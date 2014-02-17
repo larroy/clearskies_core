@@ -51,7 +51,7 @@ struct ScanFile
         , mtime()
         , size()
         , mode()
-        , scan_found(true)
+        , scan_found()
     {}
     std::string path;
     std::string mtime;
@@ -224,6 +224,12 @@ public:
         assert(relative_to_share.is_relative());
         return m_path / relative_to_share;
     }
+
+    /// @returns number of seconds the last scan took, with a minimum of 1 second
+    u32 scan_duration_s() const
+    {
+        return std::max(1u, static_cast<u32>(m_scan_duration_s));
+    }
 private:
     /// @returns true if there's more to do, this does one step in the scan part
     bool fs_scan_step();
@@ -261,6 +267,8 @@ public:
     std::unique_ptr<bfs::recursive_directory_iterator> m_scan_it;
     size_t m_scan_found_count;
     std::time_t m_scan_duration_s;
+    sqlite3pp::query m_select_not_scan_found_q;
+    sqlite3pp::command m_update_scan_found_false_q;
 
 
     /********** CKSUM *************/
@@ -274,7 +282,7 @@ public:
     size_t m_cksum_batch_sz;
 
     /// query that returns the files that need to be cksummed
-    sqlite3pp::query m_to_cksum_q;
+    sqlite3pp::query m_select_to_cksum_q;
     Checksummer m_cksummer;
 
     /********** SHARE IDENTITY, KEYS ***********/

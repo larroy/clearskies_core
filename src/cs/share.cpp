@@ -133,7 +133,7 @@ void Share::Checksummer::do_block()
     sha2::SHA256_Update(&m_c256, (const cs::u8*) rbuff.data(), m_is->gcount());
     if (! *m_is)
     {
-        // EOF 
+        // EOF
         string sha256(SHA256_DIGEST_STRING_LENGTH, 0);
         sha2::SHA256_End(&m_c256, &sha256[0]);
         sha256.resize(sha256.size() - 1);
@@ -160,11 +160,11 @@ bool Share::Checksummer::next_file()
     // the query needs to be rerun, since checksumming runs interwinded with file scanning, so there
     // could be new files to checksum added on every step. Another solution is to first scan then
     // checksum, but this way we should be utilizing the CPU more.
-    r_share.m_to_cksum_q.reset();
-    const auto to_cksum_it = r_share.m_to_cksum_q.begin();
+    r_share.m_select_to_cksum_q.reset();
+    const auto to_cksum_it = r_share.m_select_to_cksum_q.begin();
 
     // There are no more files to checksum
-    if (to_cksum_it == r_share.m_to_cksum_q.end())
+    if (to_cksum_it == r_share.m_select_to_cksum_q.end())
         return false;
 
     m_file.from_row(*to_cksum_it);
@@ -193,8 +193,10 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_scan_it()
     , m_scan_found_count()
     , m_scan_duration_s()
+    , m_select_not_scan_found_q(m_db)
+    , m_update_scan_found_false_q(m_db)
     , m_cksum_batch_sz(8)
-    , m_to_cksum_q(m_db)
+    , m_select_to_cksum_q(m_db)
     , m_cksummer(*this)
     , m_share_id()
     , m_peer_id()
@@ -325,7 +327,10 @@ void Share::initialize_statements()
         updated = ?
     WHERE path = ?
     )#");
-    m_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
+
+    m_select_not_scan_found_q.prepare("SELECT * FROM files WHERE scan_found = 0 ORDER BY path");
+    m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
+    m_select_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
 }
 
 std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
@@ -432,6 +437,7 @@ bool Share::fs_scan_step()
             f.mtime = utils::isotime(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
+            f.scan_found = true;
             scan_found(f);
 
 #if 0
@@ -456,16 +462,31 @@ bool Share::fs_scan_step()
 
 void Share::on_scan_finished()
 {
+    // save the time scan took
     time_t scan_end = 0;
     time(&scan_end);
     m_scan_duration_s = scan_end - m_scan_duration_s;
-    // TODO mark not found files as deleted
+
+    // the files which coulnd't be found are marked as deleted
+    m_select_not_scan_found_q.reset();
+    for (const auto& row: m_select_not_scan_found_q)
+    {
+        MFile file;
+        file.from_row(row);
+        file.gone(&m_revision);
+        update_mfile(file);
+    }
+
+    // reset scan_found for all the files
+    m_update_scan_found_false_q.reset();
+    m_update_scan_found_false_q.execute();
 }
 
 
 void Share::scan_found(const ScanFile& scan_file)
 {
     // TODO: add bytes to checksum for stats
+    assert(scan_file.scan_found);
     unique_ptr<MFile> mfile = get_file_info(scan_file.path);
     ++m_scan_found_count;
     if (mfile)

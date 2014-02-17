@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(share_insert_mfile)
 
 
 
-BOOST_AUTO_TEST_CASE(share_checksum_thread)
+BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
 {
     cerr << endl;
     Tmpdir tmp;
@@ -162,17 +162,46 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
     share.scan();
     while(share.scan_step());
 
-    size_t nfiles = 0;
-    for (const auto& file: share)
     {
-        //cout << file.path << endl;
-        ++nfiles;
-        BOOST_CHECK(! file.sha256.empty());
-        //cout << file.sha256 << endl;
-        //cout << file.mtime << endl;
+        vector<MFile> files;
+        size_t nfiles = 0;
+        for (const auto& file: share)
+        {
+            //cout << file.path << endl;
+            ++nfiles;
+            //cout << file.sha256 << endl;
+            //cout << file.mtime << endl;
+            files.emplace_back(file);
+            BOOST_CHECK(! file.to_checksum);
+            BOOST_CHECK(file.updated);
+            BOOST_CHECK(! file.sha256.empty());
+        }
+        BOOST_CHECK_EQUAL(nfiles, 3);
+        bfs::remove(bfs::path(tmp.tmpdir) / files.at(0).path);
     }
-    BOOST_CHECK_EQUAL(nfiles, 3);
+
+
+    share.scan();
+    while(share.scan_step());
+
+    {
+        vector<MFile> files;
+        size_t nfiles = 0;
+        for (const auto& file: share)
+        {
+            ++nfiles;
+            files.push_back(file);
+        }
+        BOOST_CHECK_EQUAL(nfiles, 3);
+        auto fpath = tmp.tmpdir / files.at(0).path;
+        cout << fpath.string() << endl;
+        BOOST_CHECK(! bfs::exists(fpath));
+        BOOST_CHECK(files.at(0).deleted);
+        BOOST_CHECK(! files.at(0).to_checksum);
+    }
 }
+
+
 
 #if 0
 BOOST_AUTO_TEST_SUITE_END()
