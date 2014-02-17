@@ -70,6 +70,10 @@ namespace sqlite3pp
         int detach(char const* name);
 
         int64_t last_insert_rowid() const;
+        int changes()
+        {
+            return sqlite3_changes(db_);
+        }
 
         int error_code() const;
         char const* error_msg() const;

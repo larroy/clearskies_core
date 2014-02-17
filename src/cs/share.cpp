@@ -377,6 +377,7 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(9, f.updated);
     m_update_mfile_q.bind(10, f.path);
     m_update_mfile_q.execute();
+    assert(m_db.changes() == 1);
 }
 
 
