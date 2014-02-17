@@ -78,10 +78,11 @@ namespace sqlite3pp
 
     database::database(char const* dbname) : db_(0)
     {
-        if (dbname) {
-            int rc = connect(dbname);
+        if (dbname) 
+        {
+            const int rc = connect(dbname);
             if (rc != SQLITE_OK)
-        throw database_error("can't connect database");
+                throw database_error("can't connect database");
         }
     }
 
@@ -172,7 +173,7 @@ namespace sqlite3pp
 
     void database::execute(char const* sql)
     {
-        int rc = eexecute(sql);
+        const int rc = eexecute(sql);
         if (rc != SQLITE_OK)
             throw database_error(*this);
     }
@@ -202,7 +203,7 @@ namespace sqlite3pp
     statement::statement(database& db, char const* stmt):
         db_(db),
         stmt_(0),
-        statement_(stmt),
+        statement_(stmt ? stmt : ""),
         tail_(0)
     {
         if (stmt)
@@ -214,29 +215,17 @@ namespace sqlite3pp
         int rc = efinish();
         if (rc != SQLITE_OK)
         {
-            if (std::uncaught_exception())
-            {
-                // an exception is being handled which called this dtor, we can't throw now
-                std::fputs("statement::~statement: sqlite3_finalize returned with error and an exception was being handled\n", stderr);
-                std::fputs("statement executed was: ", stderr);
-                std::fputs(statement_, stderr);
-                std::fputs("\n", stderr);
-                std::fputs("sqlite error: ", stderr);
+            // an exception is being handled which called this dtor, we can't throw now
+            std::fputs("statement::~statement: sqlite3_finalize returned with error while executing: ", stderr);
+            std::fputs(statement_.c_str(), stderr);
+            std::fputs("\n", stderr);
+            std::fputs("sqlite error: ", stderr);
 #ifdef SQLITE3_HAS_ERRMSG
-                std::fputs(sqlite3_errstr(rc), stderr);
+            std::fputs(sqlite3_errstr(rc), stderr);
 #else
-                std::fputs(sqlite3_errmsg(db_.db_), stderr);
+            std::fputs(sqlite3_errmsg(db_.db_), stderr);
 #endif
-                std::fputs("\n", stderr);
-            }
-            else
-            {
-#ifdef SQLITE3_HAS_ERRMSG
-                throw database_error(sqlite3_errstr(rc));
-#else
-                throw database_error(sqlite3_errmsg(db_.db_));
-#endif
-            }
+            std::fputs("\n", stderr);
         }
     }
 
@@ -251,6 +240,7 @@ namespace sqlite3pp
         if (rc != SQLITE_OK)
             return rc;
 
+        statement_ = stmt;
         return prepare_impl(stmt);
     }
 
@@ -430,11 +420,11 @@ namespace sqlite3pp
     statement::statement(statement&& other):
         db_(other.db_)
         , stmt_(other.stmt_)
-        , statement_(other.statement_)
+        , statement_(move(other.statement_))
         , tail_(other.tail_)
     {
         other.stmt_ = 0;
-        other.statement_ = 0;
+        other.statement_.clear();
         other.tail_ = 0;
     }
 
@@ -642,20 +632,16 @@ namespace sqlite3pp
 
     transaction::~transaction()
     {
-        if (db_) {
-            int rc = db_->eexecute(fcommit_ ? "COMMIT" : "ROLLBACK");
+        if (db_)
+        {
+            const int rc = db_->eexecute(fcommit_ ? "COMMIT" : "ROLLBACK");
             if (rc != SQLITE_OK)
             {
-                if (std::uncaught_exception())
-                {
-                        if (fcommit_)
-                                std::fputs("transaction::~transaction: COMMIT returned with error and an exception was being handled\n", stderr);
-                        else
-                                std::fputs("transaction::~transaction: ROLLBACK returned with error and an exception was being handled\n", stderr);
-                        abort();
-                }
+                if (fcommit_)
+                    std::fputs("transaction::~transaction: COMMIT returned with error and an exception was being handled\n", stderr);
                 else
-                        throw database_error(*db_);
+                    std::fputs("transaction::~transaction: ROLLBACK returned with error and an exception was being handled\n", stderr);
+                abort();
             }
         }
     }

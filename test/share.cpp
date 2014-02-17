@@ -19,6 +19,7 @@
 #include "cs/boost_fs_fwd.hpp"
 #include <utility>
 #include "cs/utils.hpp"
+#include "utils.hpp"
 
 using namespace std;
 using namespace cs::share;
@@ -75,6 +76,30 @@ void create_tree(const bfs::path& path)
     bfs::create_directory(path / "c");
 }
 
+#if 0
+
+struct F
+{
+    F():
+        old_cerr_rdbuf(cerr.rdbuf())
+    {
+        cerr.rdbuf(os.rdbuf());
+    }
+
+    ~F()
+    {
+        cerr.rdbuf(old_cerr_rdbuf);
+    }
+    streambuf* old_cerr_rdbuf;
+    ostringstream os;
+
+};
+
+BOOST_FIXTURE_TEST_SUITE(suite, F)
+#endif
+
+
+
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
     Tmpdir tmp;
@@ -91,7 +116,7 @@ BOOST_AUTO_TEST_CASE(tail_test)
     BOOST_CHECK_EQUAL(get_tail(bfs::path("/a/b/c/d"), 1).string(), "d");
 }
 
-BOOST_AUTO_TEST_CASE(share_save_mfile)
+BOOST_AUTO_TEST_CASE(share_insert_mfile)
 {
     MFile f;
     f.path = "omg/a/path";
@@ -100,12 +125,13 @@ BOOST_AUTO_TEST_CASE(share_save_mfile)
     f.mode = 01777;
 
     Tmpdir tmp;
-    Share share(tmp.tmpdir.string());
+    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
 
     auto f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);
 
-    share.save_mfile(f);
+    share.insert_mfile(f);
+    BOOST_CHECK_THROW(share.insert_mfile(f), sqlite3pp::database_error);
 
     f_none = share.get_file_info("argsgs");
     BOOST_CHECK(! f_none);
@@ -118,14 +144,16 @@ BOOST_AUTO_TEST_CASE(share_save_mfile)
     BOOST_CHECK_EQUAL(f_->mode, f.mode);
     BOOST_CHECK_EQUAL(f_->sha256, f.sha256);
     BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
+    cerr << "\nThe following error message is expected: statement::~statement: sqlite3_finalize returned with error..." << endl;
 }
 
 
 
 BOOST_AUTO_TEST_CASE(share_checksum_thread)
 {
+    cerr << endl;
     Tmpdir tmp;
-    Share share(tmp.tmpdir.string());
+    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
 
     for (const auto& file: share)
@@ -145,3 +173,8 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread)
     }
     BOOST_CHECK_EQUAL(nfiles, 3);
 }
+
+#if 0
+BOOST_AUTO_TEST_SUITE_END()
+#endif
+

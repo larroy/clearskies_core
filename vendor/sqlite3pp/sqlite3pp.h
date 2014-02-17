@@ -156,7 +156,7 @@ namespace sqlite3pp
      protected:
         database& db_;
         sqlite3_stmt* stmt_;
-        const char* statement_;
+        std::string statement_;
         char const* tail_;
     };
 

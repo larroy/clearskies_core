@@ -206,8 +206,9 @@ public:
     /// @returns file metadata given a path, null if there's no such file
     std::unique_ptr<MFile> get_file_info(const std::string& path);
 
-    /// save File metadata on the Share
-    void save_mfile(const MFile&);
+    void insert_mfile(const MFile&);
+    void update_mfile(const MFile&);
+
 
     /// starts a filesystem scan to detect file changes and checksum files that were modified.
     void scan();
@@ -248,7 +249,8 @@ public:
     sqlite3pp::database m_db;
     /// path to the sqlite database of the share
     std::string m_db_path;
-    sqlite3pp::command m_save_mfile_q;
+    sqlite3pp::command m_insert_mfile_q;
+    sqlite3pp::command m_update_mfile_q;
 
 
     /********* SCAN ************/
@@ -274,8 +276,6 @@ public:
     /// query that returns the files that need to be cksummed
     sqlite3pp::query m_to_cksum_q;
     Checksummer m_cksummer;
-    /// query to update the sha256 and set to_checksum = 0
-    sqlite3pp::command m_update_hash_q;
 
     /********** SHARE IDENTITY, KEYS ***********/
 
