@@ -45,12 +45,12 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     to_checksum = row.get<bool>(6);
     sha256 = row.get<string>(7);
     last_changed_rev = row.get<u64>(8);
-    updated = row.get<bool>(9);
+    last_changed_by = row.get<string>(9);
+    updated = row.get<bool>(10);
 }
 
-void MFile::gone(u64* share_rev)
+u64 MFile::gone(const std::string& peer_id, u64 rev)
 {
-    assert(share_rev);
     // file disappeared
     size = 0;
     mode = 0;
@@ -58,8 +58,9 @@ void MFile::gone(u64* share_rev)
     deleted = true;
     to_checksum = false;
     sha256.clear();
-    last_changed_rev = ++*share_rev;
+    last_changed_rev = ++rev;
     updated = true;
+    return rev;
 }
 
 Share::Share_iterator::Share_iterator():
@@ -140,7 +141,7 @@ void Share::Checksummer::do_block()
         if (! bfs::exists(r_share.fullpath(m_file.path)))
         {
             // check if file vanished one last time
-            m_file.gone(&r_share.m_revision);
+            r_share.m_revision = m_file.gone(r_share.m_peer_id, r_share.m_revision);
         }
         else
         {
@@ -172,7 +173,7 @@ bool Share::Checksummer::next_file()
     if (! *m_is) // note that we are not checking the pointer, but the stream
     {
         // file can't be opened, it has been deleted
-        m_file.gone(&r_share.m_revision);
+        r_share.m_revision = m_file.gone(r_share.m_peer_id, r_share.m_revision);
         r_share.insert_mfile(m_file);
         m_is.reset();
     }
@@ -308,7 +309,7 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, updated) VALUES (?,?,?,?,?,?,?,?,?,?)");
+    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, last_changed_by, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     m_update_mfile_q.prepare(R"#(UPDATE files SET
         mtime = ?,
         size = ?,
@@ -318,11 +319,26 @@ void Share::initialize_statements()
         to_checksum = ?,
         sha256 = ?,
         last_changed_rev = ?,
+        last_changed_by = ?,
         updated = ?
     WHERE path = ?
     )#");
 
-    m_select_not_scan_found_q.prepare("SELECT * FROM files WHERE scan_found = 0 ORDER BY path");
+    m_select_not_scan_found_q.prepare(R"#(SELECT
+        path,
+        mtime,
+        size,
+        mode,
+        scan_found,
+        deleted,
+        to_checksum,
+        sha256,
+        last_changed_rev,
+        last_changed_by,
+        updated
+    FROM
+        files
+    WHERE scan_found = 0 ORDER BY path)#");
     m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
     m_select_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
 }
@@ -333,7 +349,6 @@ void Share::init_or_read_share_identity()
     assert(m_share_id.empty());
     assert(m_peer_id.empty());
 
-#if 0
     sqlite3pp::query q(m_db, R"#(SELECT 
         share_id,
         peer_id,
@@ -344,20 +359,40 @@ void Share::init_or_read_share_identity()
         pkc_ro
     FROM share)#");
     bool found = false;
-    for (const auto& row: file_q)
+    for (const auto& row: q)
     {
         assert(! found); // path must be unique, it's pk
-        m_share_id = row.get<string>(0);
-        m_peer_id = row.get<string>(0);
-        m_psk_rw = row.get<string>(0);
-        m_psk_row = row.get<string>(0);
-        m_psk_untrusted = row.get<string>(0);
-        m_pkc_rw = row.get<string>(0);
-        m_pkc_ro = row.get<string>(0);
 
-        // FIXME
+        m_share_id = row.get<string>(0);
+        m_peer_id = row.get<string>(1);
+        m_psk_rw = row.get<string>(2);
+        m_psk_ro = row.get<string>(3);
+        m_psk_untrusted = row.get<string>(4);
+        m_pkc_rw = row.get<string>(5);
+        m_pkc_ro = row.get<string>(6);
+
+        found = true;
     }
-#endif
+
+    if (! found)
+    {
+        m_share_id = utils::random_bytes(32); 
+        m_peer_id = utils::random_bytes(16); 
+        m_psk_rw = utils::random_bytes(16); 
+        m_psk_ro = utils::random_bytes(16); 
+        m_psk_untrusted = utils::random_bytes(16); 
+        // FIXME PKC
+        //
+        sqlite3pp::command q(m_db, "INSERT INTO share (share_id, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?)");
+        q.bind(1, m_share_id);
+        q.bind(2, m_peer_id);
+        q.bind(3, m_psk_rw);
+        q.bind(4, m_psk_ro);
+        q.bind(5, m_psk_untrusted);
+        q.bind(6, "");
+        q.bind(7, "");
+        q.execute();
+    }
 }
 
 
@@ -391,7 +426,8 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(7, f.to_checksum);
     m_insert_mfile_q.bind(8, f.sha256);
     m_insert_mfile_q.bind(9, f.last_changed_rev);
-    m_insert_mfile_q.bind(10, f.updated);
+    m_insert_mfile_q.bind(10, f.last_changed_by);
+    m_insert_mfile_q.bind(11, f.updated);
     m_insert_mfile_q.execute();
 }
 
@@ -407,8 +443,9 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(6, f.to_checksum);
     m_update_mfile_q.bind(7, f.sha256);
     m_update_mfile_q.bind(8, f.last_changed_rev);
-    m_update_mfile_q.bind(9, f.updated);
-    m_update_mfile_q.bind(10, f.path);
+    m_update_mfile_q.bind(9, f.last_changed_by);
+    m_update_mfile_q.bind(10, f.updated);
+    m_update_mfile_q.bind(11, f.path);
     m_update_mfile_q.execute();
     assert(m_db.changes() == 1);
 }
@@ -501,7 +538,7 @@ void Share::on_scan_finished()
     {
         MFile file;
         file.from_row(row);
-        file.gone(&m_revision);
+        m_revision = file.gone(m_peer_id, m_revision);
         update_mfile(file);
     }
 

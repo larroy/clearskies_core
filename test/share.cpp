@@ -103,8 +103,21 @@ BOOST_FIXTURE_TEST_SUITE(suite, F)
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
     Tmpdir tmp;
-    Share share(tmp.tmpdir.string());
-    create_tree(tmp.tmpdir);
+    string share_id;
+    {
+        Share share(tmp.tmpdir.string(), tmp.dbpath.string());
+        create_tree(tmp.tmpdir);
+        share_id = share.m_share_id;
+        BOOST_CHECK(! share.m_share_id.empty());
+        BOOST_CHECK(! share.m_peer_id.empty());
+        BOOST_CHECK(! share.m_psk_rw.empty());
+        BOOST_CHECK(! share.m_psk_ro.empty());
+        BOOST_CHECK(! share.m_psk_untrusted.empty());
+    }
+    {
+        Share share(tmp.tmpdir.string(), tmp.dbpath.string());
+        BOOST_CHECK_EQUAL(share_id, share.m_share_id);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(tail_test)

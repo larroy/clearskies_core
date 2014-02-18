@@ -67,6 +67,7 @@ struct MFile: ScanFile
         , to_checksum()
         , sha256()
         , last_changed_rev()
+        , last_changed_by()
         , updated()
     {}
 
@@ -83,12 +84,13 @@ struct MFile: ScanFile
     void from_row(const sqlite3pp::query::rows& row);
 
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
-    void gone(u64* share_rev);
+    u64 gone(const std::string& peer_id, u64 rev);
 
     bool deleted;
     bool to_checksum;
     std::string sha256;
     u64 last_changed_rev;
+    std::string last_changed_by;
     bool updated;
 };
 
@@ -292,20 +294,21 @@ public:
 
     /********** SHARE IDENTITY, KEYS ***********/
 
-    /// share id, shared publicly
-    std::array<u8, 32> m_share_id;
-    std::array<u8, 16> m_peer_id;
+    /// share id, shared publicly 32bytes
+    std::string m_share_id;
+    /// 16bytes
+    std::string m_peer_id;
 
     /// pre-shared key read-write
-    std::array<u8, 16> m_psk_rw;
+    std::string m_psk_rw;
     /// pre-shared key read-only
-    std::array<u8, 16> m_psk_ro;
+    std::string m_psk_ro;
     /// pre-shared key untrusted
-    std::array<u8, 16> m_psk_untrusted;
+    std::string m_psk_untrusted;
 
-    /// private keys
-    std::array<u8, 256> m_pkc_rw;
-    std::array<u8, 256> m_pkc_ro;
+    /// private keys 256bytes
+    std::string m_pkc_rw;
+    std::string m_pkc_ro;
 };
 
 /// returns a path with the last tail number of components
