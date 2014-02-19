@@ -406,6 +406,7 @@ std::unique_ptr<MFile> Share::get_file_info(const std::string& path)
     for (const auto& row: file_q)
     {
         assert(! found); // path must be unique, it's pk
+        UNUSED(found);
         result = make_unique<MFile>();
         assert(row.get<std::string>(0) == path);
         result->from_row(row);
