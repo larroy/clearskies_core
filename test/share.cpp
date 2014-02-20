@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
         }
         BOOST_CHECK_EQUAL(nfiles, 3);
         auto fpath = tmp.tmpdir / files.at(0).path;
-        cout << fpath.string() << endl;
+        //cout << fpath.string() << endl;
         BOOST_CHECK(! bfs::exists(fpath));
         BOOST_CHECK(files.at(0).deleted);
         BOOST_CHECK(! files.at(0).to_checksum);

@@ -23,6 +23,31 @@ namespace cs
 namespace daemon
 {
 
+Daemon::Daemon()
+{
+}
+
+Daemon::~Daemon()
+{
+    stop();
+}
+
+
+void Daemon::attach_share(const std::string& share_path, const std::string& dbpath)
+{
+}
+
+
+void Daemon::start()
+{
+}
+
+
+void Daemon::stop()
+{
+}
+
+
 
 } // end ns
 } // end ns

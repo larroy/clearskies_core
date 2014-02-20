@@ -17,6 +17,7 @@
 #include <boost/test/unit_test.hpp>
 #include "cs/daemon.hpp"
 #include "cs/config.hpp"
+#include "cs/utils.hpp"
 
 using namespace std;
 using namespace cs::daemon;
@@ -24,7 +25,9 @@ using namespace cs::daemon;
 
 BOOST_AUTO_TEST_CASE(daemon_test_01)
 {
+    cs::utils::Tmpdir tmpdir;
     Daemon d;
-    UNUSED(d);
+    d.attach_share(tmpdir.path.string());
+    d.start();
 }
 

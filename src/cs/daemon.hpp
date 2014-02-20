@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <string>
 
 namespace cs
 {
@@ -27,7 +28,15 @@ namespace daemon
 class Daemon
 {
 public:
+    Daemon();
+    ~Daemon();
 
+    Daemon(const Daemon&) = delete;
+    Daemon& operator=(const Daemon&) = delete;
+
+    void attach_share(const std::string& share_path, const std::string& dbpath = std::string());
+    void start();
+    void stop();
 
 };
 
