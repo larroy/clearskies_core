@@ -17,17 +17,30 @@
  */
 
 #include "conf.hpp"
+
+using namespace std;
+
 namespace cs
 {
 namespace conf
 {
 
 Conf::Conf(const std::string& dbpath ):
-    m_db(dbpath.c_str())
+    m_tmpdir()
     , m_db_path(dbpath)
+    , m_db(m_db_dbpath.c_str())
 {
     initialize_tables();
 }
+
+Conf::Conf():
+    m_tmpdir(make_unique<utils::Tmpdir>())
+    , m_db_path((m_tmpdir->path / "conf.db").string())
+    , m_db(m_db_path.c_str())
+{
+    initialize_tables();
+}
+
 
 void Conf::initialize_tables()
 {

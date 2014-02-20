@@ -23,8 +23,9 @@ namespace cs
 namespace daemon
 {
 
-Daemon::Daemon():
-    m_port(4559)
+Daemon::Daemon(conf::Conf& conf):
+      r_conf(conf)
+    , m_port(r_conf.daemon_port())
     , m_running()
     , m_shares()
 {

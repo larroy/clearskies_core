@@ -17,9 +17,10 @@
  */
 
 #pragma once
-#include "int_types.h"
+#include "config.hpp"
 #include <string>
 #include "sqlite3pp/sqlite3pp.h"
+#include "utils.hpp"
 
 namespace cs
 {
@@ -27,20 +28,24 @@ namespace cs
 namespace conf
 {
 
+
 /**
  * Configuration object
  */
 class Conf
 {
 public:
-    // @param db_path is the path to the database holding the configuration data
+    /// @param db_path is the path to the database holding the configuration data
     Conf(const std::string& dbpath);
+    ///  A temporary, ephemeral default configuration
+    Conf();
 
     void initialize_tables();
 
+    std::unique_ptr<utils::Tmpdir> m_tmpdir;
+    std::string m_db_path;
     sqlite3pp::database m_db;
     /// path to the sqlite database
-    std::string m_db_path;
 };
 
 } // end ns

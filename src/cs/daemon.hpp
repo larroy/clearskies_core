@@ -21,6 +21,7 @@
 #include <vector>
 #include "config.hpp"
 #include "share.hpp"
+#include "conf.hpp"
 
 namespace cs
 {
@@ -31,7 +32,7 @@ namespace daemon
 class Daemon
 {
 public:
-    Daemon();
+    Daemon(conf::Conf& conf);
     ~Daemon();
 
     Daemon(const Daemon&) = delete;
@@ -43,6 +44,7 @@ public:
     void set_port(i16 port);
 
 
+    conf::Conf& r_conf;
     i16 m_port;
     bool m_running;
     std::vector<share::Share> m_shares;
