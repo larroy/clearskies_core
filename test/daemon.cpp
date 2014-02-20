@@ -28,6 +28,8 @@ BOOST_AUTO_TEST_CASE(daemon_test_01)
     cs::utils::Tmpdir tmpdir;
     Daemon d;
     d.attach_share(tmpdir.path.string());
+    d.set_port(4000);
     d.start();
+    BOOST_CHECK_THROW(d.set_port(1025), std::runtime_error);
 }
 

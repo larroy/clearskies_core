@@ -23,7 +23,10 @@ namespace cs
 namespace daemon
 {
 
-Daemon::Daemon()
+Daemon::Daemon():
+    m_port(4559)
+    , m_running()
+    , m_shares()
 {
 }
 
@@ -40,13 +43,26 @@ void Daemon::attach_share(const std::string& share_path, const std::string& dbpa
 
 void Daemon::start()
 {
+    m_running = true;
 }
 
 
 void Daemon::stop()
 {
+
+    m_running = false;
 }
 
+
+void Daemon::set_port(i16 port)
+{
+    if (m_running)
+        throw std::runtime_error("Daemon::set_port can't change while running");
+
+    if (port == 0)
+        throw std::runtime_error("Daemon::set_port port 0 is reserved");
+    m_port = port;
+}
 
 
 } // end ns

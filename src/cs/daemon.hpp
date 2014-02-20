@@ -18,6 +18,9 @@
 
 #pragma once
 #include <string>
+#include <vector>
+#include "config.hpp"
+#include "share.hpp"
 
 namespace cs
 {
@@ -37,7 +40,12 @@ public:
     void attach_share(const std::string& share_path, const std::string& dbpath = std::string());
     void start();
     void stop();
+    void set_port(i16 port);
 
+
+    i16 m_port;
+    bool m_running;
+    std::vector<share::Share> m_shares;
 };
 
 } // end ns
