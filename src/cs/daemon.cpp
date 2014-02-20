@@ -60,8 +60,6 @@ void Daemon::set_port(i16 port)
     if (m_running)
         throw std::runtime_error("Daemon::set_port can't change while running");
 
-    if (port == 0)
-        throw std::runtime_error("Daemon::set_port port 0 is reserved");
     m_port = port;
 }
 

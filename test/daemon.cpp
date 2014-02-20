@@ -26,7 +26,8 @@ using namespace cs::daemon;
 BOOST_AUTO_TEST_CASE(daemon_test_01)
 {
     cs::utils::Tmpdir tmpdir;
-    Daemon d;
+    cs::conf::Conf conf;
+    Daemon d(conf);
     d.attach_share(tmpdir.path.string());
     d.set_port(4000);
     d.start();

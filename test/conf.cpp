@@ -22,6 +22,15 @@ using namespace cs::conf;
 
 BOOST_AUTO_TEST_CASE(conf_test_01)
 {
+    Conf conf;
+    conf.load();
+    conf.daemon_port() = 1; 
+    conf.save();
+
+    Conf conf2(conf.m_db_path);
+    BOOST_CHECK_EQUAL(conf2.daemon_port(), 0);
+    conf2.load();
+    BOOST_CHECK_EQUAL(conf2.daemon_port(), 1);
 }
 
 

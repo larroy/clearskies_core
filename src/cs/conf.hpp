@@ -42,9 +42,18 @@ public:
 
     void initialize_tables();
 
+    void load();
+    void save();
+
+    /// @returns the port in which the daemon will listen
+    i16& daemon_port() { return m_daemon_port; }
+
+
     std::unique_ptr<utils::Tmpdir> m_tmpdir;
     std::string m_db_path;
     sqlite3pp::database m_db;
+
+    i16 m_daemon_port;
     /// path to the sqlite database
 };
 
