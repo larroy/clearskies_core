@@ -225,7 +225,8 @@ void Share::initialize_tables()
     // avoid excessive IO
     vector<sqlite3pp::command> performance_adjusts;
     performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA synchronous = 0"));
-    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA cache_size = 1000"));
+    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA page_size = 1024"));
+    performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA cache_size = -16384"));
     performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA fullfsync = 0"));
     // performance_adjusts.emplace_back(sqlite3pp::command(m_db, "PRAGMA journal_mode = OFF"));
 
