@@ -51,14 +51,17 @@ Conf::Conf():
 void Conf::initialize_tables()
 {
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS conf (
-            dummy INTEGER,
+            conf_idx INTEGER,
             daemon_port INTEGER NOT NULL DEFAULT 0
         )
     )#").execute();
 
+    sqlite3pp::command(m_db, R"#(
+        CREATE UNIQUE INDEX IF NOT EXISTS i_conf_conf_idx ON conf(conf_idx)
+    )#").execute();
 
-    // FIXME
-    sqlite3pp::command(m_db, "INSERT INTO conf (dummy) VALUES (0)");
+    // provide some defaults
+    sqlite3pp::command(m_db, "INSERT OR IGNORE INTO conf (conf_idx, daemon_port) VALUES (0, 0)").execute();
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS shares (
             path TEXT PRIMARY KEY, /* path to the share */
@@ -75,13 +78,16 @@ void Conf::load()
     for (const auto& row: q)
     {
         m_daemon_port = row.get<int>(0);
+        break;
     }
 }
 
 void Conf::save()
 {
-    sqlite3pp::command(m_db, R"#(UPDATE conf SET
-        daemon_port = ?)#").execute();
+    sqlite3pp::command q(m_db, R"#(UPDATE conf SET
+        daemon_port = ?)#");
+    q.bind(1, m_daemon_port);
+    q.execute();
     assert(m_db.changes() == 1);
 }
 
