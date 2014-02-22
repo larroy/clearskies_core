@@ -18,6 +18,8 @@
 
 #include "daemon.hpp"
 
+using namespace std;
+
 namespace cs
 {
 namespace daemon
@@ -40,9 +42,17 @@ Daemon::~Daemon()
 void Daemon::attach_share(const std::string& share_path, const std::string& dbpath)
 {
     if (dbpath.empty())
-        m_shares.emplace_back(share_path);
+    {
+        share::Share share(share_path);
+        string share_id = share.m_share_id;
+        m_shares.emplace(move(share_id), move(share));
+    }
     else
-        m_shares.emplace_back(share_path, dbpath);
+    {
+        share::Share share(share_path, dbpath);
+        string share_id = share.m_share_id;
+        m_shares.emplace(move(share_id), move(share));
+    }
 }
 
 

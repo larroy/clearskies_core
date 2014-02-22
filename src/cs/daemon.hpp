@@ -18,7 +18,7 @@
 
 #pragma once
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include "config.hpp"
 #include "share.hpp"
 #include "conf.hpp"
@@ -47,7 +47,7 @@ public:
     conf::Conf& r_conf;
     i16 m_port;
     bool m_running;
-    std::vector<share::Share> m_shares;
+    std::unordered_map<std::string, share::Share> m_shares;
 };
 
 } // end ns
