@@ -17,6 +17,11 @@
  */
 
 #include "daemon.hpp"
+#if __linux__ or __unix
+#include <unistd.h>
+#endif
+#include <uv.h>
+#include "utils.hpp"
 
 using namespace std;
 
@@ -25,11 +30,11 @@ namespace cs
 namespace daemon
 {
 
-Daemon::Daemon(conf::Conf& conf):
-      r_conf(conf)
-    , m_port(r_conf.daemon_port())
+Daemon::Daemon():
+      m_port(0)
     , m_running()
     , m_shares()
+    , m_daemon()
 {
 }
 
@@ -55,6 +60,27 @@ void Daemon::attach_share(const std::string& share_path, const std::string& dbpa
     }
 }
 
+void Daemon::daemonize()
+{
+// Sqlite dbs shouldn't be carried open across a fork
+#ifdef __unix
+    int fd = -1;
+
+    if (fork() != 0) exit(0); /* parent exits */
+    setsid(); /* create a new session */
+    if(chdir("/") < 0)
+        throw runtime_error("ERROR: Daemon::daemonize chdir(\"/\") failed");
+    if ((fd = open("/dev/null", O_RDWR, 0)) != -1)
+    {
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if (fd > STDERR_FILENO)
+            close(fd);
+    }
+    m_daemon = true;
+#endif
+}
 
 void Daemon::start()
 {

@@ -19,6 +19,7 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 
 #include <algorithm>
 #include <random>
@@ -31,7 +32,9 @@ namespace
 struct tm* xgmtime_r(const time_t *timep, struct tm *result)
 {
     // FIXME ifdef windows here with gmtime_s (needs to be reentrant)
+#ifdef __unix
     return gmtime_r(timep, result);
+#endif
 }
 
 }
@@ -75,6 +78,7 @@ std::string random_bytes(size_t count)
     generate_n(back_inserter(result), count, [&] { return udist8(rng); });
     return result;
 }
+
 
 
 } // end ns

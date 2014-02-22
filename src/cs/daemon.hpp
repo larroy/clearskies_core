@@ -19,9 +19,8 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include "config.hpp"
 #include "share.hpp"
-#include "conf.hpp"
+#include "config.hpp"
 
 namespace cs
 {
@@ -32,22 +31,23 @@ namespace daemon
 class Daemon
 {
 public:
-    Daemon(conf::Conf& conf);
+    Daemon();
     ~Daemon();
 
     Daemon(const Daemon&) = delete;
     Daemon& operator=(const Daemon&) = delete;
 
     void attach_share(const std::string& share_path, const std::string& dbpath = std::string());
+    void daemonize();
     void start();
     void stop();
     void set_port(i16 port);
 
 
-    conf::Conf& r_conf;
     i16 m_port;
     bool m_running;
     std::unordered_map<std::string, share::Share> m_shares;
+    bool m_daemon;
 };
 
 } // end ns
