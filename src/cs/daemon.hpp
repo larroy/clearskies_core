@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include "share.hpp"
 #include "config.hpp"
+#include "uvpp/loop.hpp"
 
 namespace cs
 {
@@ -48,6 +49,7 @@ public:
     bool m_running;
     std::unordered_map<std::string, share::Share> m_shares;
     bool m_daemon;
+    uvpp::loop m_loop;
 };
 
 } // end ns

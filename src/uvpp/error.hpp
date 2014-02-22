@@ -41,6 +41,6 @@ namespace uvpp
         uv_err_t uv_err_;
     };
 
-    error get_last_error() { return uv_last_error(uv_default_loop()); }
+    inline error get_last_error() { return uv_last_error(uv_default_loop()); }
 }
 

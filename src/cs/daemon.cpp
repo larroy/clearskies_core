@@ -35,6 +35,7 @@ Daemon::Daemon():
     , m_running()
     , m_shares()
     , m_daemon()
+    , m_loop()
 {
 }
 
@@ -85,6 +86,8 @@ void Daemon::daemonize()
 void Daemon::start()
 {
     m_running = true;
+
+
 }
 
 

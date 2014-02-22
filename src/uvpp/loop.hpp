@@ -1,9 +1,8 @@
 #pragma once
 
-#include "base.h"
-#include "error.h"
+#include "error.hpp"
 
-namespace uvpp 
+namespace uvpp
 {
     /*!
      *  Class that represents the loop instance.
@@ -38,23 +37,18 @@ namespace uvpp
 
         /*!
          *  Starts the loop.
-         *  Internally, this function just calls uv_run() function.
          */
-        bool run() { 
-
-            /* new libuv stuff */
-            return uv_run(uv_loop_, UV_RUN_DEFAULT)==0; 
+        bool run()
+        {
+            return uv_run(uv_loop_, UV_RUN_DEFAULT) == 0;
         }
 
         /*!
          *  Polls for new events without blocking.
-         *  Internally, this function just calls uv_run_once() function.
          */
-        bool run_once() { 
-
-            //return uv_run_once(uv_loop_)==0; 
-     
-            return uv_run(uv_loop_, UV_RUN_ONCE)==0; 
+        bool run_once()
+        {
+            return uv_run(uv_loop_, UV_RUN_ONCE) == 0;
         }
 
         /*!
@@ -85,19 +79,17 @@ namespace uvpp
     /*!
      *  Starts the default loop.
      */
-    int run()
+    inline int run()
     {
-        /*New libuv requires a runmode enum argument*/
-        return uv_run(uv_default_loop(),UV_RUN_DEFAULT);
+        return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     }
 
     /*!
      *  Polls for new events without blocking for the default loop.
      */
-    int run_once()
+    inline int run_once()
     {
-        /*New libuv requires a runmode argument*/
-        return uv_run(uv_default_loop(),UV_RUN_ONCE);
+        return uv_run(uv_default_loop(), UV_RUN_ONCE);
     }
 }
 
