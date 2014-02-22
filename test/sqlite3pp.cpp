@@ -15,7 +15,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include "sqlite3pp/sqlite3pp.h" 
+#include "sqlite3pp/sqlite3pp.hpp"
 #include <cstdint>
 
 using namespace std;

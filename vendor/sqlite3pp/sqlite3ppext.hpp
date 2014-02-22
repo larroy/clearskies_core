@@ -21,11 +21,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+#pragma once
 
-#ifndef SQLITE3PPEXT_H
-#define SQLITE3PPEXT_H
-
-#include "sqlite3pp.h"
+#include "sqlite3pp.hpp"
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
@@ -365,4 +363,3 @@ namespace sqlite3pp
 
 } // namespace sqlite3pp
 
-#endif

@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "sqlite3ppext.h"
+#include "sqlite3ppext.hpp"
 
 namespace sqlite3pp
 {

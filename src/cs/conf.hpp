@@ -19,7 +19,7 @@
 #pragma once
 #include "config.hpp"
 #include <string>
-#include "sqlite3pp/sqlite3pp.h"
+#include "sqlite3pp/sqlite3pp.hpp"
 #include "utils.hpp"
 
 namespace cs

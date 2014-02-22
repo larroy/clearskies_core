@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "sqlite3pp.h"
+#include "sqlite3pp.hpp"
 #include <memory>
 #include <cstdlib>
 #include <cstdio>
@@ -76,7 +76,8 @@ namespace sqlite3pp
         return sqlite3_enable_shared_cache(fenable);
     }
 
-    database::database(char const* dbname) : db_(0)
+    database::database(char const* dbname):
+        db_(nullptr)
     {
         if (dbname) 
         {
@@ -90,6 +91,18 @@ namespace sqlite3pp
     {
         disconnect();
     }
+
+    database::database(database&& other):
+        db_(other.db_)
+        , bh_(other.bh_)
+        , ch_(other.ch_)
+        , rh_(other.rh_)
+        , uh_(other.uh_)
+        , ah_(other.ah_)
+    {
+        other.db_ = nullptr;
+    }
+
 
     int database::connect(char const* dbname)
     {
@@ -110,7 +123,7 @@ namespace sqlite3pp
         int rc = SQLITE_OK;
         if (db_) {
             rc = sqlite3_close(db_);
-            db_ = 0;
+            db_ = nullptr;
         }
 
         return rc;
@@ -259,9 +272,9 @@ namespace sqlite3pp
         int rc = SQLITE_OK;
         if (stmt_) {
             rc = finish_impl(stmt_);
-            stmt_ = 0;
+            stmt_ = nullptr;
         }
-        tail_ = 0;
+        tail_ = nullptr;
 
         return rc;
     }
@@ -423,9 +436,9 @@ namespace sqlite3pp
         , statement_(move(other.statement_))
         , tail_(other.tail_)
     {
-        other.stmt_ = 0;
+        other.stmt_ = nullptr;
         other.statement_.clear();
-        other.tail_ = 0;
+        other.tail_ = nullptr;
     }
 
     command::bindstream::bindstream(command& cmd, int idx) : cmd_(cmd), idx_(idx)
@@ -649,7 +662,7 @@ namespace sqlite3pp
     int transaction::commit()
     {
         database* db = db_;
-        db_ = 0;
+        db_ = nullptr;
         int rc = db->eexecute("COMMIT");
         return rc;
     }
@@ -657,7 +670,7 @@ namespace sqlite3pp
     int transaction::rollback()
     {
         database* db = db_;
-        db_ = 0;
+        db_ = nullptr;
         int rc = db->eexecute("ROLLBACK");
         return rc;
     }

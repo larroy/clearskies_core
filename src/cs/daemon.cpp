@@ -39,6 +39,10 @@ Daemon::~Daemon()
 
 void Daemon::attach_share(const std::string& share_path, const std::string& dbpath)
 {
+    if (dbpath.empty())
+        m_shares.emplace_back(share_path);
+    else
+        m_shares.emplace_back(share_path, dbpath);
 }
 
 

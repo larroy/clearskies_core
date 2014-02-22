@@ -20,7 +20,7 @@
 #include "int_types.h"
 #include "file.hpp"
 #include "boost_fs_fwd.hpp"
-#include "sqlite3pp/sqlite3pp.h"
+#include "sqlite3pp/sqlite3pp.hpp"
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
 #include <string>
@@ -190,6 +190,9 @@ public:
 
 
     Share(const std::string& share_path, const std::string& dbpath = ":memory:");
+    Share(Share&&) = default;
+    Share& operator=(Share&&) = default;
+
     void initialize_tables();
     void initialize_statements();
 

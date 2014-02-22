@@ -9,9 +9,9 @@
             "type": "static_library",
             "sources": [
                 "sqlite3pp.cpp",
-                "sqlite3pp.h",
+                "sqlite3pp.hpp",
                 "sqlite3ppext.cpp",
-                "sqlite3ppext.h",
+                "sqlite3ppext.hpp",
             ]
         },
     ],
