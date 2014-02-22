@@ -13,3 +13,9 @@ build
 *.lai
 *.la
 *.a
+
+
+# vim backup files
+*.swp
+*~
+*.tmp
