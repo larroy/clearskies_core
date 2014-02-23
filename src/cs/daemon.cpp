@@ -86,8 +86,7 @@ void Daemon::daemonize()
 void Daemon::start()
 {
     m_running = true;
-
-
+    m_loop.run();    
 }
 
 
