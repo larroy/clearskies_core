@@ -23,7 +23,7 @@ namespace uvpp
         }
 
     public:
-        operator bool()
+        explicit operator bool()
         {
             return m_error != 0;
         }
@@ -34,7 +34,7 @@ namespace uvpp
         }
 
     private:
-        m_error;
+        int m_error;
     };
 
     inline error get_last_error(loop& x)
