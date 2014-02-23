@@ -6,41 +6,40 @@
 
 namespace uvpp
 {
-    class exception
+    class exception: public std::runtime_error
     {
     public:
-        exception(const std::string& message)
-            : message_(message)
+        exception(const std::string& message):
+            std::runtime_error(message)
         {}
-
-        virtual ~exception() {}
-
-        const std::string& message() const { return message_; }
-
-    private:
-        std::string message_;
     };
 
     class error
     {
     public:
-        error() : uv_err_() {}
-        error(uv_err_t e) : uv_err_(e) {}
-        error(uv_err_code c) : uv_err_{ c, 0 } {}
-        error(int c) : uv_err_{ static_cast<uv_err_code>(c), 0 } { }
-        ~error() = default;
+        error(int c):
+            m_error(c)
+        {
+        }
 
     public:
-        operator bool() { return uv_err_.code != UV_OK; }
+        operator bool()
+        {
+            return m_error != 0;
+        }
 
-        uv_err_code code() const { return uv_err_.code; }
-        const char* name() const { return uv_err_name(uv_err_); }
-        const char* str() const { return uv_strerror(uv_err_); }
+        const char* str() const
+        {
+            return uv_strerror(m_error);
+        }
 
     private:
-        uv_err_t uv_err_;
+        m_error;
     };
 
-    inline error get_last_error() { return uv_last_error(uv_default_loop()); }
+    inline error get_last_error(loop& x)
+    {
+        return uv_last_error(x.get());
+    }
 }
 

@@ -4,79 +4,91 @@
 
 namespace uvpp
 {
-    /*!
-     *  Class that represents the loop instance.
+    /**
+     *  Class that represents the uv_loop instance.
      */
     class loop
     {
     public:
-        /*!
+        /**
          *  Default constructor
          *  @param use_default indicates whether to use default loop or create a new loop.
          */
-        loop(bool use_default=false)
-            : uv_loop_(use_default ? uv_default_loop() : uv_loop_new())
-        { }
+        loop(bool use_default=false):
+            m_uv_loop(use_default ? uv_default_loop() : uv_loop_new())
+        {
+        }
 
-        /*!
+        /**
          *  Destructor
          */
         ~loop()
         {
-            if(uv_loop_)
+            if(m_uv_loop)
             {
-                uv_loop_delete(uv_loop_);
-                uv_loop_ = nullptr;
+                uv_loop_delete(m_uv_loop);
+                m_uv_loop = nullptr;
             }
         }
 
-        /*!
+        loop(const loop&) = delete;
+        loop& operator=(const loop&) = delete;
+        loop(loop&& other):
+        {
+            m_uv_loop = other.m_uv_loop;
+            other.m_uv_loop = nullptr;
+        }
+        loop& operator=(loop&&)
+        {
+            m_uv_loop = other.m_uv_loop;
+            other.m_uv_loop = nullptr;
+        }
+
+
+
+        /**
          *  Returns internal handle for libuv functions.
          */
-        uv_loop_t* get() { return uv_loop_; }
+        uv_loop_t* get() { return m_uv_loop; }
 
-        /*!
+        /**
          *  Starts the loop.
          */
         bool run()
         {
-            return uv_run(uv_loop_, UV_RUN_DEFAULT) == 0;
+            return uv_run(m_uv_loop, UV_RUN_DEFAULT) == 0;
         }
 
-        /*!
+        /**
          *  Polls for new events without blocking.
          */
         bool run_once()
         {
-            return uv_run(uv_loop_, UV_RUN_ONCE) == 0;
+            return uv_run(m_uv_loop, UV_RUN_ONCE) == 0;
         }
 
-        /*!
+        /**
          *  ...
          *  Internally, this function just calls uv_update_time() function.
          */
-        void update_time() { uv_update_time(uv_loop_); }
+        void update_time() { uv_update_time(m_uv_loop); }
 
-        /*!
+        /**
          *  ...
          *  Internally, this function just calls uv_now() function.
          */
-        int64_t now() { return uv_now(uv_loop_); }
+        int64_t now() { return uv_now(m_uv_loop); }
 
-        /*!
+        /**
          *  Returns the last error occured in the loop.
          */
-        error last_error() { return uv_last_error(uv_loop_); }
+        error last_error() { return uv_last_error(m_uv_loop); }
 
     private:
-        loop(const loop&);
-        void operator =(const loop&);
-
-    private:
-        uv_loop_t* uv_loop_;
+        uv_loop_t* m_uv_loop;
     };
 
-    /*!
+    /**
      *  Starts the default loop.
      */
     inline int run()
@@ -84,7 +96,7 @@ namespace uvpp
         return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     }
 
-    /*!
+    /**
      *  Polls for new events without blocking for the default loop.
      */
     inline int run_once()
