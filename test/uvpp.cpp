@@ -25,8 +25,11 @@ using namespace uvpp;
 BOOST_AUTO_TEST_CASE(test_handle)
 {
     auto han = handle<uv_handle_t>();
-
-    // 
     uv_stream_t* sp = han.get<uv_stream_t>();
     UNUSED(sp);
+
+    auto han2 = handle<uv_tcp_t>();
+    uv_stream_t* sp2 = han2.get<uv_stream_t>();
+    UNUSED(sp2);
+
 }

@@ -6,26 +6,33 @@ namespace uvpp
 {
     namespace
     {
-        inline void free_handle(uv_handle_t* h)
+        template<typename HANDLE_T>
+        inline void free_handle(HANDLE_T** h)
         {
-            assert(h);
+            if(*h == nullptr)
+                return;
 
-            if(h->data)
+            if((*h)->data)
             {
-                delete reinterpret_cast<callbacks*>(h->data);
-                h->data = nullptr;
+                delete reinterpret_cast<callbacks*>((*h)->data);
+                (*h)->data = nullptr;
             }
 
-            switch(h->type)
+            switch((*h)->type)
             {
                 case UV_TCP:
-                    delete reinterpret_cast<uv_tcp_t*>(h);
+                    delete reinterpret_cast<uv_tcp_t*>(*h);
+                    break;
+
+                case UV_UDP:
+                    delete reinterpret_cast<uv_udp_t*>(*h);
                     break;
 
                 default:
                     assert(0);
                     throw std::runtime_error("free_handle can't handle this type");
                     break;
+                *h = nullptr;
             }
         }
 
@@ -42,11 +49,40 @@ namespace uvpp
     public:
         handle():
             m_uv_handle(new HANDLE_T())
+            , m_will_close(false)
         {
             assert(m_uv_handle);
             m_uv_handle->data = new callbacks();
             assert(m_uv_handle->data);
         }
+
+        handle(handle&& other):
+            m_uv_handle(other.m_uv_handle)
+            , m_will_close(other.m_will_close)
+        {
+            other.m_uv_handle = nullptr;
+            other.m_will_close = false;
+        }
+
+        handle& operator=(handle&& other)
+        {
+            if (this == &other)
+                return *this;
+            m_uv_handle = other.m_uv_handle;
+            m_will_close = other.m_will_close;
+            other.m_uv_handle = nullptr;
+            other.m_will_close = false;
+            return *this;
+        }
+
+        ~handle()
+        {
+            if (! m_will_close)
+                free_handle(&m_uv_handle);
+        }
+
+        handle(const handle&) = delete;
+        handle& operator=(const handle&) = delete;
 
     public:
         template<typename T=HANDLE_T>
@@ -69,15 +105,17 @@ namespace uvpp
         void close(std::function<void()> callback = []{})
         {
             callbacks::store(get()->data, internal::uv_cid_close, callback);
+            m_will_close = true;
             uv_close(get(),
                 [](uv_handle_t* h) {
                     callbacks::invoke<decltype(callback)>(h->data, internal::uv_cid_close);
-                    free_handle(h);
+                    free_handle(&h);
                 });
         }
 
     protected:
         HANDLE_T* m_uv_handle;
+        bool m_will_close;
     };
 
 }
