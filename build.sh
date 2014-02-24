@@ -9,6 +9,6 @@ if [[ `uname` == "Darwin" ]]; then
     export CXX="`which clang++` -std=c++11 -stdlib=libc++"
 fi
 
-gyp -f ninja test/test.gyp --depth=. --generator-output=build
+gyp -f ninja test/test.gyp --depth=. --generator-output=build -Duv_library=static_library -I common.gypi
 ninja -C build/out/Debug/ -v
 #ninja -C build/out/Release/ -v

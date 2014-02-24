@@ -9,6 +9,7 @@
             "type": "executable",
             "dependencies": [
                 "../src/cs/cs.gyp:cs",
+                "../vendor/libuv/uv.gyp:libuv",
             ],
             "sources": [
                 "main.cpp",

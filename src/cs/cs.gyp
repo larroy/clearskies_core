@@ -10,6 +10,7 @@
             "dependencies": [
                 "../../vendor/sqlite3pp/sqlite3pp.gyp:sqlite3pp",
                 "../../vendor/sha2/sha2.gyp:sha2",
+                "../../vendor/libuv/uv.gyp:libuv",
             ],
             "sources": [
                 "int_types.h",
