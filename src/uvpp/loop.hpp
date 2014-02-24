@@ -34,14 +34,20 @@ namespace uvpp
         loop(const loop&) = delete;
         loop& operator=(const loop&) = delete;
         loop(loop&& other):
+            m_uv_loop(other.m_uv_loop)
         {
-            m_uv_loop = other.m_uv_loop;
-            other.m_uv_loop = nullptr;
+            if (this != &other)
+                other.m_uv_loop = nullptr;
         }
-        loop& operator=(loop&&)
+
+        loop& operator=(loop&& other)
         {
-            m_uv_loop = other.m_uv_loop;
-            other.m_uv_loop = nullptr;
+            if (this != &other)
+            {
+                m_uv_loop = other.m_uv_loop;
+                other.m_uv_loop = nullptr;
+            }
+            return *this;
         }
 
 
@@ -78,11 +84,6 @@ namespace uvpp
          *  Internally, this function just calls uv_now() function.
          */
         int64_t now() { return uv_now(m_uv_loop); }
-
-        /**
-         *  Returns the last error occured in the loop.
-         */
-        error last_error() { return uv_last_error(m_uv_loop); }
 
     private:
         uv_loop_t* m_uv_loop;

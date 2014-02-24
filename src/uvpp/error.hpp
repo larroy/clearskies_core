@@ -36,10 +36,5 @@ namespace uvpp
     private:
         int m_error;
     };
-
-    inline error get_last_error(loop& x)
-    {
-        return uv_last_error(x.get());
-    }
 }
 
