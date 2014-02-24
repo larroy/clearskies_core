@@ -436,6 +436,8 @@ namespace sqlite3pp
         , statement_(move(other.statement_))
         , tail_(other.tail_)
     {
+        if (this == &other)
+            return;
         other.stmt_ = nullptr;
         other.statement_.clear();
         other.tail_ = nullptr;
