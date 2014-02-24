@@ -28,6 +28,22 @@ namespace uvpp
                     delete reinterpret_cast<uv_udp_t*>(*h);
                     break;
 
+                case UV_NAMED_PIPE:
+                    delete reinterpret_cast<uv_pipe_t*>(*h);
+                    break;
+
+                case UV_TTY:
+                    delete reinterpret_cast<uv_tty_t*>(*h);
+                    break;
+
+                case UV_TIMER:
+                    delete reinterpret_cast<uv_timer_t*>(*h);
+                    break;
+
+                case UV_SIGNAL:
+                    delete reinterpret_cast<uv_signal_t*>(*h);
+                    break;
+
                 default:
                     assert(0);
                     throw std::runtime_error("free_handle can't handle this type");
