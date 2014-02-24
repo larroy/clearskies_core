@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <sstream>
-#include "../cs/config.hpp"
+#include "../src/cs/config.hpp"
 
 /// Formatted string, allows to use stream operators and returns a std::string with the resulting format
 #define fs(x) \
