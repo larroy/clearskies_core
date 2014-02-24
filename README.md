@@ -19,8 +19,14 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 * libboost-test-dev
 * libboost-filesystem (v3)
 * libsqlite3-dev
-* gyp (for older versions of gyp that doesn't support ninja, check .travis.yml)
 * ninja  (ninja-build on debian)
+
+# Included dependencies:
+
+* libuv (vendor/libuv)
+* gyp (tools/gyp) WARNING: watch out for interactions with the installed system gyp modules! this
+  can produce errors as the python module search path might use the ones on the system instead of
+  the installed one.
 
 # Supported compilers:
 
