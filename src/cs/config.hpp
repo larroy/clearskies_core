@@ -55,7 +55,7 @@
 #define fe(x) \
    (static_cast<const std::ostringstream&>(((*std::make_unique<std::ostringstream>().get()) << "ERROR: "<< __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ <<  x)).str ())
 
-
+#include <memory>
 
 
 namespace std
