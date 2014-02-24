@@ -6,16 +6,16 @@
 
 namespace uvpp
 {
-    class tcp : public stream<uv_tcp_t>
+    class Tcp : public stream<uv_tcp_t>
     {
     public:
-        tcp():
+        Tcp():
             stream()
         {
             uv_tcp_init(uv_default_loop(), get());
         }
 
-        tcp(loop& l):
+        Tcp(loop& l):
             stream()
         {
             uv_tcp_init(l.get(), get());
