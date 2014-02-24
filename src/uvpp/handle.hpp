@@ -2,7 +2,7 @@
 
 #include "callback.hpp"
 
-namespace uvpp 
+namespace uvpp
 {
     namespace
     {
@@ -18,7 +18,7 @@ namespace uvpp
 
             switch(h->type)
             {
-                case UV_TCP: 
+                case UV_TCP:
                     delete reinterpret_cast<uv_tcp_t*>(h);
                     break;
 
@@ -31,12 +31,17 @@ namespace uvpp
 
     }
 
+    /**
+     * Wraps a libuv's uv_handle_t, or derived such as uv_stream_t, uv_tcp_t etc.
+     *
+     * Resources are released on the close call as mandated by libuv and NOT on the dtor
+     */
+    template<typename HANDLE_T>
     class handle
     {
     public:
-        template<typename T>
         handle():
-            m_uv_handle(reinterpret_cast<uv_handle_t*>(new T()))
+            m_uv_handle(new HANDLE_T())
         {
             assert(m_uv_handle);
             m_uv_handle->data = new callbacks();
@@ -44,20 +49,20 @@ namespace uvpp
         }
 
     public:
-        template<typename T=uv_handle_t>
+        template<typename T=HANDLE_T>
         T* get()
-        { 
-            return reinterpret_cast<T*>(m_uv_handle); 
+        {
+            return reinterpret_cast<T*>(m_uv_handle);
         }
 
-        template<typename T=uv_handle_t>
+        template<typename T=HANDLE_T>
         const T* get() const
         {
             return reinterpret_cast<const T*>(m_uv_handle);
         }
 
         bool is_active()
-        { 
+        {
             return uv_is_active(get()) != 0;
         }
 
@@ -72,7 +77,7 @@ namespace uvpp
         }
 
     protected:
-        uv_handle_t* m_uv_handle;
+        HANDLE_T* m_uv_handle;
     };
 
 }

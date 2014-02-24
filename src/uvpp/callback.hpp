@@ -73,7 +73,7 @@ namespace uvpp
     {
     public:
         callbacks():
-            m_lut(uv_cid_max)
+            m_lut(internal::uv_cid_max)
         {
         }
 
@@ -84,7 +84,7 @@ namespace uvpp
         }
 
         template<typename callback_t>
-        static void* get_data(void* target, int cid) const
+        static void* get_data(void* target, int cid)
         {
             return reinterpret_cast<callbacks*>(target)->m_lut[cid]->get_data();
         }

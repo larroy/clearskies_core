@@ -15,22 +15,18 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include "cs/conf.hpp"
+#include "cs/config.hpp"
+#include "uvpp/uvpp.hpp"
+
 
 using namespace std;
-using namespace cs::conf;
+using namespace uvpp;
 
-BOOST_AUTO_TEST_CASE(conf_test_01)
+BOOST_AUTO_TEST_CASE(test_handle)
 {
-    Conf conf;
-    conf.load();
-    conf.daemon_port() = 1;
-    conf.save();
+    auto han = handle<uv_handle_t>();
 
-    Conf conf2(conf.m_db_path);
-    BOOST_CHECK_EQUAL(conf2.daemon_port(), 0);
-    conf2.load();
-    BOOST_CHECK_EQUAL(conf2.daemon_port(), 1);
+    // 
+    uv_stream_t* sp = han.get<uv_stream_t>();
+    UNUSED(sp);
 }
-
-

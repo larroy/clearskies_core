@@ -21,6 +21,7 @@
                 "sqlite3pp.cpp",
                 "daemon.cpp",
                 "conf.cpp",
+                "uvpp.cpp",
             ],
             "include_dirs": [
                 "../src",
