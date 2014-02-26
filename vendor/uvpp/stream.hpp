@@ -9,11 +9,12 @@ namespace uvpp
     template<typename HANDLE_T>
     class stream : public handle<HANDLE_T>
     {
-    public:
+    protected:
         stream(): 
             handle<HANDLE_T>()
         {}
 
+    public:
         bool listen(std::function<void(uvpp::error)> callback, int backlog=128)
         {
             callbacks::store(handle<HANDLE_T>::get()->data, uvpp::internal::uv_cid_listen, callback);

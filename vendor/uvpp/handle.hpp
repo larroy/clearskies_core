@@ -62,7 +62,7 @@ namespace uvpp
     template<typename HANDLE_T>
     class handle
     {
-    public:
+    protected:
         handle():
             m_uv_handle(new HANDLE_T())
             , m_will_close(false)
