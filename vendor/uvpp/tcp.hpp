@@ -45,7 +45,7 @@ namespace uvpp
         bool bind6(const std::string& ip, int port)
         { 
             ip6_addr addr = to_ip6_addr(ip, port); 
-            return uv_tcp_bind(get(), reinterpret_cast<sockaddr*>(&addr), UV_TCP_IPV6ONLY) == 0;
+            return uv_tcp_bind(get(), reinterpret_cast<sockaddr*>(&addr), 0) == 0;
         }
 
         bool connect(const std::string& ip, int port, std::function<void(error)> callback)

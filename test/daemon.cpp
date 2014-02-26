@@ -22,6 +22,7 @@
 using namespace std;
 using namespace cs::daemon;
 
+#if 0
 
 BOOST_AUTO_TEST_CASE(daemon_test_01)
 {
@@ -33,3 +34,4 @@ BOOST_AUTO_TEST_CASE(daemon_test_01)
     BOOST_CHECK_THROW(d.set_port(1025), std::runtime_error);
 }
 
+#endif

@@ -20,10 +20,16 @@
 #if __linux__ or __unix
 #include <unistd.h>
 #endif
-#include <uv.h>
 #include "utils.hpp"
+#include <functional>
 
 using namespace std;
+
+namespace
+{
+
+
+} // end ns
 
 namespace cs
 {
@@ -36,6 +42,7 @@ Daemon::Daemon():
     , m_shares()
     , m_daemon()
     , m_loop()
+    , m_tcp_listen_conn(m_loop)
 {
 }
 
@@ -85,6 +92,8 @@ void Daemon::daemonize()
 
 void Daemon::start()
 {
+    m_tcp_listen_conn.bind6("::", m_port);
+    m_tcp_listen_conn.listen(std::bind(&Daemon::on_connect, this, placeholders::_1));
     m_running = true;
     m_loop.run();    
 }
@@ -105,6 +114,11 @@ void Daemon::set_port(i16 port)
     m_port = port;
 }
 
+
+void Daemon::on_connect(uvpp::error error)
+{
+
+}
 
 } // end ns
 } // end ns

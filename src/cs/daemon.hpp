@@ -21,13 +21,33 @@
 #include <unordered_map>
 #include "share.hpp"
 #include "config.hpp"
-#include "uvpp/loop.hpp"
+#include "uvpp/uvpp.hpp"
+#include "clearskiesprotocol.hpp"
 
 namespace cs
 {
 namespace daemon
 {
 
+namespace internal
+{
+
+class TCPconnectionState
+{
+    TCPconnectionState(uvpp::loop& loop):
+        r_loop(loop)
+        , m_conn(loop)
+    {
+
+    }
+    uvpp::loop& r_loop;
+    uvpp::Tcp m_conn;
+    cs::protocol::ClearSkiesProtocol m_protocol;
+};
+
+
+
+} // end ns
 
 class Daemon
 {
@@ -44,12 +64,17 @@ public:
     void stop();
     void set_port(i16 port);
 
+private:
+    void on_connect(uvpp::error error);
+
 
     i16 m_port;
     bool m_running;
     std::unordered_map<std::string, share::Share> m_shares;
     bool m_daemon;
     uvpp::loop m_loop;
+    uvpp::Tcp m_tcp_listen_conn;
+    std::vector<internal::TCPconnectionState> m_connections;
 };
 
 } // end ns
