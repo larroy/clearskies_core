@@ -117,7 +117,7 @@ MsgRstate find_message(const std::string& buff)
             if (newline_pos > ProtocolState::s_msg_signature_max)
                 return result.set_garbage();
             const size_t sig_start = msg_plus_sig_end;
-            const size_t sig_end = newline_pos; 
+            const size_t sig_end = newline_pos;
             msg_plus_sig_end = sig_end + 1;
             assert(sig_start <= sig_end);
             result.signature = &buff[sig_start];
@@ -172,7 +172,7 @@ PayLoadFound find_payload(const std::string& buff)
     return result;
 }
 
-size_t ProtocolState::s_msg_preamble_max = 22; // m[20 digits]: 
+size_t ProtocolState::s_msg_preamble_max = 22; // m[20 digits]:
 size_t ProtocolState::s_msg_signature_max = 512;
 size_t ProtocolState::s_msg_size_max = 16777216;
 size_t ProtocolState::s_payload_chunk_size_max = 16777216;
@@ -192,13 +192,13 @@ void ProtocolState::input(const char* data, size_t len)
             MsgRstate mrs = find_message(m_input_buff);
             if (mrs.found)
             {
-                try 
+                try
                 {
                     unique_ptr<message::Message> msg = m_msg_coder.decode_msg(mrs.payload(), mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz);
                     if (mrs.payload())
                         m_read_payload = true;
                     handle_message(move(msg));
-                } 
+                }
                 catch(const message::CoderError& e)
                 {
                     handle_msg_garbage(fs("message::CoderError exception: " <<  e.what()));
@@ -247,6 +247,34 @@ void ProtocolState::input(const char* data, size_t len)
     }
 }
 
+void ProtocolState::send_message(const message::Message& m)
+{
+    const bool do_write = m_output_buff.empty() == true;
+    m_output_buff.emplace_back(m_msg_coder.encode_msg(m));
+    if (do_write)
+    {
+        assert(! m_write_in_progress);
+        const string& buf = m_output_buff.front();
+        m_do_write(buf.c_str(), buf.size());
+        m_write_in_progress = true;
+    }
+}
+
+
+void ProtocolState::on_write_finished()
+{
+    m_write_in_progress = false;
+    assert(! m_output_buff.empty());
+    m_output_buff.pop_front();
+    if (! m_output_buff.empty())
+    {
+        const string& buf = m_output_buff.front();
+        m_do_write(buf.c_str(), buf.size());
+        m_write_in_progress = true;
+    }
+    else
+        handle_empty_output_buff();
+}
 
 } // end ns
 } // end ns

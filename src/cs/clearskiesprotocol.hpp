@@ -55,8 +55,8 @@ typedef std::array<std::array<state_trans_fn_t, SC(State::MAX)>, SC(message::MTy
 class ClearSkiesProtocol: public ProtocolState
 {
 public:
-    ClearSkiesProtocol(write_cb_t write_cb = [](const char*, size_t){}):
-          ProtocolState(write_cb)
+    ClearSkiesProtocol(do_write_t do_write = [](const char*, size_t){}):
+          ProtocolState(do_write)
         , m_state(State::INITIAL)
     {}
 

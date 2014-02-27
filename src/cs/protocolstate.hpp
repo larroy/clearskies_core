@@ -64,7 +64,7 @@ struct MsgRstate
     {
         return has_payload(prefix);
     }
-    
+
     bool has_signature() const
     {
         return signature_sz != 0;
@@ -136,9 +136,6 @@ struct PayLoadFound
 /// @return info about a payload chunk on the input buffer
 PayLoadFound find_payload(const std::string& buff);
 
-/// type of callback for writing data
-typedef std::function<void(const char*, size_t)> write_cb_t;
-
 /**
  * @brief Base protocol state class for all protocols
  * @author plarroy
@@ -151,18 +148,26 @@ typedef std::function<void(const char*, size_t)> write_cb_t;
 class ProtocolState
 {
 public:
+    /// type of callback for writing data
+    typedef std::function<void(const char*, size_t)> do_write_t;
+
+
     static size_t s_msg_preamble_max;
     static size_t s_msg_signature_max;
     static size_t s_msg_size_max;
     static size_t s_payload_chunk_size_max;
     /// initial size of the input buffer
     static size_t s_input_buff_size;
-    ProtocolState(write_cb_t write_cb = [](const char*, size_t){}):
+    ProtocolState(
+        do_write_t do_write = [](const char*, size_t){}
+    ):
           m_input_buff()
+        , m_output_buff()
         , m_read_payload(false)
         , m_pl_found()
         , m_msg_coder()
-        , m_write_cb(write_cb)
+        , m_do_write(do_write)
+        , m_write_in_progress(false)
     {
         m_input_buff.reserve(s_input_buff_size);
     }
@@ -183,6 +188,14 @@ public:
      */
     void input(const char* data, size_t len);
 
+    void send_message(const message::Message&);
+    /// to be called when the last write finished
+    void on_write_finished();
+
+    /// called by on_write_finished to signal that we are out of data (ex. send more manifest
+    /// messages)
+    virtual void handle_empty_output_buff() {}
+
     /// called when a message is completely read on the input buffer
     virtual void handle_message(std::unique_ptr<message::Message>) = 0;
     /// called after a message with the payload flag was handled and payload was input
@@ -197,6 +210,10 @@ public:
 private:
     /// internal input buffer accumulating data until it can be processed
     std::string m_input_buff;
+    /// queue of buffers to write, we write from front to back, new appended to back, when wrote,
+    /// removed from front.
+    std::deque<std::string> m_output_buff;
+
     /// true if we are reading a payload section, false if we are reading or expecting a message
     bool m_read_payload;
     PayLoadFound m_pl_found;
@@ -206,7 +223,8 @@ private:
 
 public:
     /// callback used to write data
-    write_cb_t m_write_cb;
+    do_write_t m_do_write;
+    bool m_write_in_progress;
 };
 } // end ns
 } // end ns

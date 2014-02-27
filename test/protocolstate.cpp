@@ -28,8 +28,8 @@ using namespace cs::protocol;
 class ProtocolTest: public ProtocolState
 {
 public:
-    ProtocolTest(write_cb_t write_cb = [](const char*, size_t){}):
-        ProtocolState(write_cb)
+    ProtocolTest(do_write_t do_write = [](const char*, size_t){}):
+        ProtocolState(do_write)
         , m_messages()
         , m_payload()
         , m_payload_end()
