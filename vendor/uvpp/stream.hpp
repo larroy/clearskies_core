@@ -23,9 +23,9 @@ namespace uvpp
             }) == 0;
         }
 
-        bool accept(stream* client)
+        bool accept(stream& client)
         {
-            return uv_accept(handle<HANDLE_T>::template get<uv_stream_t>(), client->handle<HANDLE_T>::template get<uv_stream_t>()) == 0;
+            return uv_accept(handle<HANDLE_T>::template get<uv_stream_t>(), client.handle<HANDLE_T>::template get<uv_stream_t>()) == 0;
         }
 
         bool read_start(std::function<void(const char* buf, ssize_t len)> callback)

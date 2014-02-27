@@ -31,6 +31,8 @@ class CoderImpl
 {
 public:
     virtual ~CoderImpl() {};
+    CoderImpl(CoderImpl&&) = default;
+    CoderImpl() = default;
     virtual std::unique_ptr<Message> decode_msg(bool, const char*, size_t, const char*, size_t) = 0;
     virtual std::string encode_msg(const Message&) = 0;
 };
@@ -773,6 +775,10 @@ Coder::Coder(CoderType type):
 Coder::~Coder()
 {
 }
+
+
+Coder::Coder(Coder&&) = default;
+Coder& Coder::operator=(Coder&&) = default;
 
 
 std::unique_ptr<Message> Coder::decode_msg(bool payload, const char* encoded, size_t encoded_sz, const char* signature, size_t signature_sz)

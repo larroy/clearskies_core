@@ -167,10 +167,11 @@ public:
         m_input_buff.reserve(s_input_buff_size);
     }
 
-    //ProtocolState(const ProtocolState&) = delete;
-    //ProtocolState& operator=(const ProtocolState&) = delete;
-
     virtual ~ProtocolState() = default;
+    ProtocolState(const ProtocolState&) = delete;
+    ProtocolState& operator=(const ProtocolState&) = delete;
+    ProtocolState(ProtocolState&&) = default;
+    ProtocolState& operator=(ProtocolState&&) = default;
 
     void input(const std::string& s)
     {

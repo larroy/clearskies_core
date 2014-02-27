@@ -34,14 +34,15 @@ namespace internal
 
 class TCPconnectionState
 {
+public:
     TCPconnectionState(uvpp::loop& loop):
         r_loop(loop)
-        , m_conn(loop)
+        , m_tcp_conn(loop)
     {
 
     }
     uvpp::loop& r_loop;
-    uvpp::Tcp m_conn;
+    uvpp::Tcp m_tcp_conn;
     cs::protocol::ClearSkiesProtocol m_protocol;
 };
 
@@ -65,7 +66,7 @@ public:
     void set_port(i16 port);
 
 private:
-    void on_connect(uvpp::error error);
+    void on_tcp_connect(uvpp::error error);
 
 
     i16 m_port;

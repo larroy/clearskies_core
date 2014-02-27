@@ -59,8 +59,8 @@ public:
     Coder& operator=(const Coder&) = delete;
 
     // moves enabled
-    Coder(Coder&&) = default;
-    Coder& operator=(Coder&&) = default;
+    Coder(Coder&&);
+    Coder& operator=(Coder&&);
 
     /// @returns a pointer to a polymorphic Message
     /// @throws CoderError when the message has a format that prevents decoding

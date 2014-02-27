@@ -93,7 +93,7 @@ void Daemon::daemonize()
 void Daemon::start()
 {
     m_tcp_listen_conn.bind6("::", m_port);
-    m_tcp_listen_conn.listen(std::bind(&Daemon::on_connect, this, placeholders::_1));
+    m_tcp_listen_conn.listen(std::bind(&Daemon::on_tcp_connect, this, placeholders::_1));
     m_running = true;
     m_loop.run();    
 }
@@ -115,9 +115,10 @@ void Daemon::set_port(i16 port)
 }
 
 
-void Daemon::on_connect(uvpp::error error)
+void Daemon::on_tcp_connect(uvpp::error error)
 {
-
+    m_connections.emplace_back(m_loop);
+    m_tcp_listen_conn.accept(m_connections.back().m_tcp_conn);
 }
 
 } // end ns
