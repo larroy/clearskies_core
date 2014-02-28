@@ -185,11 +185,13 @@ public:
     /**
      * feed input data, for example from socket IO
      * Once a full message is read, handle_message is called
+     *
+     * to be called by the event library on read
      */
     void input(const char* data, size_t len);
 
     void send_message(const message::Message&);
-    /// to be called when the last write finished
+    /// to be called by the event library on write when the last write finished
     void on_write_finished();
 
     /// called by on_write_finished to signal that we are out of data (ex. send more manifest
