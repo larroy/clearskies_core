@@ -122,7 +122,7 @@ namespace uvpp
         {
             callbacks::store(get()->data, internal::uv_cid_close, callback);
             m_will_close = true;
-            uv_close(get(),
+            uv_close(get<uv_handle_t>(),
                 [](uv_handle_t* h) {
                     callbacks::invoke<decltype(callback)>(h->data, internal::uv_cid_close);
                     free_handle(&h);

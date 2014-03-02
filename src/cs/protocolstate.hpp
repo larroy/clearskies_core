@@ -158,15 +158,13 @@ public:
     static size_t s_payload_chunk_size_max;
     /// initial size of the input buffer
     static size_t s_input_buff_size;
-    ProtocolState(
-        do_write_t do_write = [](const char*, size_t){}
-    ):
+    ProtocolState():
           m_input_buff()
         , m_output_buff()
         , m_read_payload(false)
         , m_pl_found()
         , m_msg_coder()
-        , m_do_write(do_write)
+        , m_do_write([](const char*, size_t) { assert(false); })
         , m_write_in_progress(false)
     {
         m_input_buff.reserve(s_input_buff_size);
@@ -191,6 +189,11 @@ public:
     void input(const char* data, size_t len);
 
     void send_message(const message::Message&);
+
+    void set_write_fun(do_write_t do_write)
+    {
+        m_do_write = do_write;
+    }
     /// to be called by the event library on write when the last write finished
     void on_write_finished();
 

@@ -36,6 +36,8 @@
                 "conf.hpp",
                 "conf.cpp",
                 "config.hpp",
+                "server.hpp",
+                "server.cpp",
             ],
             "include_dirs": [
                 "../",

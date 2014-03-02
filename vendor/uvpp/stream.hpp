@@ -39,11 +39,13 @@ namespace uvpp
             callbacks::store(handle<HANDLE_T>::get()->data, uvpp::internal::uv_cid_read_start, callback);
 
             return uv_read_start(handle<HANDLE_T>::template get<uv_stream_t>(),
-                [](uv_handle_t*, size_t suggested_size){
+                [](uv_handle_t*, size_t suggested_size, uv_buf_t* buf) {
+                    assert(buf);
                     auto size = std::max(suggested_size, max_alloc_size);
-                    return uv_buf_t { new char[size], size };
+                    buf->base = new char[size];
+                    buf->len = size;
                 },
-                [](uv_stream_t* s, ssize_t nread, uv_buf_t buf){
+                [](uv_stream_t* s, ssize_t nread, const uv_buf_t* buf) {
                     // FIXME handle callback throwing exception
                     if(nread < 0)
                     {
@@ -53,9 +55,9 @@ namespace uvpp
                     }
                     else if(nread >= 0)
                     {
-                        callbacks::invoke<decltype(callback)>(s->data, uvpp::internal::uv_cid_read_start, buf.base, nread);
+                        callbacks::invoke<decltype(callback)>(s->data, uvpp::internal::uv_cid_read_start, buf->base, nread);
                     }
-                    delete buf.base;
+                    delete buf->base;
                 }) == 0;
         }
 

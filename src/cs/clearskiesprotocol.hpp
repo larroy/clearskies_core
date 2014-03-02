@@ -18,7 +18,9 @@
 #pragma once
 
 #include "protocolstate.hpp"
+#include "share.hpp"
 #include <array>
+#include <map>
 
 namespace cs
 {
@@ -55,8 +57,11 @@ typedef std::array<std::array<state_trans_fn_t, SC(State::MAX)>, SC(message::MTy
 class ClearSkiesProtocol: public ProtocolState
 {
 public:
-    ClearSkiesProtocol(do_write_t do_write = [](const char*, size_t){}):
-          ProtocolState(do_write)
+    ClearSkiesProtocol(
+        const std::map<std::string, share::Share>& shares
+    ):
+          ProtocolState()
+        , r_shares(shares)
         , m_state(State::INITIAL)
     {}
 
@@ -74,6 +79,7 @@ public:
     // trans_<State>_<Message type>
     void trans_INITIAL_INTERNAL_START(const message::Message&);
 
+    const std::map<std::string, share::Share>& r_shares;
     State m_state;
 
     state_trans_table_t m_state_trans_table;

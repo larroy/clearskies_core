@@ -15,63 +15,31 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#pragma once
-#include "config.hpp"
 #include "server.hpp"
-#include "uvpp/uvpp.hpp"
-#include <string>
-#include <unordered_map>
+
+using namespace std;
 
 namespace cs
 {
-namespace daemon
+
+namespace server
 {
 
-class TCPConnection: public server::Connection
+void Server::attach_share(const std::string& share_path, const std::string& dbpath)
 {
-public:
-    TCPConnection(
-        const std::map<std::string, share::Share>& shares,
-        uvpp::loop& loop
-    ):
-        server::Connection(shares)
-        , r_loop(loop)
-        , m_tcp_conn(loop)
+    if (dbpath.empty())
     {
-
+        share::Share share(share_path);
+        string share_id = share.m_share_id;
+        m_shares.emplace(move(share_id), move(share));
     }
-    uvpp::loop& r_loop;
-    uvpp::Tcp m_tcp_conn;
-};
-
-
-
-
-class Daemon: public server::Server
-{
-public:
-    Daemon();
-    ~Daemon();
-
-    Daemon(const Daemon&) = delete;
-    Daemon& operator=(const Daemon&) = delete;
-
-    void daemonize();
-    void start();
-    void stop();
-    void set_port(i16 port);
-
-private:
-    void on_tcp_connect(uvpp::error error);
-
-    i16 m_port;
-    bool m_running;
-    bool m_daemon;
-    uvpp::loop m_loop;
-    uvpp::Tcp m_tcp_listen_conn;
-};
+    else
+    {
+        share::Share share(share_path, dbpath);
+        string share_id = share.m_share_id;
+        m_shares.emplace(move(share_id), move(share));
+    }
+}
 
 } // end ns
 } // end ns
-

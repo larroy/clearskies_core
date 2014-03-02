@@ -17,6 +17,7 @@
  */
 
 #include "daemon.hpp"
+#include "protocolstate.hpp"
 #if __linux__ or __unix
 #include <unistd.h>
 #endif
@@ -39,7 +40,6 @@ namespace daemon
 Daemon::Daemon():
       m_port(0)
     , m_running()
-    , m_shares()
     , m_daemon()
     , m_loop()
     , m_tcp_listen_conn(m_loop)
@@ -51,22 +51,6 @@ Daemon::~Daemon()
     stop();
 }
 
-
-void Daemon::attach_share(const std::string& share_path, const std::string& dbpath)
-{
-    if (dbpath.empty())
-    {
-        share::Share share(share_path);
-        string share_id = share.m_share_id;
-        m_shares.emplace(move(share_id), move(share));
-    }
-    else
-    {
-        share::Share share(share_path, dbpath);
-        string share_id = share.m_share_id;
-        m_shares.emplace(move(share_id), move(share));
-    }
-}
 
 void Daemon::daemonize()
 {
@@ -117,8 +101,65 @@ void Daemon::set_port(i16 port)
 
 void Daemon::on_tcp_connect(uvpp::error error)
 {
-    m_connections.emplace_back(m_loop);
-    m_tcp_listen_conn.accept(m_connections.back().m_tcp_conn);
+    auto tcp_conn_ptr = make_unique<TCPConnection>(m_shares, m_loop);
+    TCPConnection& tcp_conn = *tcp_conn_ptr;
+    m_tcp_listen_conn.accept(tcp_conn.m_tcp_conn);
+    protocol::ProtocolState& pstate = tcp_conn.m_cs_protocol;
+
+    string peer_ip;
+    int port;
+    bool ip4;
+    const bool getpeername_ok = tcp_conn.m_tcp_conn.getpeername(ip4, peer_ip, port);
+    assert(getpeername_ok);
+    ostringstream os;
+    os << "tcp://" << peer_ip << ":" << port; 
+    string peer_ = os.str();
+    //string peer_ = fs("tcp://" << peer_ip << ":" << port); // will go out of scope
+
+    auto res = m_connections.emplace(piecewise_construct,
+        forward_as_tuple(move(peer_)),
+        forward_as_tuple(move(tcp_conn_ptr)));
+    assert(res.second);
+    const string& peer = res.first->first; // reference that will stay valid
+
+    // we need to be very careful about capturing objects that might go out of scope. The Connection
+    // is owned by Server::m_connections, so remains valid.
+    // tcp_conn and p_state are owned by the Server. (m_connections)
+
+    auto close_cb = [this, peer]() {
+        m_connections.erase(peer);
+    };
+
+    // write finished callback
+    auto write_cb = [&](uvpp::error) {
+        if (! error)
+            pstate.on_write_finished();
+        else
+        {
+            cerr << "TCP client write error: " << peer << endl;
+            tcp_conn.m_tcp_conn.close(close_cb);
+        }
+    };
+
+    // function to be called when the the protocol needs to write
+    auto do_write = [&](const char* buff, size_t sz) {
+        tcp_conn.m_tcp_conn.write(buff, sz, write_cb); 
+    };
+
+    auto read_cb = [&](const char* buff, ssize_t len) {
+        if (len < 0)
+        {
+            cerr << "TCP client read error: " << peer << endl;
+            tcp_conn.m_tcp_conn.close(close_cb);
+        }
+        else
+            pstate.input(buff, static_cast<size_t>(len)); 
+    };
+
+    // set function to call when the protocol has data to write
+    pstate.set_write_fun(do_write);
+
+    tcp_conn.m_tcp_conn.read_start(read_cb);
 }
 
 } // end ns
