@@ -13,6 +13,12 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
   See [CONTRIBUTING](CONTRIBUTING.md)
 
+# Donate:
+
+If you want to support development of this project, you can **donate BTC** to the following address:
+
+    18QEEJuR2ACAunMVeAxZ46o4QprxFKyGkw
+
 # Dependencies:
 
 * boost >= 1.49
