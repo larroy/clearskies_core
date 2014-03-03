@@ -81,7 +81,6 @@ public:
     i32 m_protocol;
     std::vector<std::string> m_features;
 
-
 protected:
     /// share id to @sa share::Share, the share knows the path
     std::map<std::string, share::Share> m_shares;
