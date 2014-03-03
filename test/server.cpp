@@ -70,6 +70,58 @@ public:
     std::map<std::string, std::string> m_out_buff;
 };
 
+
+class Peer: public ProtocolState
+{
+public:
+    Peer():
+        ProtocolState()
+        , m_messages_payload()
+        , m_payload_end()
+        , m_msg_garbage_cb([](const string&){})
+        , m_pl_garbage_cb([](const string&){})
+    {
+    }
+
+    void handle_message(unique_ptr<Message> msg) override
+    {
+        m_messages_payload.emplace_back(move(msg), string());
+    }
+
+    void handle_payload(const char* data, size_t len) override
+    {
+        assert(! m_messages_payload.empty());
+        m_messages_payload.back().second.append(data, len);
+    }
+
+    void handle_payload_end() override
+    {
+        m_payload_end = true;
+    }
+
+    void handle_msg_garbage(const std::string& buff) override
+    {
+        m_msg_garbage_cb(buff);
+        cout << "handle_msg_garbage: " << buff << endl;
+        assert(false);
+    }
+
+    void handle_pl_garbage(const std::string& buff) override
+    {
+        m_pl_garbage_cb(buff);
+        cout << "handle_pl_garbage: " << buff << endl;
+        assert(false);
+    }
+
+
+
+    vector<pair<unique_ptr<Message>, string>> m_messages_payload;
+    bool m_payload_end;
+    std::function<void(const std::string&)> m_msg_garbage_cb;
+    std::function<void(const std::string&)> m_pl_garbage_cb;
+};
+
+
 BOOST_AUTO_TEST_CASE(server_test_01)
 {
     Tmpdir tmp;
