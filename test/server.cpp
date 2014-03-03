@@ -71,7 +71,7 @@ public:
 };
 
 
-class Peer: public ProtocolState
+class Peer: public protocol::ProtocolState
 {
 public:
     Peer():
@@ -83,7 +83,7 @@ public:
     {
     }
 
-    void handle_message(unique_ptr<Message> msg) override
+    void handle_message(unique_ptr<message::Message> msg) override
     {
         m_messages_payload.emplace_back(move(msg), string());
     }
@@ -115,7 +115,7 @@ public:
 
 
 
-    vector<pair<unique_ptr<Message>, string>> m_messages_payload;
+    vector<pair<unique_ptr<message::Message>, string>> m_messages_payload;
     bool m_payload_end;
     std::function<void(const std::string&)> m_msg_garbage_cb;
     std::function<void(const std::string&)> m_pl_garbage_cb;
