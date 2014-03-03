@@ -267,6 +267,28 @@ public:
 class Start: public MessageImpl<Start, MType::START>
 {
 public:
+    Start(const std::string& software,
+        const int protocol,
+        const std::vector<std::string>& features,
+        const std::string& id,
+        const std::string& access,
+        const std::string& peer
+    ):
+          m_software(software)
+        , m_protocol(protocol)
+        , m_id(id)
+        , m_access(access)
+        , m_peer(peer)
+    {}
+
+    Start():
+          m_software()
+        , m_protocol()
+        , m_id()
+        , m_access()
+        , m_peer()
+    {}
+
     std::string m_software;
     int m_protocol = 0;
     std::vector<std::string> m_features;

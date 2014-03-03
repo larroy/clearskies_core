@@ -62,7 +62,11 @@ class Server
 {
 public:
     Server(): 
-        m_shares{}
+          m_software{}
+        , m_protocol{1}
+        , m_features{}
+        , m_shares{}
+        , m_connections{}
     {}
 
     Server(const Server&) = delete;
@@ -72,11 +76,18 @@ public:
 
     void attach_share(const std::string& share_path, const std::string& dbpath = std::string());
 
+public:
+    std::string m_software;
+    i32 m_protocol;
+    std::vector<std::string> m_features;
+
+
 protected:
     /// share id to @sa share::Share, the share knows the path
     std::map<std::string, share::Share> m_shares;
     /// connection identifier to Connection
     std::map<std::string, std::unique_ptr<Connection>> m_connections;
+
 };
 
 
