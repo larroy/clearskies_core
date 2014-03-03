@@ -26,6 +26,9 @@ using namespace std;
 using namespace cs::server;
 using namespace cs;
 
+/**
+ * A server
+ */
 class CSServer: public Server
 {
 public:
@@ -71,16 +74,30 @@ public:
 };
 
 
+/**
+ * Just a class to recieve data from the Server
+ */
 class Peer: public protocol::ProtocolState
 {
 public:
-    Peer():
-        ProtocolState()
+    Peer(const std::string& name):
+          ProtocolState()
+        , m_name(name)
         , m_messages_payload()
         , m_payload_end()
         , m_msg_garbage_cb([](const string&){})
         , m_pl_garbage_cb([](const string&){})
     {
+    }
+
+    void read_from(CSServer& server)
+    {
+        string server_output = server.tx_write(m_name);
+        while(! server_output.empty())
+        {
+            input(server_output);
+            server_output = server.tx_write(m_name);
+        }
     }
 
     void handle_message(unique_ptr<message::Message> msg) override
@@ -114,7 +131,7 @@ public:
     }
 
 
-
+    std::string m_name;
     vector<pair<unique_ptr<message::Message>, string>> m_messages_payload;
     bool m_payload_end;
     std::function<void(const std::string&)> m_msg_garbage_cb;
@@ -131,6 +148,9 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
     Connection& connection = server.add_connection("test");
     UNUSED(connection);
+
+
+
 }
 
 
