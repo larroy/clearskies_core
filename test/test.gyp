@@ -22,6 +22,7 @@
                 "daemon.cpp",
                 "conf.cpp",
                 "uvpp.cpp",
+                "server.cpp",
             ],
             "include_dirs": [
                 "../src",

@@ -14,67 +14,16 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <boost/test/unit_test.hpp>
 #include "cs/share.hpp"
-#include "cs/boost_fs_fwd.hpp"
-#include <utility>
 #include "cs/utils.hpp"
 #include "utils.hpp"
+#include <boost/test/unit_test.hpp>
+#include "cs/boost_fs_fwd.hpp"
+#include <utility>
 
 using namespace std;
 using namespace cs::share;
 using cs::File;
-
-enum
-{
-    TMPDIR,
-    DBPATH,
-};
-
-struct Tmpdir
-{
-    Tmpdir():
-        tmpdir(cs::utils::tmpdir())
-        , dbpath(tmpdir.string() + "__cs.db")
-    {
-        // cout << tmpdir.string() << endl;
-        assert(! bfs::exists(tmpdir));
-        bfs::create_directory(tmpdir);
-        assert(bfs::exists(tmpdir));
-        assert(! bfs::exists(dbpath));
-    }
-    ~Tmpdir()
-    {
-        bfs::remove_all(tmpdir);
-        bfs::remove(dbpath);
-    }
-    bfs::path tmpdir;
-    bfs::path dbpath;
-};
-
-
-void create_tree(const bfs::path& path)
-{
-    bfs::create_directory(path / "a");
-    bfs::path aaa = path / "a" / "aa";
-    bfs::create_directory(aaa);
-    bfs::path aaaf = aaa / "f";
-    bfs::ofstream aaaf_os(aaaf);
-    aaaf_os << "aaaf content " << endl;
-
-    bfs::path aab = path / "a" / "ab";
-    bfs::create_directory(aab);
-    bfs::path aabf = aab / "aabf";
-    bfs::ofstream aabf_os(aabf);
-
-    bfs::create_directory(path / "a" / "ac");
-    bfs::path b = path / "b";
-    bfs::create_directory(b);
-
-    bfs::ofstream bf_os(b / "f");
-
-    bfs::create_directory(path / "c");
-}
 
 #if 0
 

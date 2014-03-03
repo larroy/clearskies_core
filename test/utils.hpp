@@ -27,3 +27,58 @@
 
 #define REDIRECT_CERR streambuf* old_cerr_rdbuf__ = cerr.rdbuf(); ostringstream os; cerr.rdbuf(os.rdbuf());
 #define REDIRECT_CERR_END cerr.rdbuf(old_cerr_rdbuf__);
+
+#include "cs/boost_fs_fwd.hpp"
+#include "cs/utils.hpp"
+
+enum
+{
+    TMPDIR,
+    DBPATH,
+};
+
+struct Tmpdir
+{
+    Tmpdir():
+        tmpdir(cs::utils::tmpdir())
+        , dbpath(tmpdir.string() + "__cs.db")
+    {
+        // cout << tmpdir.string() << endl;
+        assert(! bfs::exists(tmpdir));
+        bfs::create_directory(tmpdir);
+        assert(bfs::exists(tmpdir));
+        assert(! bfs::exists(dbpath));
+    }
+    ~Tmpdir()
+    {
+        bfs::remove_all(tmpdir);
+        bfs::remove(dbpath);
+    }
+    bfs::path tmpdir;
+    bfs::path dbpath;
+};
+
+
+inline void create_tree(const bfs::path& path)
+{
+    bfs::create_directory(path / "a");
+    bfs::path aaa = path / "a" / "aa";
+    bfs::create_directory(aaa);
+    bfs::path aaaf = aaa / "f";
+    bfs::ofstream aaaf_os(aaaf);
+    aaaf_os << "aaaf content " << std::endl;
+
+    bfs::path aab = path / "a" / "ab";
+    bfs::create_directory(aab);
+    bfs::path aabf = aab / "aabf";
+    bfs::ofstream aabf_os(aabf);
+
+    bfs::create_directory(path / "a" / "ac");
+    bfs::path b = path / "b";
+    bfs::create_directory(b);
+
+    bfs::ofstream bf_os(b / "f");
+
+    bfs::create_directory(path / "c");
+}
+

@@ -50,10 +50,6 @@ public:
     Connection(Connection&&) = default;
     Connection& operator=(Connection&&) = default;
 
-    void input(const char* data, size_t len)
-    {
-        m_cs_protocol.input(data,len);
-    }
     cs::protocol::ClearSkiesProtocol m_cs_protocol;
 };
 
