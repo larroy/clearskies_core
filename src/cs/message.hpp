@@ -306,6 +306,17 @@ class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 class StartTLS: public MessageImpl<StartTLS, MType::STARTTLS>
 {
 public:
+    StartTLS():
+          m_peer{}
+        , m_access{MAccess::UNKNOWN}
+    {}
+
+    StartTLS(const std::string& peer, MAccess access):
+          m_peer{peer}
+        , m_access{access}
+    {}
+
+
     std::string m_peer;
     MAccess m_access = MAccess::UNKNOWN;
 };

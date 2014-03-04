@@ -70,6 +70,16 @@ public:
             conn.m_cs_protocol.on_write_finished();
         return move(res);
     }
+
+    std::vector<std::string> shares() const
+    {
+        vector<string> result;
+        for (const auto& x: m_shares)
+            result.emplace_back(x.first);
+        return result;
+
+    }
+
     std::map<std::string, std::string> m_out_buff;
 };
 
@@ -81,15 +91,17 @@ class Peer: public protocol::ProtocolState
 {
 public:
     Peer(const std::string& name):
-          ProtocolState()
-        , m_name(name)
-        , m_messages_payload()
-        , m_payload_end()
-        , m_msg_garbage_cb([](const string&){})
-        , m_pl_garbage_cb([](const string&){})
+          ProtocolState{}
+        , m_name{name}
+        , m_id{utils::random_bytes(16)}
+        , m_messages_payload{}
+        , m_payload_end{}
+        , m_msg_garbage_cb{[](const string&){}}
+        , m_pl_garbage_cb{[](const string&){}}
     {
     }
 
+    /// read all the output buffers from the server
     void read_from(CSServer& server)
     {
         string server_output = server.tx_write(m_name);
@@ -132,6 +144,7 @@ public:
 
 
     std::string m_name;
+    std::string m_id;
     vector<pair<unique_ptr<message::Message>, string>> m_messages_payload;
     bool m_payload_end;
     std::function<void(const std::string&)> m_msg_garbage_cb;
@@ -141,13 +154,25 @@ public:
 
 BOOST_AUTO_TEST_CASE(server_test_01)
 {
+    using namespace cs::message;
     Tmpdir tmp;
     create_tree(tmp.tmpdir);
 
     CSServer server;
-    server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
+    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
     Connection& connection = server.add_connection("test");
     UNUSED(connection);
+
+    Peer peer("test");
+    server.receive("test", Start{
+        "cs_impl_latest_trendy_language_v1.0",
+        1,
+        vector<string>(),
+        share_id,  // share id
+        "read_write",
+        utils::random_bytes(16)  // peer id
+    });
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
 
 
 
