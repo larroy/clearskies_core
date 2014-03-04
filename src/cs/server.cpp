@@ -25,20 +25,22 @@ namespace cs
 namespace server
 {
 
-void Server::attach_share(const std::string& share_path, const std::string& dbpath)
+std::string Server::attach_share(const std::string& share_path, const std::string& dbpath)
 {
+    string share_id;
     if (dbpath.empty())
     {
         share::Share share(share_path);
-        string share_id = share.m_share_id;
-        m_shares.emplace(move(share_id), move(share));
+        share_id = share.m_share_id;
+        m_shares.emplace(share_id, move(share));
     }
     else
     {
         share::Share share(share_path, dbpath);
-        string share_id = share.m_share_id;
-        m_shares.emplace(move(share_id), move(share));
+        share_id = share.m_share_id;
+        m_shares.emplace(share_id, move(share));
     }
+    return share_id;
 }
 
 } // end ns

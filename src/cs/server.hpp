@@ -74,7 +74,12 @@ public:
     Server(Server&&) = default;
     Server& operator=(Server&&) = default;
 
-    void attach_share(const std::string& share_path, const std::string& dbpath = std::string());
+    /**
+     * We attach a path and a database holding the configuration for this share. If @param dbpath is
+     * not provided, the share is transient, stored in memory.
+     * @returns share ID
+     */
+    std::string attach_share(const std::string& share_path, const std::string& dbpath = std::string());
 
 public:
     std::string m_software;
