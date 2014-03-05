@@ -81,6 +81,12 @@ public:
      */
     std::string attach_share(const std::string& share_path, const std::string& dbpath = std::string());
 
+    /// @returns a reference to the given share, @throws runtime_error if share is not known 
+    share::Share& share(const std::string& share_id);
+
+    /// @returns the list of known share_ids
+    std::vector<std::string> shares() const;
+
 public:
     std::string m_software;
     i32 m_protocol;

@@ -43,5 +43,23 @@ std::string Server::attach_share(const std::string& share_path, const std::strin
     return share_id;
 }
 
+share::Share& Server::share(const std::string& share_id)
+{
+    auto res = m_shares.find(share_id);
+    if (res == m_shares.end())
+        throw std::runtime_error(fs("Server::share error, share \"" << share_id << "\" not found"));
+    return res->second;
+}
+
+std::vector<std::string> Server::shares() const
+{
+    vector<string> result;
+    for (const auto& x: m_shares)
+        result.emplace_back(x.first);
+    return result;
+}
+
+
+
 } // end ns
 } // end ns

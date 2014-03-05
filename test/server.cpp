@@ -71,15 +71,6 @@ public:
         return move(res);
     }
 
-    std::vector<std::string> shares() const
-    {
-        vector<string> result;
-        for (const auto& x: m_shares)
-            result.emplace_back(x.first);
-        return result;
-
-    }
-
     std::map<std::string, std::string> m_out_buff;
 };
 
@@ -172,8 +163,9 @@ BOOST_AUTO_TEST_CASE(server_test_01)
         "read_write",
         utils::random_bytes(16)  // peer id
     });
+    share::Share& tmpshare = server.share(share_id);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
-
+    BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload[0].first) == StartTLS(tmpshare.m_share_id, MAccess::READ_WRITE)); 
 
 
 }
