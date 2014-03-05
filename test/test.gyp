@@ -14,6 +14,7 @@
             "sources": [
                 "main.cpp",
                 "message.cpp",
+                "messagecoder.cpp",
                 "protocolstate.cpp",
                 "share.cpp",
                 "utils.cpp",
