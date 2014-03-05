@@ -316,6 +316,10 @@ public:
         , m_access{access}
     {}
 
+    bool operator==(const StartTLS& other)
+    {
+        return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
+    }
 
     std::string m_peer;
     MAccess m_access = MAccess::UNKNOWN;
