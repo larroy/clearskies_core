@@ -217,3 +217,12 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults)
 }
 
 
+BOOST_AUTO_TEST_CASE(MessageTest_Start_operator)
+{
+    BOOST_CHECK(Start("a", 1, vector<string>(), "asdas", "read_write", "1231") ==
+        Start("a", 1, vector<string>(), "asdas", "read_write", "1231"));
+
+    BOOST_CHECK(Start("a", 1, vector<string>(), "asdas", "read_writes", "1231") !=
+
+        Start("a", 1, vector<string>(), "asdas", "read_write", "1231"));
+}

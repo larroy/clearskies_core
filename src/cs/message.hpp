@@ -176,7 +176,7 @@ protected:
     }
 
 public:
-    virtual ~Message() {};
+    virtual ~Message() = default;
 
     Message(const Message&) = default;
     Message(Message&&) = default;
@@ -288,6 +288,17 @@ public:
         , m_access()
         , m_peer()
     {}
+
+    bool operator==(const Start& o)
+    {
+        return std::tie(m_software, m_protocol, m_features, m_id, m_access, m_peer) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_id, o.m_access, o.m_peer);
+    }
+
+    bool operator!=(const Start& o)
+    {
+        return ! (*this == o);
+    }
 
     std::string m_software;
     int m_protocol = 0;
