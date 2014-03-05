@@ -226,3 +226,15 @@ BOOST_AUTO_TEST_CASE(MessageTest_Start_operator)
 
         Start("a", 1, vector<string>(), "asdas", "read_write", "1231"));
 }
+
+BOOST_AUTO_TEST_CASE(MessageTest_StartTLS_operator)
+{
+    BOOST_CHECK(StartTLS("b", MAccess::READ_ONLY) ==
+        StartTLS("b", MAccess::READ_ONLY));
+
+    BOOST_CHECK(StartTLS("b", MAccess::READ_ONLY) !=
+        StartTLS("a", MAccess::READ_ONLY));
+
+    BOOST_CHECK(StartTLS("a", MAccess::READ_ONLY) !=
+        StartTLS("a", MAccess::READ_WRITE));
+}

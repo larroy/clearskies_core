@@ -332,6 +332,12 @@ public:
         return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
     }
 
+    bool operator!=(const StartTLS& o)
+    {
+        return ! (*this == o);
+    }
+
+
     std::string m_peer;
     MAccess m_access = MAccess::UNKNOWN;
 };
