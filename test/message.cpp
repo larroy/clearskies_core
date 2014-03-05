@@ -21,7 +21,8 @@
 using namespace std;
 using namespace cs::message;
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_from_str) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
+{
     BOOST_CHECK(mtype_from_string("unknown") == MType::UNKNOWN);
     BOOST_CHECK(mtype_from_string("__internal_start") == MType::INTERNAL_START);
     BOOST_CHECK(mtype_from_string("ping") == MType::PING);
@@ -41,7 +42,8 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_from_str) {
     BOOST_CHECK(mtype_from_string("aarsrasrasa") == MType::UNKNOWN);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_to_str) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_to_str)
+{
     BOOST_CHECK(mtype_to_string(MType::UNKNOWN) == "unknown");
     BOOST_CHECK(mtype_to_string(MType::INTERNAL_START) == "__internal_start");
     BOOST_CHECK(mtype_to_string(MType::PING) == "ping");
@@ -60,13 +62,15 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_to_str) {
     BOOST_CHECK(mtype_to_string(MType::MOVE) == "move");
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_access_from_str) {
+BOOST_AUTO_TEST_CASE(MessageTest_access_from_str)
+{
     BOOST_CHECK(maccess_from_string("unknown") == MAccess::UNKNOWN);
     BOOST_CHECK(maccess_from_string("read_only") == MAccess::READ_ONLY);
     BOOST_CHECK(maccess_from_string("read_write") == MAccess::READ_WRITE);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_access_to_str) {
+BOOST_AUTO_TEST_CASE(MessageTest_access_to_str)
+{
     BOOST_CHECK(maccess_to_string(MAccess::UNKNOWN) == "unknown");
     BOOST_CHECK(maccess_to_string(MAccess::READ_ONLY) == "read_only");
     BOOST_CHECK(maccess_to_string(MAccess::READ_WRITE) == "read_write");
@@ -79,30 +83,35 @@ void check_message_defaults(const Message& m, MType type)
     BOOST_CHECK(!m.signature());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_unknown_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_unknown_defaults)
+{
     Unknown m;
     check_message_defaults(m, MType::UNKNOWN);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_internal_start_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_internal_start_defaults)
+{
     InternalStart m;
     check_message_defaults(m, MType::INTERNAL_START);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_ping_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_ping_defaults)
+{
     Ping m;
     check_message_defaults(m, MType::PING);
     BOOST_CHECK(m.m_timeout == 60);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_greeting_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_greeting_defaults)
+{
     Greeting m;
     check_message_defaults(m, MType::GREETING);
     BOOST_CHECK(m.m_software == "");
     BOOST_CHECK(m.m_protocol.empty());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_start_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_start_defaults)
+{
     Start m;
     check_message_defaults(m, MType::START);
     BOOST_CHECK(m.m_software == "");
@@ -113,26 +122,30 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_start_defaults) {
     BOOST_CHECK(m.m_peer == "");
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_cannot_start_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_cannot_start_defaults)
+{
     CannotStart m;
     check_message_defaults(m, MType::CANNOT_START);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_starttls_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_starttls_defaults)
+{
     StartTLS m;
     check_message_defaults(m, MType::STARTTLS);
     BOOST_CHECK(m.m_peer == "");
     BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_identity_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_identity_defaults)
+{
     Identity m;
     check_message_defaults(m, MType::IDENTITY);
     BOOST_CHECK(m.m_name == "");
     BOOST_CHECK(m.m_time == 0);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults)
+{
     Keys m;
     check_message_defaults(m, MType::KEYS);
     BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
@@ -142,12 +155,14 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults) {
     BOOST_CHECK(m.m_rw_public_rsa == "");
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_keys_acknowledgment_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_keys_acknowledgment_defaults)
+{
     KeysAcknowledgment m;
     check_message_defaults(m, MType::KEYS_ACKNOWLEDGMENT);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults)
+{
     Manifest m;
     check_message_defaults(m, MType::MANIFEST);
     BOOST_CHECK(m.m_peer == "");
@@ -155,39 +170,45 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults) {
     BOOST_CHECK(m.m_files.empty());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_get_manifest_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_get_manifest_defaults)
+{
     GetManifest m;
     check_message_defaults(m, MType::GET_MANIFEST);
     BOOST_CHECK(m.m_revision == 0);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_current_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_current_defaults)
+{
     ManifestCurrent m;
     check_message_defaults(m, MType::MANIFEST_CURRENT);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)
+{
     Get m;
     check_message_defaults(m, MType::GET);
     BOOST_CHECK(m.m_path == "");
     BOOST_CHECK(m.m_range.empty());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
+{
     FileData m;
     check_message_defaults(m, MType::FILE_DATA);
     BOOST_CHECK(m.m_path == "");
     BOOST_CHECK(m.m_range.empty());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_update_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_update_defaults)
+{
     Update m;
     check_message_defaults(m, MType::UPDATE);
     BOOST_CHECK(m.m_revision == 0);
     BOOST_CHECK(m.m_file.m_path == ""); // TODO: Check MFile is default
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults) {
+BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults)
+{
     Move m;
     check_message_defaults(m, MType::MOVE);
     BOOST_CHECK(m.m_revision == 0);

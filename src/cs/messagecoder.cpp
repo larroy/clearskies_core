@@ -258,7 +258,7 @@ void encode(const Start& msg, jsoncons::json& json)
     using namespace jsoncons;
     encode_type(msg, json);
     json["software"] = msg.m_software;
-    json["protocol"] = to_string(msg.m_protocol);
+    json["protocol"] = msg.m_protocol;
     json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
     json["id"] = msg.m_id;
     json["access"] = msg.m_access;
