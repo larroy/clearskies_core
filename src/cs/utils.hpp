@@ -39,7 +39,7 @@ std::string isotime(std::time_t);
 std::string bin_to_hex(const void* b, size_t sz);
 inline std::string bin_to_hex(const std::string& s)
 {
-    return utils::bin_to_hex(reinterpret_cast<const u8*>(s.c_str()), s.size());
+    return utils::bin_to_hex(s.c_str(), s.size());
 }
 
 template<typename OUT_T>
