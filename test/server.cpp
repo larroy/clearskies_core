@@ -36,12 +36,14 @@ public:
     {
         auto res = m_connections.emplace(name, make_unique<Connection>(m_shares));
         assert(res.second);
+        m_out_buff.emplace(name, string());
         auto do_write = [name, this](const char* buff, size_t sz)
         {
             assert(m_out_buff[name].empty());
             m_out_buff[name] = {buff,sz};
         };
         Connection& conn = *res.first->second;
+        conn.m_cs_protocol.set_write_fun(do_write);
         return conn;
     }
 
@@ -164,6 +166,7 @@ BOOST_AUTO_TEST_CASE(server_test_01)
         utils::random_bytes(16)  // peer id
     });
     share::Share& tmpshare = server.share(share_id);
+    peer.read_from(server);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
     BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_share_id, MAccess::READ_WRITE));
 
