@@ -18,7 +18,6 @@
 
 #pragma once
 
-
 // gcc -E -dM - < /dev/null
 //
 #ifdef __GNUC__
@@ -44,17 +43,7 @@
 #define UNUSED(x) ((void)(x))
 
 #include "int_types.h"
-
-
-/// Formatted string, allows to use stream operators and returns a std::string with the resulting format
-#define fs(x) \
-   (static_cast<const std::ostringstream&>(((*std::make_unique<std::ostringstream>().get()) << x)).str ())
-
-
-/// Format error
-#define fe(x) \
-   (static_cast<const std::ostringstream&>(((*std::make_unique<std::ostringstream>().get()) << "ERROR: "<< __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ <<  x)).str ())
-
+#include "fs.hpp"
 #include <memory>
 
 

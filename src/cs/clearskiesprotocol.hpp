@@ -18,6 +18,7 @@
 #pragma once
 
 #include "protocolstate.hpp"
+#include "config.hpp"
 #include "share.hpp"
 #include <array>
 #include <map>
@@ -32,23 +33,112 @@ enum class State: unsigned
     // initial state, we can start and send a greeting by sending a message to ourselves.
     INITIAL = 0,
 
-    START_WAIT, // greeting was sent, waiting for start
+    START_TLS_SENT,
 
     MAX,
 };
 
+class ProtocolError: public std::runtime_error
+{
+public:
+    explicit ProtocolError(const std::string& what):
+        std::runtime_error(what)
+    {}
+};
 
+class MessageHandler: public message::ConstMessageVisitor
+{
+public:
+    explicit MessageHandler(State state):
+          m_state(state)
+        , m_next_state(state)
+    {}
 
-// state transition function
-typedef std::function<void(const message::Message&)> state_trans_fn_t;
+    virtual State next_state()
+    {
+        return m_next_state;
+    }
+
+    void visit(const message::Unknown&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::InternalStart&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Ping&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Greeting&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Start&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::CannotStart&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::StartTLS&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Identity&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Keys&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::KeysAcknowledgment&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Manifest&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::GetManifest&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::ManifestCurrent&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Get&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::FileData&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Update&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+    void visit(const message::Move&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
+
+    State m_state;
+    State m_next_state;
+};
 
 /**
- * state transition matrix, message_type x protocol_state
- * each cell has a function pointer to execute when a message is recieved on the given state
- *
+ * state transition table, for each state, we have a handler for all the message types, which is a
+ * message visitor. The default behaviour when not expecting a message in the given state is to
+ * throw ProtocolError.
  */
 #define SC(X) static_cast<size_t>(X)
-typedef std::array<std::array<state_trans_fn_t, SC(State::MAX)>, SC(message::MType::MAX)> state_trans_table_t;
+typedef std::array<std::unique_ptr<MessageHandler>, SC(State::MAX)> state_trans_table_t;
 #undef SC
 
 /**
@@ -74,10 +164,6 @@ public:
     void handle_payload_end() override;
     void handle_msg_garbage(const std::string& buff) override;
     void handle_pl_garbage(const std::string& buff) override;
-
-    // state transition functions
-    // trans_<State>_<Message type>
-    void trans_INITIAL_INTERNAL_START(const message::Message&);
 
     const std::map<std::string, share::Share>& r_shares;
     State m_state;
