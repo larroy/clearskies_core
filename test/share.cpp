@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
         BOOST_CHECK(file.sha256.empty());
 
     share.scan();
-    while(share.scan_step());
+    while(share.scan_step()) {};
 
     {
         vector<MFile> files;
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
 
 
     share.scan();
-    while(share.scan_step());
+    while(share.scan_step()) {};
 
     {
         vector<MFile> files;
