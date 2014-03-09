@@ -30,7 +30,7 @@ class MessageHandler_INITIAL: public MessageHandler
 {
 public:
     MessageHandler_INITIAL(State state, ClearSkiesProtocol& protocol):
-        MessageHandler(state, protocol)
+        MessageHandler{state, protocol}
     {
     }
 
@@ -44,7 +44,7 @@ public:
 ClearSkiesProtocol::ClearSkiesProtocol(const std::map<std::string, share::Share>& shares):
     ProtocolState()
     , r_shares(shares)
-    , m_state(State::INITIAL)
+    , m_state{State::INITIAL}
 {
     m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
 }
