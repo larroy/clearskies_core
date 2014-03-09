@@ -27,7 +27,7 @@ using namespace cs::server;
 using namespace cs;
 
 /**
- * A server
+ * A local server
  */
 class CSServer: public Server
 {
@@ -78,7 +78,7 @@ public:
 
 
 /**
- * Just a class to recieve data from the Server
+ * Just a class excite the Server acting as a Peer
  */
 class Peer: public protocol::ProtocolState
 {
