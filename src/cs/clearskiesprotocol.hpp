@@ -48,12 +48,17 @@ public:
 
 class ClearSkiesProtocol;
 
+/**
+ * Base class for handling messages, throws if the message type is not expected in the current
+ * protocol state
+ */
 class MessageHandler: public message::ConstMessageVisitor
 {
 public:
-    explicit MessageHandler(State state):
+    explicit MessageHandler(State state, ClearSkiesProtocol& protocol):
           m_state(state)
         , m_next_state(state)
+        , r_protocol(protocol)
     {}
 
     virtual State next_state()
@@ -132,6 +137,7 @@ public:
 
     State m_state;
     State m_next_state;
+    ClearSkiesProtocol& r_protocol;
 };
 
 /**
@@ -147,14 +153,7 @@ typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_tabl
 class ClearSkiesProtocol: public ProtocolState
 {
 public:
-    ClearSkiesProtocol(
-        const std::map<std::string, share::Share>& shares
-    ):
-          ProtocolState()
-        , r_shares(shares)
-        , m_state(State::INITIAL)
-    {}
-
+    ClearSkiesProtocol(const std::map<std::string, share::Share>& shares);
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 

@@ -29,16 +29,32 @@ namespace protocol
 class MessageHandler_INITIAL: public MessageHandler
 {
 public:
+    MessageHandler_INITIAL(State state, ClearSkiesProtocol& protocol):
+        MessageHandler(state, protocol)
+    {
+    }
+
     void visit(const message::Start& msg) override
     {
         cout << "Start!" << endl;
+        r_protocol.send_message(message::StartTLS("omg", message::MAccess::READ_WRITE));
     }
 };
 
+ClearSkiesProtocol::ClearSkiesProtocol(const std::map<std::string, share::Share>& shares):
+    ProtocolState()
+    , r_shares(shares)
+    , m_state(State::INITIAL)
+{
+    m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
+}
 
 void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
 {
-    msg->accept(*m_state_trans_table[m_state]);
+    unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];
+    assert(handler);
+    msg->accept(*handler);
+    m_state = handler->next_state();
 }
 
 void ClearSkiesProtocol::handle_payload(const char* data, size_t len)
