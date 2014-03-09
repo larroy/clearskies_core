@@ -167,8 +167,12 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     });
     share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
     BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_peer_id, MAccess::READ_WRITE));
+    Identity* identity_msg{};
+    BOOST_CHECK_NO_THROW(identity_msg = &dynamic_cast<Identity&>(*peer.m_messages_payload.at(1).first));
+    BOOST_CHECK_EQUAL(identity_msg->m_name, server.m_server_info.m_name);
+    BOOST_CHECK(identity_msg->m_time <= utils::isotime(std::time(nullptr)));
 
     peer.m_messages_payload.clear();
 

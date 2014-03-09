@@ -87,12 +87,13 @@ public:
     /// @returns the list of known share_ids
     std::vector<std::string> shares() const;
 
-
 protected:
     /// share id to @sa share::Share, the share knows the path
     std::map<std::string, share::Share> m_shares;
     /// connection identifier to Connection
     std::map<std::string, std::unique_ptr<Connection>> m_connections;
+
+public:
     ServerInfo m_server_info;
 
 };
