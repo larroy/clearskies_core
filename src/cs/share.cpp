@@ -350,7 +350,7 @@ void Share::init_or_read_share_identity()
     assert(m_share_id.empty());
     assert(m_peer_id.empty());
 
-    sqlite3pp::query q(m_db, R"#(SELECT 
+    sqlite3pp::query q(m_db, R"#(SELECT
         share_id,
         peer_id,
         psk_rw,
@@ -377,11 +377,11 @@ void Share::init_or_read_share_identity()
 
     if (! found)
     {
-        m_share_id = utils::random_bytes(32); 
-        m_peer_id = utils::random_bytes(16); 
-        m_psk_rw = utils::random_bytes(16); 
-        m_psk_ro = utils::random_bytes(16); 
-        m_psk_untrusted = utils::random_bytes(16); 
+        m_share_id = utils::bin_to_hex(utils::random_bytes(32));
+        m_peer_id = utils::bin_to_hex(utils::random_bytes(16));
+        m_psk_rw = utils::bin_to_hex(utils::random_bytes(16));
+        m_psk_ro = utils::bin_to_hex(utils::random_bytes(16));
+        m_psk_untrusted = utils::random_bytes(16);
         // FIXME PKC
         //
         sqlite3pp::command q(m_db, "INSERT INTO share (share_id, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?)");
