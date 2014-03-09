@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_identity_defaults)
     Identity m;
     check_message_defaults(m, MType::IDENTITY);
     BOOST_CHECK(m.m_name.empty());
-    BOOST_CHECK(m.m_time == 0);
+    BOOST_CHECK(m.m_time.empty());
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults)

@@ -95,7 +95,7 @@ void decode(const jsoncons::json& json, StartTLS& msg)
 void decode(const jsoncons::json& json, Identity& msg)
 {
     msg.m_name = json["name"].as_string();
-    msg.m_time = json["time"].as_int();
+    msg.m_time = json["time"].as_string();
 }
 
 void decode(const jsoncons::json& json, Keys& msg)
@@ -283,7 +283,7 @@ void encode(const Identity& msg, jsoncons::json& json)
     using namespace jsoncons;
     encode_type(msg, json);
     json["name"] = msg.m_name;
-    json["time"] = to_string(msg.m_time);
+    json["time"] = msg.m_time;
 }
 
 void encode(const Keys& msg, jsoncons::json& json)

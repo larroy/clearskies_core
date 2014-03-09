@@ -346,8 +346,18 @@ public:
 class Identity: public MessageImpl<Identity, MType::IDENTITY>
 {
 public:
+    Identity():
+        m_name()
+        , m_time()
+    {}
+
+    Identity(const std::string& name, const std::string& time):
+        m_name(name)
+        , m_time(time)
+    {}
+
     std::string m_name;
-    int m_time = 0;     // FIXME is int the correct type to represent time?
+    std::string m_time;
 };
 
 
