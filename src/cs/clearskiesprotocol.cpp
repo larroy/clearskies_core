@@ -43,7 +43,7 @@ public:
 
 ClearSkiesProtocol::ClearSkiesProtocol(const std::map<std::string, share::Share>& shares):
     ProtocolState()
-    , r_shares(shares)
+    , r_shares(shares) // why using {} makes gcc compilation fail?
     , m_state{State::INITIAL}
 {
     m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
