@@ -26,8 +26,19 @@ namespace protocol
 {
 
 
+class MessageHandler_INITIAL: public MessageHandler
+{
+public:
+    void visit(const message::Start& msg) override
+    {
+        cout << "Start!" << endl;
+    }
+};
+
+
 void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
 {
+    msg->accept(*m_state_trans_table[m_state]);
 }
 
 void ClearSkiesProtocol::handle_payload(const char* data, size_t len)

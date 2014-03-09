@@ -28,7 +28,7 @@ namespace cs
 namespace protocol
 {
 
-enum class State: unsigned
+enum State: unsigned
 {
     // initial state, we can start and send a greeting by sending a message to ourselves.
     INITIAL = 0,
@@ -45,6 +45,8 @@ public:
         std::runtime_error(what)
     {}
 };
+
+class ClearSkiesProtocol;
 
 class MessageHandler: public message::ConstMessageVisitor
 {
@@ -137,9 +139,7 @@ public:
  * message visitor. The default behaviour when not expecting a message in the given state is to
  * throw ProtocolError.
  */
-#define SC(X) static_cast<size_t>(X)
-typedef std::array<std::unique_ptr<MessageHandler>, SC(State::MAX)> state_trans_table_t;
-#undef SC
+typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_table_t;
 
 /**
  * This class specializes ProtocolState to implement the clearskies protocol on the message level
