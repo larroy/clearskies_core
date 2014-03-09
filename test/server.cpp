@@ -34,7 +34,7 @@ class CSServer: public Server
 public:
     Connection& add_connection(const std::string& name)
     {
-        auto res = m_connections.emplace(name, make_unique<Connection>(m_shares));
+        auto res = m_connections.emplace(name, make_unique<Connection>(m_server_info, m_shares));
         assert(res.second);
         m_out_buff.emplace(name, string());
         auto do_write = [name, this](const char* buff, size_t sz)
@@ -169,6 +169,8 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     peer.read_from(server);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
     BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_peer_id, MAccess::READ_WRITE));
+
+    peer.m_messages_payload.clear();
 
 
 }

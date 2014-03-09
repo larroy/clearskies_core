@@ -101,7 +101,7 @@ void Daemon::set_port(i16 port)
 
 void Daemon::on_tcp_connect(uvpp::error error)
 {
-    auto tcp_conn_ptr = make_unique<TCPConnection>(m_shares, m_loop);
+    auto tcp_conn_ptr = make_unique<TCPConnection>(m_server_info, m_shares, m_loop);
     TCPConnection& tcp_conn = *tcp_conn_ptr;
     m_tcp_listen_conn.accept(tcp_conn.m_tcp_conn);
     protocol::ProtocolState& pstate = tcp_conn.m_cs_protocol;

@@ -19,6 +19,7 @@
 #pragma once
 #include "config.hpp"
 #include "share.hpp"
+#include "serverinfo.hpp"
 #include "protocolstate.hpp"
 #include "clearskiesprotocol.hpp"
 #include <string>
@@ -38,9 +39,10 @@ class Connection
 {
 public:
     Connection(
+        const ServerInfo& server_info,
         const std::map<std::string, share::Share>& shares
     ):
-        m_cs_protocol(shares)
+        m_cs_protocol(server_info, shares)
     {}
 
     virtual ~Connection() = default;
@@ -62,11 +64,9 @@ class Server
 {
 public:
     Server(): 
-          m_software{}
-        , m_protocol{1}
-        , m_features{}
-        , m_shares{}
-        , m_connections{}
+        m_shares()
+        , m_connections()
+        , m_server_info()
     {}
 
     Server(const Server&) = delete;
@@ -87,16 +87,13 @@ public:
     /// @returns the list of known share_ids
     std::vector<std::string> shares() const;
 
-public:
-    std::string m_software;
-    i32 m_protocol;
-    std::vector<std::string> m_features;
 
 protected:
     /// share id to @sa share::Share, the share knows the path
     std::map<std::string, share::Share> m_shares;
     /// connection identifier to Connection
     std::map<std::string, std::unique_ptr<Connection>> m_connections;
+    ServerInfo m_server_info;
 
 };
 

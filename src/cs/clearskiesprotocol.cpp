@@ -43,14 +43,20 @@ public:
         auto& shares = r_protocol.r_shares;
         auto shr_i = shares.find(msg.m_share_id);
         if (shr_i == shares.end())
+        {
             r_protocol.send_message(message::CannotStart());
-        else
-            r_protocol.send_message(message::StartTLS(shr_i->second.m_peer_id, message::MAccess::READ_WRITE));
+            return;
+        }
+
+        r_protocol.send_message(message::StartTLS(shr_i->second.m_peer_id, message::MAccess::READ_WRITE));
+        r_protocol.send_message(message::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
     }
 };
 
-ClearSkiesProtocol::ClearSkiesProtocol(const std::map<std::string, share::Share>& shares):
+
+ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std::map<std::string, share::Share>& shares):
     ProtocolState()
+    , r_server_info(server_info)
     , r_shares(shares) // why using {} makes gcc compilation fail?
     , m_state{State::INITIAL}
 {

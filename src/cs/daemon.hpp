@@ -32,10 +32,11 @@ class TCPConnection: public server::Connection
 {
 public:
     TCPConnection(
+        const ServerInfo& server_info,
         const std::map<std::string, share::Share>& shares,
         uvpp::loop& loop
     ):
-        server::Connection(shares)
+        server::Connection(server_info, shares)
         , r_loop(loop)
         , m_tcp_conn(loop)
     {

@@ -17,8 +17,9 @@
  */
 #pragma once
 
-#include "protocolstate.hpp"
 #include "config.hpp"
+#include "protocolstate.hpp"
+#include "serverinfo.hpp"
 #include "share.hpp"
 #include <array>
 #include <map>
@@ -153,7 +154,7 @@ typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_tabl
 class ClearSkiesProtocol: public ProtocolState
 {
 public:
-    ClearSkiesProtocol(const std::map<std::string, share::Share>& shares);
+    ClearSkiesProtocol(const ServerInfo&, const std::map<std::string, share::Share>& shares);
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
@@ -164,6 +165,7 @@ public:
     void handle_msg_garbage(const std::string& buff) override;
     void handle_pl_garbage(const std::string& buff) override;
 
+    const ServerInfo& r_server_info;
     const std::map<std::string, share::Share>& r_shares;
     State m_state;
 
