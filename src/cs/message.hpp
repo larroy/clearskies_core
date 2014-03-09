@@ -276,7 +276,7 @@ public:
     ):
           m_software(software)
         , m_protocol(protocol)
-        , m_id(id)
+        , m_share_id(id)
         , m_access(access)
         , m_peer(peer)
     {}
@@ -284,15 +284,15 @@ public:
     Start():
           m_software()
         , m_protocol()
-        , m_id()
+        , m_share_id()
         , m_access()
         , m_peer()
     {}
 
     bool operator==(const Start& o)
     {
-        return std::tie(m_software, m_protocol, m_features, m_id, m_access, m_peer) ==
-            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_id, o.m_access, o.m_peer);
+        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer);
     }
 
     bool operator!=(const Start& o)
@@ -303,7 +303,7 @@ public:
     std::string m_software;
     int m_protocol = 0;
     std::vector<std::string> m_features;
-    std::string m_id;
+    std::string m_share_id;
     std::string m_access;
     std::string m_peer;
 };

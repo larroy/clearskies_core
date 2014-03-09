@@ -34,10 +34,18 @@ public:
     {
     }
 
+    /**
+     * Start on INITIAL
+     */
     void visit(const message::Start& msg) override
     {
-        cout << "Start!" << endl;
-        r_protocol.send_message(message::StartTLS("omg", message::MAccess::READ_WRITE));
+
+        auto& shares = r_protocol.r_shares;
+        auto shr_i = shares.find(msg.m_share_id);
+        if (shr_i == shares.end())
+            r_protocol.send_message(message::CannotStart());
+        else
+            r_protocol.send_message(message::StartTLS(shr_i->second.m_peer_id, message::MAccess::READ_WRITE));
     }
 };
 

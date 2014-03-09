@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_greeting_defaults)
 {
     Greeting m;
     check_message_defaults(m, MType::GREETING);
-    BOOST_CHECK(m.m_software == "");
+    BOOST_CHECK(m.m_software.empty());
     BOOST_CHECK(m.m_protocol.empty());
 }
 
@@ -114,12 +114,12 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_start_defaults)
 {
     Start m;
     check_message_defaults(m, MType::START);
-    BOOST_CHECK(m.m_software == "");
+    BOOST_CHECK(m.m_software.empty());
     BOOST_CHECK(m.m_protocol == 0);
     BOOST_CHECK(m.m_features.empty());
-    BOOST_CHECK(m.m_id == "");
-    BOOST_CHECK(m.m_access == "");
-    BOOST_CHECK(m.m_peer == "");
+    BOOST_CHECK(m.m_share_id.empty());
+    BOOST_CHECK(m.m_access.empty());
+    BOOST_CHECK(m.m_peer.empty());
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_cannot_start_defaults)
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_starttls_defaults)
 {
     StartTLS m;
     check_message_defaults(m, MType::STARTTLS);
-    BOOST_CHECK(m.m_peer == "");
+    BOOST_CHECK(m.m_peer.empty());
     BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
 }
 
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_identity_defaults)
 {
     Identity m;
     check_message_defaults(m, MType::IDENTITY);
-    BOOST_CHECK(m.m_name == "");
+    BOOST_CHECK(m.m_name.empty());
     BOOST_CHECK(m.m_time == 0);
 }
 
@@ -149,10 +149,10 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_keys_defaults)
     Keys m;
     check_message_defaults(m, MType::KEYS);
     BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
-    BOOST_CHECK(m.m_share_id == "");
-    BOOST_CHECK(m.m_ro_psk == "");
-    BOOST_CHECK(m.m_ro_rsa == "");
-    BOOST_CHECK(m.m_rw_public_rsa == "");
+    BOOST_CHECK(m.m_share_id.empty());
+    BOOST_CHECK(m.m_ro_psk.empty());
+    BOOST_CHECK(m.m_ro_rsa.empty());
+    BOOST_CHECK(m.m_rw_public_rsa.empty());
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_keys_acknowledgment_defaults)
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults)
 {
     Manifest m;
     check_message_defaults(m, MType::MANIFEST);
-    BOOST_CHECK(m.m_peer == "");
+    BOOST_CHECK(m.m_peer.empty());
     BOOST_CHECK(m.m_revision == 0);
     BOOST_CHECK(m.m_files.empty());
 }
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)
 {
     Get m;
     check_message_defaults(m, MType::GET);
-    BOOST_CHECK(m.m_path == "");
+    BOOST_CHECK(m.m_path.empty());
     BOOST_CHECK(m.m_range.empty());
 }
 
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
 {
     FileData m;
     check_message_defaults(m, MType::FILE_DATA);
-    BOOST_CHECK(m.m_path == "");
+    BOOST_CHECK(m.m_path.empty());
     BOOST_CHECK(m.m_range.empty());
 }
 
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_update_defaults)
     Update m;
     check_message_defaults(m, MType::UPDATE);
     BOOST_CHECK(m.m_revision == 0);
-    BOOST_CHECK(m.m_file.m_path == ""); // TODO: Check MFile is default
+    BOOST_CHECK(m.m_file.m_path.empty()); // TODO: Check MFile is default
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults)
@@ -212,8 +212,8 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_move_defaults)
     Move m;
     check_message_defaults(m, MType::MOVE);
     BOOST_CHECK(m.m_revision == 0);
-    BOOST_CHECK(m.m_source == "");
-    BOOST_CHECK(m.m_destination.m_path == ""); // TODO: Check MFile is default
+    BOOST_CHECK(m.m_source.empty());
+    BOOST_CHECK(m.m_destination.m_path.empty()); // TODO: Check MFile is default
 }
 
 

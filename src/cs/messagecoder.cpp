@@ -77,7 +77,7 @@ void decode(const jsoncons::json& json, Start& msg)
     msg.m_software = json["software"].as_string();
     msg.m_protocol = json["protocol"].as_int();
     msg.m_features = json["features"].as_vector<string>();
-    msg.m_id = json["id"].as_string();
+    msg.m_share_id = json["id"].as_string();
     msg.m_access = json["access"].as_string();
     msg.m_peer = json["peer"].as_string();
 }
@@ -260,7 +260,7 @@ void encode(const Start& msg, jsoncons::json& json)
     json["software"] = msg.m_software;
     json["protocol"] = msg.m_protocol;
     json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
-    json["id"] = msg.m_id;
+    json["id"] = msg.m_share_id;
     json["access"] = msg.m_access;
     json["peer"] = msg.m_peer;
 }
