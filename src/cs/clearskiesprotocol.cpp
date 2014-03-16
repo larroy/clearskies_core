@@ -26,6 +26,10 @@ namespace protocol
 {
 
 
+/*
+ * Handlers -------------------------------------
+ */
+
 class MessageHandler_INITIAL: public MessageHandler
 {
 public:
@@ -70,7 +74,34 @@ public:
 };
 
 
+class MessageHandler_CONNECTED: public MessageHandler
+{
+public:
+    MessageHandler_CONNECTED(State state, ClearSkiesProtocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
 
+    void visit(const message::Identity& msg) override
+    {
+    }
+};
+
+
+
+
+
+/*
+ * ClearSkiesProtocol -------------------------------------
+ */
+
+
+
+
+
+/**
+ * ctor, sets message handlers.
+ */
 ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std::map<std::string, share::Share>& shares):
     ProtocolState()
     , r_server_info(server_info)
