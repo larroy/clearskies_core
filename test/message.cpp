@@ -177,10 +177,10 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_get_updates_defaults)
     BOOST_CHECK(m.m_revision == 0);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_current_defaults)
+BOOST_AUTO_TEST_CASE(MessageTest_type_current_defaults)
 {
-    ManifestCurrent m;
-    check_message_defaults(m, MType::MANIFEST_CURRENT);
+    Current m;
+    check_message_defaults(m, MType::CURRENT);
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)

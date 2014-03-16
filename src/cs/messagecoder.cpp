@@ -150,7 +150,7 @@ void decode(const jsoncons::json& json, GetUpdates& msg)
     msg.m_revision = json["revision"].as_longlong();
 }
 
-void decode(const jsoncons::json& json, ManifestCurrent& msg)
+void decode(const jsoncons::json& json, Current& msg)
 {
 }
 
@@ -343,7 +343,7 @@ void encode(const GetUpdates& msg, jsoncons::json& json)
     json["revision"] = msg.m_revision;
 }
 
-void encode(const ManifestCurrent& msg, jsoncons::json& json)
+void encode(const Current& msg, jsoncons::json& json)
 {
     assert(0);
 }
@@ -433,7 +433,7 @@ protected:
     void visit(const KeysAcknowledgment&) override;
     void visit(const Manifest&) override;
     void visit(const GetUpdates&) override;
-    void visit(const ManifestCurrent&) override;
+    void visit(const Current&) override;
     void visit(const Get&) override;
     void visit(const FileData&) override;
     void visit(const Update&) override;
@@ -544,9 +544,9 @@ try
         break;
     }
 
-    case MType::MANIFEST_CURRENT:
+    case MType::CURRENT:
     {
-        auto xmsg = make_unique<ManifestCurrent>();
+        auto xmsg = make_unique<Current>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -725,7 +725,7 @@ void JSONCoder::visit(const GetUpdates& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const ManifestCurrent& x)
+void JSONCoder::visit(const Current& x)
 {
     ENCXX;
 }
