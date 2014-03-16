@@ -50,8 +50,26 @@ public:
 
         r_protocol.send_message(message::StartTLS(shr_i->second.m_peer_id, message::MAccess::READ_WRITE));
         r_protocol.send_message(message::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
+        m_next_state = WAIT4_CLIENT_IDENTITY;
     }
 };
+
+
+class MessageHandler_WAIT4_CLIENT_IDENTITY: public MessageHandler
+{
+public:
+    MessageHandler_WAIT4_CLIENT_IDENTITY(State state, ClearSkiesProtocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
+
+    void visit(const message::Identity& msg) override
+    {
+
+        m_next_state = CONNECTED;
+    }
+};
+
 
 
 ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std::map<std::string, share::Share>& shares):
@@ -60,7 +78,12 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std:
     , r_shares(shares) // why using {} makes gcc compilation fail?
     , m_state{State::INITIAL}
 {
-    m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
+#define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
+
+    SET_HANDLER(INITIAL, MessageHandler_INITIAL);
+    SET_HANDLER(WAIT4_CLIENT_IDENTITY, MessageHandler_WAIT4_CLIENT_IDENTITY);
+
+#undef SET_HANDLER
 }
 
 void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)

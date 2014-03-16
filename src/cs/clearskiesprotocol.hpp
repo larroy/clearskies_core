@@ -33,8 +33,9 @@ enum State: unsigned
 {
     // initial state, we can start and send a greeting by sending a message to ourselves.
     INITIAL = 0,
+    WAIT4_CLIENT_IDENTITY,
+    CONNECTED,
 
-    START_TLS_SENT,
 
     MAX,
 };
@@ -51,7 +52,23 @@ class ClearSkiesProtocol;
 
 /**
  * Base class for handling messages, throws if the message type is not expected in the current
- * protocol state
+ * protocol state.
+ *
+ * To handle a message, we have to know in which state we want to handle it. We install a handler
+ * for this state, and in the visit function we perform desired actions and if applicable, we change
+ * m_next_state variable so the ClearSkiesProtocol class switches to the next state after handling
+ * the message.
+ *
+ *
+ * 1. Install handler
+ *   m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
+ * 2. Implement Handler::visit(const message::Type&)
+ *  2.1 change m_next_state to the desired next state
+ *
+ * If an unexpected message in some state is recieved, and exception is thrown which will cause the
+ * connection to be closed immediately. FIXME: write tests for these cases on the server that does
+ * network IO.
+ *
  */
 class MessageHandler: public message::ConstMessageVisitor
 {

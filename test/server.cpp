@@ -181,11 +181,10 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     BOOST_CHECK_EQUAL(identity_msg->m_name, server.m_server_info.m_name);
     BOOST_CHECK(identity_msg->m_time <= utils::isotime(std::time(nullptr)));
 
+    peer.send(Identity{peer.m_name, utils::isotime(std::time(nullptr))});
 
 
     peer.m_messages_payload.clear();
-
-
 }
 
 
