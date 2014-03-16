@@ -83,7 +83,7 @@ public:
 class Peer: public protocol::ProtocolState
 {
 public:
-    Peer(const std::string& name):
+    Peer(const std::string& name, CSServer& server):
           ProtocolState{}
         , m_name{name}
         , m_id{utils::random_bytes(16)}
@@ -91,6 +91,7 @@ public:
         , m_payload_end{}
         , m_msg_garbage_cb{[](const string&){}}
         , m_pl_garbage_cb{[](const string&){}}
+        , r_server(server)
     {
     }
 
@@ -103,6 +104,11 @@ public:
             input(server_output);
             server_output = server.tx_write(m_name);
         }
+    }
+
+    void send(const message::Message& m)
+    {
+        r_server.receive(m_name, m);
     }
 
     void handle_message(unique_ptr<message::Message> msg) override
@@ -142,6 +148,7 @@ public:
     bool m_payload_end;
     std::function<void(const std::string&)> m_msg_garbage_cb;
     std::function<void(const std::string&)> m_pl_garbage_cb;
+    CSServer& r_server;
 };
 
 
@@ -156,8 +163,8 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     Connection& connection = server.add_connection("test");
     UNUSED(connection);
 
-    Peer peer("test");
-    server.receive("test", Start{
+    Peer peer("test", server);
+    peer.send(Start{
         "cs_impl_latest_trendy_language_v1.0",
         1,
         vector<string>(),
@@ -169,10 +176,12 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     peer.read_from(server);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
     BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_peer_id, MAccess::READ_WRITE));
-    Identity* identity_msg{};
+    Identity* identity_msg = 0;
     BOOST_CHECK_NO_THROW(identity_msg = &dynamic_cast<Identity&>(*peer.m_messages_payload.at(1).first));
     BOOST_CHECK_EQUAL(identity_msg->m_name, server.m_server_info.m_name);
     BOOST_CHECK(identity_msg->m_time <= utils::isotime(std::time(nullptr)));
+
+
 
     peer.m_messages_payload.clear();
 
