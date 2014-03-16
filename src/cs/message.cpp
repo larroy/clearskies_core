@@ -47,7 +47,7 @@ mtype_str_table_t mtype_str_table_init()
     res[SC(MType::KEYS)] = "keys";
     res[SC(MType::KEYS_ACKNOWLEDGMENT)] = "keys_acknowledgment";
     res[SC(MType::MANIFEST)] = "manifest";
-    res[SC(MType::GET_MANIFEST)] = "get_manifest";
+    res[SC(MType::GET_UPDATES)] = "get_updates";
     res[SC(MType::GET)] = "get";
     res[SC(MType::FILE_DATA)] = "file_data";
     res[SC(MType::UPDATE)] = "update";
@@ -98,8 +98,8 @@ MType mtype_from_string(const std::string& type)
     if (type == "manifest")
         return MType::MANIFEST;
 
-    if (type == "get_manifest")
-        return MType::GET_MANIFEST;
+    if (type == "get_updates")
+        return MType::GET_UPDATES;
 
     if (type == "manifest_current")
         return MType::MANIFEST_CURRENT;

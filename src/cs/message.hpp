@@ -48,8 +48,8 @@ enum class MType: unsigned
     /// file listing
     MANIFEST,
     /// request for manifest
-    GET_MANIFEST,
-    /// response to GET_MANIFEST when revision matches
+    GET_UPDATES,
+    /// response to GET_UPDATES when revision matches
     MANIFEST_CURRENT,
     /// request to retrieve contents of a file
     GET,
@@ -103,7 +103,7 @@ class Identity;
 class Keys;
 class KeysAcknowledgment;
 class Manifest;
-class GetManifest;
+class GetUpdates;
 class ManifestCurrent;
 class Get;
 class FileData;
@@ -126,7 +126,7 @@ public:
     virtual void visit(const Keys&) = 0;
     virtual void visit(const KeysAcknowledgment&) = 0;
     virtual void visit(const Manifest&) = 0;
-    virtual void visit(const GetManifest&) = 0;
+    virtual void visit(const GetUpdates&) = 0;
     virtual void visit(const ManifestCurrent&) = 0;
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
@@ -150,7 +150,7 @@ public:
     virtual void visit(Keys&) = 0;
     virtual void visit(KeysAcknowledgment&) = 0;
     virtual void visit(Manifest&) = 0;
-    virtual void visit(GetManifest&) = 0;
+    virtual void visit(GetUpdates&) = 0;
     virtual void visit(ManifestCurrent&) = 0;
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
@@ -386,7 +386,7 @@ public:
 };
 
 
-class GetManifest: public MessageImpl<GetManifest, MType::GET_MANIFEST>
+class GetUpdates: public MessageImpl<GetUpdates, MType::GET_UPDATES>
 {
 public:
     long long m_revision = 0;

@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
     BOOST_CHECK(mtype_from_string("keys") == MType::KEYS);
     BOOST_CHECK(mtype_from_string("keys_acknowledgment") == MType::KEYS_ACKNOWLEDGMENT);
     BOOST_CHECK(mtype_from_string("manifest") == MType::MANIFEST);
-    BOOST_CHECK(mtype_from_string("get_manifest") == MType::GET_MANIFEST);
+    BOOST_CHECK(mtype_from_string("get_updates") == MType::GET_UPDATES);
     BOOST_CHECK(mtype_from_string("get") == MType::GET);
     BOOST_CHECK(mtype_from_string("file_data") == MType::FILE_DATA);
     BOOST_CHECK(mtype_from_string("update") == MType::UPDATE);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_to_str)
     BOOST_CHECK(mtype_to_string(MType::KEYS) == "keys");
     BOOST_CHECK(mtype_to_string(MType::KEYS_ACKNOWLEDGMENT) == "keys_acknowledgment");
     BOOST_CHECK(mtype_to_string(MType::MANIFEST) == "manifest");
-    BOOST_CHECK(mtype_to_string(MType::GET_MANIFEST) == "get_manifest");
+    BOOST_CHECK(mtype_to_string(MType::GET_UPDATES) == "get_updates");
     BOOST_CHECK(mtype_to_string(MType::GET) == "get");
     BOOST_CHECK(mtype_to_string(MType::FILE_DATA) == "file_data");
     BOOST_CHECK(mtype_to_string(MType::UPDATE) == "update");
@@ -170,10 +170,10 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest_defaults)
     BOOST_CHECK(m.m_files.empty());
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_get_manifest_defaults)
+BOOST_AUTO_TEST_CASE(MessageTest_type_get_updates_defaults)
 {
-    GetManifest m;
-    check_message_defaults(m, MType::GET_MANIFEST);
+    GetUpdates m;
+    check_message_defaults(m, MType::GET_UPDATES);
     BOOST_CHECK(m.m_revision == 0);
 }
 

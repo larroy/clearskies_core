@@ -84,6 +84,8 @@ public:
         return m_next_state;
     }
 
+// FIXME: message type in string
+
     void visit(const message::Unknown&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
@@ -128,7 +130,7 @@ public:
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::GetManifest&) override
+    void visit(const message::GetUpdates&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
