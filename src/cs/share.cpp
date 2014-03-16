@@ -239,6 +239,7 @@ void Share::initialize_tables()
     //
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
         share_id TEXT PRIMARY KEY,
+        revision INTEGER DEFAULT 0,
         peer_id TEXT NOT NULL,
         psk_rw TEXT NOT NULL,
         psk_ro TEXT NOT NULL,
@@ -352,6 +353,7 @@ void Share::init_or_read_share_identity()
 
     sqlite3pp::query q(m_db, R"#(SELECT
         share_id,
+        revision,
         peer_id,
         psk_rw,
         psk_ro,
@@ -365,12 +367,13 @@ void Share::init_or_read_share_identity()
         assert(! found); // path must be unique, it's pk
 
         m_share_id = row.get<string>(0);
-        m_peer_id = row.get<string>(1);
-        m_psk_rw = row.get<string>(2);
-        m_psk_ro = row.get<string>(3);
-        m_psk_untrusted = row.get<string>(4);
-        m_pkc_rw = row.get<string>(5);
-        m_pkc_ro = row.get<string>(6);
+        m_revision = row.get<u32>(1);
+        m_peer_id = row.get<string>(2);
+        m_psk_rw = row.get<string>(3);
+        m_psk_ro = row.get<string>(4);
+        m_psk_untrusted = row.get<string>(5);
+        m_pkc_rw = row.get<string>(6);
+        m_pkc_ro = row.get<string>(7);
 
         found = true;
     }
@@ -384,14 +387,15 @@ void Share::init_or_read_share_identity()
         m_psk_untrusted = utils::random_bytes(16);
         // FIXME PKC
         //
-        sqlite3pp::command q(m_db, "INSERT INTO share (share_id, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?)");
+        sqlite3pp::command q(m_db, "INSERT INTO share (share_id, revision, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?,?)");
         q.bind(1, m_share_id);
-        q.bind(2, m_peer_id);
-        q.bind(3, m_psk_rw);
-        q.bind(4, m_psk_ro);
-        q.bind(5, m_psk_untrusted);
-        q.bind(6, "");
+        q.bind(2, m_revision);
+        q.bind(3, m_peer_id);
+        q.bind(4, m_psk_rw);
+        q.bind(5, m_psk_ro);
+        q.bind(6, m_psk_untrusted);
         q.bind(7, "");
+        q.bind(8, "");
         q.execute();
     }
 }
