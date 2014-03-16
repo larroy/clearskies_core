@@ -26,6 +26,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cstdio>
+#include <boost/numeric/conversion/cast.hpp>
 
 
 #define THROW_ERR(ret) do { if ((ret) != SQLITE_OK) throw database_error(db_); } while(0);
@@ -295,12 +296,16 @@ namespace sqlite3pp
         return *this;
     }
 
-    statement& statement::bind(int idx, int value)
+    statement& statement::bind(int idx, int32_t value)
     {
-        THROW_ERR(sqlite3_bind_int(stmt_, idx, value));
-        return *this;
-
+        return bind(idx, static_cast<int64_t>(value));
     }
+
+    statement& statement::bind(int idx, uint32_t value)
+    {
+        return bind(idx, static_cast<uint64_t>(value));
+    }
+
 
     statement& statement::bind(int idx, double value)
     {
@@ -319,8 +324,6 @@ namespace sqlite3pp
         THROW_ERR(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)));
         return *this;
     }
-
-
 
     statement& statement::bind(int idx, const std::string& value, bool blob, bool fstatic)
     {
@@ -526,16 +529,20 @@ namespace sqlite3pp
         return sqlite3_column_int(stmt_, idx) != 0;
     }
 
-    int query::rows::get(int idx, int) const
-    {
-        assert(column_type(idx) == SQLITE_INTEGER);
-        return sqlite3_column_int(stmt_, idx);
-    }
-
     double query::rows::get(int idx, double) const
     {
         assert(column_type(idx) == SQLITE_FLOAT);
         return sqlite3_column_double(stmt_, idx);
+    }
+
+    int32_t query::rows::get(int idx, int32_t) const
+    {
+        return boost::numeric_cast<int32_t>(get(idx, int64_t()));
+    }
+
+    uint32_t query::rows::get(int idx, uint32_t) const
+    {
+        return boost::numeric_cast<uint32_t>(get(idx, uint64_t()));
     }
 
     int64_t query::rows::get(int idx, int64_t) const

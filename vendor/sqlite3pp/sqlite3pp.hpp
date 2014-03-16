@@ -120,7 +120,8 @@ namespace sqlite3pp
         // finish statements, @returns error code
         int efinish();
 
-        statement& bind(int idx, int value);
+        statement& bind(int idx, int32_t value);
+        statement& bind(int idx, uint32_t value);
         statement& bind(int idx, double value);
         statement& bind(int idx, int64_t value);
         statement& bind(int idx, uint64_t value);
@@ -280,8 +281,9 @@ namespace sqlite3pp
 
          private:
             bool get(int idx, bool) const;
-            int get(int idx, int) const;
             double get(int idx, double) const;
+            int32_t get(int idx, int32_t) const;
+            uint32_t get(int idx, uint32_t) const;
             int64_t get(int idx, int64_t) const;
             uint64_t get(int idx, uint64_t) const;
             char const* get(int idx, char const*) const;
