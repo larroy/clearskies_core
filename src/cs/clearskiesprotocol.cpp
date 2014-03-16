@@ -75,7 +75,7 @@ public:
 ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std::map<std::string, share::Share>& shares):
     ProtocolState()
     , r_server_info(server_info)
-    , r_shares(shares) // why using {} makes gcc compilation fail?
+    , r_shares(shares)
     , m_state{State::INITIAL}
 {
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
