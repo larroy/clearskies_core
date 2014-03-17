@@ -35,6 +35,8 @@
                     "-lsqlite3",
                     "-lboost_system",
                     "-lboost_filesystem",
+                    "-lgmpxx",
+                    "-lgmp",
                     #"-luv",
                 ],
             },

@@ -19,10 +19,13 @@
 #pragma once
 #include "int_types.h"
 #include <map>
+#include <memory>
 
 
 namespace cs
 {
+
+class VclockImpl;
 
 /**
  * A Vclock is descendant of another when changes are a consequence of another, thus the changes are
@@ -36,12 +39,17 @@ namespace cs
  */
 class Vclock
 {
+friend class VclockImpl;
 public:
-    Vclock():
-        m_clk()
-    {}
+    Vclock();
 
-    typedef u32 value_type;
+    /// the value has to be a number in base10
+    Vclock(const std::map<std::string, std::string>&);
+
+    ~Vclock();
+
+    Vclock(Vclock&&);
+    Vclock& operator=(Vclock&&);
 
     /// @returns true if this clock is a descendant from @param other
     bool is_descendant(const Vclock& other) const;
@@ -49,15 +57,18 @@ public:
     /**
      * access the version field at clock given by @param key, if key doesn't exists is assumed to
      * have value of 0
+     * @returns an arbitrary precission int in base10
      */
-    u32 operator[](const std::string& key) const;
+    std::string operator[](const std::string& key) const;
+
+    std::map<std::string, std::string> get_values() const;
 
 
     /// increment clock @param key by @param val
     void increment(const std::string& key, u32 val = 1);
 
 private:
-    std::map<std::string, u32> m_clk; 
+    std::unique_ptr<VclockImpl> m_p;
 };
 
 } // end ns

@@ -75,6 +75,6 @@ BOOST_AUTO_TEST_CASE(vlock_test_03)
     BOOST_CHECK(desc.is_descendant(paren));
 
     desc.increment("a", 3);
-    BOOST_CHECK(! desc.is_descendant(paren));
+    BOOST_CHECK(desc.is_descendant(paren));
 
 }
