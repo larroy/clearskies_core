@@ -63,6 +63,37 @@ u64 MFile::gone(const std::string& peer_id, u64 rev)
     return rev;
 }
 
+
+namespace
+{
+
+std::string create_vclock_query(const std::string& peer_id, const Vclock& vclock)
+{
+    string result;
+    return result;
+}
+
+
+}
+
+ManifestViewIterator::ManifestViewIterator():
+    m_query()
+    , m_query_it()
+    , m_file()
+    , m_file_set()
+{
+}
+
+ManifestViewIterator::ManifestViewIterator(const std::string& peer_id, const Vclock& vclock, Share& share):
+    m_query(make_unique<sqlite3pp::query>(share.m_db, create_vclock_query(peer_id, vclock).c_str()))
+    , m_query_it(m_query->begin())
+    , m_file()
+    , m_file_set()
+{
+}
+
+
+
 Share::Share_iterator::Share_iterator():
     m_query()
     , m_query_it()

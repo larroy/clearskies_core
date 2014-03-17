@@ -19,6 +19,7 @@
 #pragma once
 #include "int_types.h"
 #include "file.hpp"
+#include "vclock.hpp"
 #include "boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
 #include <boost/iterator/iterator_facade.hpp>
@@ -43,6 +44,8 @@ namespace cs
 {
 namespace share
 {
+
+class Share;
 
 struct ScanFile 
 {
@@ -94,6 +97,39 @@ struct MFile: ScanFile
     bool updated;
 };
 
+
+class ManifestViewIterator: public boost::iterator_facade<ManifestViewIterator, MFile, boost::single_pass_traversal_tag> 
+{
+friend class boost::iterator_core_access;
+public:
+    ManifestViewIterator();
+    ManifestViewIterator(const std::string& peer_id, const Vclock& vclock, Share& share);
+    ~ManifestViewIterator();
+
+private:
+    void increment();
+    bool equal(const ManifestViewIterator& other) const
+    {
+        return m_query_it == other.m_query_it;
+    }
+
+    MFile& dereference() const;
+    std::unique_ptr<sqlite3pp::query> m_query;
+    sqlite3pp::query::query_iterator m_query_it;
+    mutable MFile m_file;
+    mutable bool m_file_set;
+};
+
+/**
+ * A frozen view over the manifest for a peer
+ */
+class ManifestView
+{
+public:
+    
+
+};
+
 /**
  * Filesystem scan is done in two passes, first files are checked for size and time changes, then
  * if this indicates any change or the file is new they ar marked to be checksummed (to_checksum).
@@ -137,12 +173,12 @@ public:
      */
     class Share_iterator: public boost::iterator_facade<Share_iterator, MFile, boost::single_pass_traversal_tag>
     {
+    friend class boost::iterator_core_access;
     public:
         Share_iterator();
         explicit Share_iterator(Share&);
 
     private:
-        friend class boost::iterator_core_access;
         void increment();
         bool equal(const Share_iterator& other) const
         {
@@ -216,7 +252,10 @@ public:
     /// @returns file metadata given a path, null if there's no such file
     std::unique_ptr<MFile> get_file_info(const std::string& path);
 
+    /// add new discovered file
     void insert_mfile(const MFile&);
+
+    /// update existing file
     void update_mfile(const MFile&);
 
 
@@ -240,6 +279,12 @@ public:
     {
         return std::max(1u, static_cast<u32>(m_scan_duration_s));
     }
+
+
+    // Interface for updates
+    ManifestView get_updates(const std::string& peer_id, const Vclock& since);
+
+
 private:
     /// @returns true if there's more to do, this does one step in the scan part
     bool fs_scan_step();
