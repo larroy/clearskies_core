@@ -17,7 +17,7 @@
  */
 
 #pragma once
-#include "int_types.h"
+#include "config.hpp"
 #include "file.hpp"
 #include "vclock.hpp"
 #include "boost_fs_fwd.hpp"
@@ -47,7 +47,7 @@ namespace share
 
 class Share;
 
-struct ScanFile 
+struct ScanFile
 {
     ScanFile():
         path()
@@ -98,17 +98,17 @@ struct MFile: ScanFile
 };
 
 
-class ManifestViewIterator: public boost::iterator_facade<ManifestViewIterator, MFile, boost::single_pass_traversal_tag> 
+class FrozenManifestIterator: public boost::iterator_facade<FrozenManifestIterator, MFile, boost::single_pass_traversal_tag>
 {
 friend class boost::iterator_core_access;
 public:
-    ManifestViewIterator();
-    ManifestViewIterator(const std::string& peer_id, const Vclock& vclock, Share& share);
-    ~ManifestViewIterator();
+    FrozenManifestIterator();
+    FrozenManifestIterator(const std::string& peer_id, const Vclock& vclock, Share& share);
+    ~FrozenManifestIterator();
 
 private:
     void increment();
-    bool equal(const ManifestViewIterator& other) const
+    bool equal(const FrozenManifestIterator& other) const
     {
         return m_query_it == other.m_query_it;
     }
@@ -123,11 +123,17 @@ private:
 /**
  * A frozen view over the manifest for a peer
  */
-class ManifestView
+class FrozenManifest
 {
 public:
-    
+    FrozenManifest(const std::string& peer_id, Share&);
+    ~FrozenManifest();
 
+    FrozenManifestIterator begin();
+    FrozenManifestIterator end();
+    Share& r_share;
+    std::string m_peer_id;
+    std::string m_table;
 };
 
 /**
@@ -143,7 +149,7 @@ public:
  *  - An updated file from another client is downloaded into a temporary directory outside the share
  *  together with its vector clock.
  *  - Once the file is fully downloaded, it's checksum is calculated, if it matches the file is
- *  commited to the share (so a scan is not in place at the same time). 
+ *  commited to the share (so a scan is not in place at the same time).
  *  - On commit if the vclock of the new file is descendant of the file we already have, it's
  *  replaced, otherwise this file is marked as conflicted and respective copies are saved in the
  *  share.
@@ -162,7 +168,7 @@ class Share
 public:
 
     /**
-     * Iterate through all the files in the share database. 
+     * Iterate through all the files in the share database.
      * Changes to files through the iterator don't change the database or produce any side-effects. @sa Share::m_query
      * @code
      * for(const auto& file: share)
@@ -203,7 +209,7 @@ public:
     public:
         Checksummer(Share&);
         /**
-         * step should be called until it returns false, then all the files to_checksum are processed. 
+         * step should be called until it returns false, then all the files to_checksum are processed.
          * It checksums Share::m_cksum_batch_sz blocks or less. @returns false if there are no more
          * blocks or files to checksum, true otherwise.
          */
@@ -282,7 +288,7 @@ public:
 
 
     // Interface for updates
-    ManifestView get_updates(const std::string& peer_id, const Vclock& since);
+    FrozenManifest get_updates(const std::string& peer_id, const Vclock& since);
 
 
 private:

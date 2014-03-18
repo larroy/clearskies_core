@@ -18,7 +18,7 @@
 #include "share.hpp"
 #include "utils.hpp"
 #include <iostream>
-#include "int_types.h"
+#include "boost/format.hpp"
 using namespace std;
 
 namespace
@@ -64,19 +64,7 @@ u64 MFile::gone(const std::string& peer_id, u64 rev)
 }
 
 
-namespace
-{
-
-std::string create_vclock_query(const std::string& peer_id, const Vclock& vclock)
-{
-    string result;
-    return result;
-}
-
-
-}
-
-ManifestViewIterator::ManifestViewIterator():
+FrozenManifestIterator::FrozenManifestIterator():
     m_query()
     , m_query_it()
     , m_file()
@@ -84,15 +72,53 @@ ManifestViewIterator::ManifestViewIterator():
 {
 }
 
-ManifestViewIterator::ManifestViewIterator(const std::string& peer_id, const Vclock& vclock, Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db, create_vclock_query(peer_id, vclock).c_str()))
+FrozenManifestIterator::FrozenManifestIterator(const std::string& peer_id, const Vclock& vclock, Share& share):
+    m_query(make_unique<sqlite3pp::query>(share.m_db)
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
 {
+    const auto vclock_values = vclock.get_values();
+    // Freeze manifest
+    //
+    // Create query over it
+    string query("SELECT 
+    m_query.prepare("
+}
+
+FrozenManifestIterator::~FrozenManifestIterator()
+{
 }
 
 
+FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share):
+    r_share(share)
+    , m_peer_id(peer_id)
+    , m_table("frozen_files_" + peer_id)
+{
+    sqlite3pp::query q_cnt_tbl(r_share.m_db,R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
+    q_cnt_tbl.bind(1, m_table);
+    bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
+
+
+    sqlite3pp::command q(r_share.m_db, R"#(CREATE TEMPORARY TABLE ? AS
+        SELECT * FROM files
+        WHERE
+            scan_found = 0
+            AND deleted = 0
+            AND to_checksum = 0
+            AND sha256 != ''
+    )#");
+    q.bind(1, m_table);
+    q.execute();
+}
+
+FrozenManifest::~FrozenManifest()
+{
+    sqlite3pp::command q(r_share.m_db, R"#(DROP TABLE ?)#");
+    q.bind(1, m_table);
+    q.execute();
+}
 
 Share::Share_iterator::Share_iterator():
     m_query()
