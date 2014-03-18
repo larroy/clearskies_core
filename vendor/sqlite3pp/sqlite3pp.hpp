@@ -323,6 +323,8 @@ namespace sqlite3pp
 
         typedef query_iterator iterator;
 
+        rows fetchone();
+
         iterator begin();
         iterator end();
     };

@@ -465,8 +465,8 @@ namespace sqlite3pp
     int command::eexecute()
     {
         int rc = step();
-        if (rc == SQLITE_DONE) rc = SQLITE_OK;
-
+        if (rc == SQLITE_DONE)
+            rc = SQLITE_OK;
         return rc;
     }
 
@@ -495,11 +495,14 @@ namespace sqlite3pp
     }
 
 
-    query::rows::getstream::getstream(rows* rws, int idx) : rws_(rws), idx_(idx)
+    query::rows::getstream::getstream(rows* rws, int idx):
+        rws_(rws)
+        , idx_(idx)
     {
     }
 
-    query::rows::rows(sqlite3_stmt* stmt) : stmt_(stmt)
+    query::rows::rows(sqlite3_stmt* stmt):
+        stmt_(stmt)
     {
     }
 
@@ -586,7 +589,8 @@ namespace sqlite3pp
     }
 
 
-    query::query_iterator::query_iterator() : cmd_(0)
+    query::query_iterator::query_iterator():
+        cmd_(0)
     {
         rc_ = SQLITE_DONE;
     }
@@ -633,6 +637,13 @@ namespace sqlite3pp
         return sqlite3_column_decltype(stmt_, idx);
     }
 
+    query::rows query::fetchone()
+    {
+        int rc = step(); 
+        if (rc != SQLITE_ROW)
+            throw database_error(db_);
+        return query::rows(stmt_);
+    }
 
     query::iterator query::begin()
     {
@@ -645,7 +656,9 @@ namespace sqlite3pp
     }
 
 
-    transaction::transaction(database& db, bool fcommit, bool freserve) : db_(&db), fcommit_(fcommit)
+    transaction::transaction(database& db, bool fcommit, bool freserve):
+        db_(&db)
+        , fcommit_(fcommit)
     {
         db_->eexecute(freserve ? "BEGIN IMMEDIATE" : "BEGIN");
     }
