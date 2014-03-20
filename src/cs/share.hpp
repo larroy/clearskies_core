@@ -19,13 +19,14 @@
 #pragma once
 #include "config.hpp"
 #include "file.hpp"
-#include "vclock.hpp"
 #include "boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
+#include <map>
 #include <string>
 #include <thread>
+#include <gmpxx.h>
 namespace sha2
 {
 #include "sha2/sha2.h"
@@ -47,26 +48,16 @@ namespace share
 
 class Share;
 
-struct ScanFile
+
+struct MFile
 {
-    ScanFile():
+    MFile():
         path()
         , mtime()
         , size()
         , mode()
         , scan_found()
-    {}
-    std::string path;
-    std::string mtime;
-    u64 size;
-    u16 mode;
-    bool scan_found;
-};
-
-struct MFile: ScanFile
-{
-    MFile():
-        deleted()
+        , deleted()
         , to_checksum()
         , sha256()
         , last_changed_rev()
@@ -74,37 +65,37 @@ struct MFile: ScanFile
         , updated()
     {}
 
-    MFile& operator=(const ScanFile& x)
-    {
-        if (&x == this)
-            return *this;
-
-        std::tie(path, mtime, size, mode, scan_found) =
-            std::tie(x.path, x.mtime, x.size, x.mode, x.scan_found);
-        return *this;
-    }
-
     void from_row(const sqlite3pp::query::rows& row);
 
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
-    u64 gone(const std::string& peer_id, u64 rev);
+    void was_deleted(const std::string& peer_id, const std::string& rev);
 
+    std::string path;
+    std::string mtime;
+    u64 size;
+    u16 mode;
+    bool scan_found;
     bool deleted;
     bool to_checksum;
     std::string sha256;
-    u64 last_changed_rev;
+    std::string last_changed_rev;
     std::string last_changed_by;
     bool updated;
 };
 
+class FrozenManifest;
 
 class FrozenManifestIterator: public boost::iterator_facade<FrozenManifestIterator, MFile, boost::single_pass_traversal_tag>
 {
 friend class boost::iterator_core_access;
 public:
     FrozenManifestIterator();
-    FrozenManifestIterator(const std::string& peer_id, const Vclock& vclock, Share& share);
+    FrozenManifestIterator(FrozenManifest&);
+    FrozenManifestIterator(FrozenManifestIterator&&) = default;
+    FrozenManifestIterator& operator=(FrozenManifestIterator&&) = default;
+
     ~FrozenManifestIterator();
+    std::string create_query() const;
 
 private:
     void increment();
@@ -114,6 +105,8 @@ private:
     }
 
     MFile& dereference() const;
+
+    FrozenManifest& r_frozen_manifest;
     std::unique_ptr<sqlite3pp::query> m_query;
     sqlite3pp::query::query_iterator m_query_it;
     mutable MFile m_file;
@@ -126,14 +119,26 @@ private:
 class FrozenManifest
 {
 public:
+    /**
+     * @param[in] peer_id the _other_ peer id which is requesting this manifest
+     */
     FrozenManifest(const std::string& peer_id, Share&);
     ~FrozenManifest();
 
-    FrozenManifestIterator begin();
-    FrozenManifestIterator end();
-    Share& r_share;
+    FrozenManifestIterator begin()
+    {
+        return FrozenManifestIterator(*this);
+    }
+
+    FrozenManifestIterator end()
+    {
+        return FrozenManifestIterator();
+    }
+
     std::string m_peer_id;
+    Share& r_share;
     std::string m_table;
+    std::map<std::string, std::string> m_update_vector;
 };
 
 /**
@@ -288,7 +293,11 @@ public:
 
 
     // Interface for updates
-    FrozenManifest get_updates(const std::string& peer_id, const Vclock& since);
+
+    /**
+     * Get updates since the given changed_by, revision pairs
+     */
+    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since);
 
 
 private:
@@ -307,11 +316,11 @@ private:
 #endif
 
     /// actions to perform for each scanned file
-    void scan_found(const ScanFile& file);
+    void scan_found(MFile& file);
 
 public:
     std::string m_path;
-    u64 m_revision;
+    mpz_class m_revision;
 
     sqlite3pp::database m_db;
     /// path to the sqlite database of the share

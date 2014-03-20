@@ -49,7 +49,7 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     updated = row.get<bool>(10);
 }
 
-u64 MFile::gone(const std::string& peer_id, u64 rev)
+void MFile::was_deleted(const std::string& peer_id, const std::string& revision)
 {
     // file disappeared
     size = 0;
@@ -58,9 +58,9 @@ u64 MFile::gone(const std::string& peer_id, u64 rev)
     deleted = true;
     to_checksum = false;
     sha256.clear();
-    last_changed_rev = ++rev;
+    last_changed_rev = revision;
+    last_changed_by = peer_id;
     updated = true;
-    return rev;
 }
 
 
@@ -72,45 +72,90 @@ FrozenManifestIterator::FrozenManifestIterator():
 {
 }
 
-FrozenManifestIterator::FrozenManifestIterator(const std::string& peer_id, const Vclock& vclock, Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db)
+FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
+    r_frozen_manifest(frozen_manifest)
+    , m_query(make_unique<sqlite3pp::query>(share.m_db, create_query()))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
 {
-    const auto vclock_values = vclock.get_values();
-    // Freeze manifest
-    //
-    // Create query over it
-    string query("SELECT 
-    m_query.prepare("
 }
 
 FrozenManifestIterator::~FrozenManifestIterator()
 {
 }
 
+/**
+ * 
+ * SELECT * FROM files
+ * WHERE last_changed_by = 'A' AND last_changed_rev > 2
+ * OR last_changed_by = 'B' AND last_changed_rev > 1
+ * OR last_changed_by NOT IN ('A', 'B')
+ *
+ */
+std::string FrozenManifestIterator::create_query() const
+{
+    string result;
+    if (! m.m_update_vector.empty())
+    {
+        const auto& m = r_frozen_manifest; 
+        ostringstream where;
+        {
+            for (const auto& x: m.m_update_vector)
+            {
+                if (&x != &m.m_update_vector.front())
+                    where << "OR ";
+                where << "last_changed_by = '" << x.first << "' AND last_changed_rev > '" << x.second << "'\n";
+            }
+        }
+
+        where << "OR last_changed_by NOT IN (";
+        for (const auto& x: m.m_update_vector)
+        {
+            if (&x != &m.m_update_vector.front())
+                where << ", ";
+            where << "'" << x.first << "'";
+        }
+        where << ")\n";
+
+        result = boost::format(R"#(SELECT * FROM %1%
+            WHERE 
+                %2% 
+        )#") % m.m_table % where.str();
+    }
+    else
+        result = boost::format("SELECT * FROM %1%") % m.m_table;
+    return result;
+}
 
 FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share):
-    r_share(share)
-    , m_peer_id(peer_id)
+    m_peer_id(peer_id)
+    , r_share(share)
     , m_table("frozen_files_" + peer_id)
+    . m_update_vector()
 {
     sqlite3pp::query q_cnt_tbl(r_share.m_db,R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
     q_cnt_tbl.bind(1, m_table);
     bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
 
 
-    sqlite3pp::command q(r_share.m_db, R"#(CREATE TEMPORARY TABLE ? AS
-        SELECT * FROM files
-        WHERE
-            scan_found = 0
-            AND deleted = 0
-            AND to_checksum = 0
-            AND sha256 != ''
-    )#");
-    q.bind(1, m_table);
-    q.execute();
+    {
+        sqlite3pp::command q(r_share.m_db, R"#(CREATE TEMPORARY TABLE ? AS
+            SELECT * FROM files
+            WHERE
+                scan_found = 0
+                AND deleted = 0
+                AND to_checksum = 0
+                AND sha256 != ''
+        )#");
+        q.bind(1, m_table);
+        q.execute();
+    }
+    {
+        sqlite3pp::query q(r_share.m_db, R"#(SELECT last_changed_by, max(last_changed_rev) FROM t GROUP BY last_changed_by)#");
+        for (const auto& row: q)
+            m_update_vector[row.get<string>(0)] = row.get<string>(1);
+    }
 }
 
 FrozenManifest::~FrozenManifest()
@@ -119,6 +164,8 @@ FrozenManifest::~FrozenManifest()
     q.bind(1, m_table);
     q.execute();
 }
+
+
 
 Share::Share_iterator::Share_iterator():
     m_query()
@@ -198,11 +245,11 @@ void Share::Checksummer::do_block()
         if (! bfs::exists(r_share.fullpath(m_file.path)))
         {
             // check if file vanished one last time
-            r_share.m_revision = m_file.gone(r_share.m_peer_id, r_share.m_revision);
+            m_file.was_deleted(r_share.m_peer_id, r_share.m_revision.get_str());
+            ++r_share.m_revision;
         }
         else
         {
-            m_file.last_changed_rev = ++r_share.m_revision;
             m_file.sha256 = move(sha256);
             m_file.to_checksum = false;
             m_file.updated = true;
@@ -227,11 +274,13 @@ bool Share::Checksummer::next_file()
 
     m_file.from_row(*to_cksum_it);
     m_is = make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
+
     if (! *m_is) // note that we are not checking the pointer, but the stream
     {
         // file can't be opened, it has been deleted
-        r_share.m_revision = m_file.gone(r_share.m_peer_id, r_share.m_revision);
-        r_share.insert_mfile(m_file);
+        m_file.was_deleted(r_share.m_peer_id, r_share.m_revision.get_str());
+        ++r_share.m_revision;
+        r_share.update_mfile(m_file);
         m_is.reset();
     }
     m_is->exceptions(ios::badbit);
@@ -241,7 +290,7 @@ bool Share::Checksummer::next_file()
 
 Share::Share(const std::string& share_path, const std::string& dbpath):
       m_path(share_path)
-    , m_revision()
+    , m_revision(0)
     , m_db(dbpath.c_str())
     , m_db_path(dbpath)
     , m_insert_mfile_q(m_db)
@@ -320,7 +369,7 @@ void Share::initialize_tables()
         deleted INTEGER DEFAULT 0,
         to_checksum INTEGER DEFAULT 0,
         sha256 TEXT DEFAULT '',
-        last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
+        last_changed_rev TEXT DEFAULT '0', /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
         updated INTEGER DEFAULT 0
         )
@@ -424,7 +473,7 @@ void Share::init_or_read_share_identity()
         assert(! found); // path must be unique, it's pk
 
         m_share_id = row.get<string>(0);
-        m_revision = row.get<u32>(1);
+        m_revision = row.get<string>(1);
         m_peer_id = row.get<string>(2);
         m_psk_rw = row.get<string>(3);
         m_psk_ro = row.get<string>(4);
@@ -446,7 +495,7 @@ void Share::init_or_read_share_identity()
         //
         sqlite3pp::command q(m_db, "INSERT INTO share (share_id, revision, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?,?)");
         q.bind(1, m_share_id);
-        q.bind(2, m_revision);
+        q.bind(2, m_revision.get_str());
         q.bind(3, m_peer_id);
         q.bind(4, m_psk_rw);
         q.bind(5, m_psk_ro);
@@ -540,6 +589,9 @@ bool Share::scan_step()
     return m_scan_in_progress;
 }
 
+FrozenManifest Share::get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since)
+{
+}
 
 /**
  * scan m_scan_batch_sz files @returns true if finished, false if more to do
@@ -557,7 +609,7 @@ bool Share::fs_scan_step()
         const auto& dentry = *it;
         if (dentry.status().type() == bfs::regular_file)
         {
-            ScanFile f;
+            MFile f;
             // we get the path relative to the share
             bfs::path fpath = get_tail(dentry.path(), it.level() + 1);
             assert(fpath.is_relative());
@@ -601,7 +653,8 @@ void Share::on_scan_finished()
     {
         MFile file;
         file.from_row(row);
-        m_revision = file.gone(m_peer_id, m_revision);
+        file.was_deleted(m_peer_id, m_revision.get_str());
+        ++m_revision;
         update_mfile(file);
     }
 
@@ -611,34 +664,35 @@ void Share::on_scan_finished()
 }
 
 
-void Share::scan_found(const ScanFile& scan_file)
+void Share::scan_found(MFile& scan_file)
 {
     // TODO: add bytes to checksum for stats
     assert(scan_file.scan_found);
     unique_ptr<MFile> mfile = get_file_info(scan_file.path);
     ++m_scan_found_count;
-    if (mfile)
+    if (mfile) // found
     {
-        if (scan_file.mtime != mfile->mtime
-            || scan_file.size != mfile->size)
+        *mfile = scan_file;
+        bool changed = false;
+        if (scan_file.mtime != mfile->mtime || scan_file.size != mfile->size);
         {
-            *mfile = scan_file;
             mfile->to_checksum = true;
-            update_mfile(*mfile);
+            changed = true;
         }
-        else
+        if (changed || scan_file.mode != mfile->mode)
         {
-            *mfile = scan_file;
-            mfile->to_checksum = false;
-            update_mfile(*mfile);
+            mfile->last_changed_rev = m_revision.get_str();
+            ++m_revision;
+            mfile->last_changed_by = m_peer_id;
+            changed = true;
         }
+        if (changed)
+            update_mfile(*mfile);
     }
     else
     {
-        MFile mfile_;
-        mfile_ = scan_file;
-        mfile_.to_checksum = true;
-        insert_mfile(mfile_);
+        scan_file.to_checksum = true;
+        insert_mfile(scan_file);
     }
 }
 
