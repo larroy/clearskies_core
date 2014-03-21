@@ -44,7 +44,7 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     deleted = row.get<bool>(5);
     to_checksum = row.get<bool>(6);
     sha256 = row.get<string>(7);
-    last_changed_rev = row.get<u64>(8);
+    last_changed_rev = row.get<string>(8);
     last_changed_by = row.get<string>(9);
     updated = row.get<bool>(10);
 }
@@ -88,7 +88,7 @@ FrozenManifestIterator::~FrozenManifestIterator()
 }
 
 /**
- * 
+ *
  * SELECT * FROM files
  * WHERE last_changed_by = 'A' AND last_changed_rev > 2
  * OR last_changed_by = 'B' AND last_changed_rev > 1
@@ -120,8 +120,8 @@ std::string FrozenManifestIterator::create_query(const std::map<std::string, std
         where << ")\n";
 
         result = boost::str(boost::format(R"#(SELECT * FROM %1%
-            WHERE 
-                %2% 
+            WHERE
+                %2%
         )#") % table % where.str());
     }
     else
@@ -180,7 +180,21 @@ Share::Share_iterator::Share_iterator():
 {}
 
 Share::Share_iterator::Share_iterator(Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db, "SELECT * FROM files ORDER BY path"))
+    m_query(make_unique<sqlite3pp::query>(share.m_db, R"#(
+        SELECT
+            path
+            , mtime
+            , size
+            , mode
+            , scan_found
+            , deleted
+            , to_checksum
+            , sha256
+            , last_changed_rev
+            , last_changed_by
+            , updated
+        FROM files ORDER BY path
+    )#"))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
@@ -350,7 +364,7 @@ void Share::initialize_tables()
     //
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
         share_id TEXT PRIMARY KEY,
-        revision INTEGER DEFAULT 0,
+        revision TEXT DEFAULT '0',
         peer_id TEXT NOT NULL,
         psk_rw TEXT NOT NULL,
         psk_ro TEXT NOT NULL,
