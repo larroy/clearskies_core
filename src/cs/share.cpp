@@ -64,8 +64,9 @@ void MFile::was_deleted(const std::string& peer_id, const std::string& revision)
 }
 
 
-FrozenManifestIterator::FrozenManifestIterator():
-    m_query()
+FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest, bool):
+    r_frozen_manifest(frozen_manifest)
+    , m_query()
     , m_query_it()
     , m_file()
     , m_file_set()
@@ -74,7 +75,8 @@ FrozenManifestIterator::FrozenManifestIterator():
 
 FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
     r_frozen_manifest(frozen_manifest)
-    , m_query(make_unique<sqlite3pp::query>(share.m_db, create_query()))
+    , m_query_str(create_query(r_frozen_manifest.m_since, r_frozen_manifest.m_table))
+    , m_query(make_unique<sqlite3pp::query>(r_frozen_manifest.r_share.m_db, m_query_str.c_str()))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
@@ -93,53 +95,55 @@ FrozenManifestIterator::~FrozenManifestIterator()
  * OR last_changed_by NOT IN ('A', 'B')
  *
  */
-std::string FrozenManifestIterator::create_query() const
+std::string FrozenManifestIterator::create_query(const std::map<std::string, std::string>& since, const std::string& table)
 {
     string result;
-    if (! m.m_update_vector.empty())
+    if (! since.empty())
     {
-        const auto& m = r_frozen_manifest; 
         ostringstream where;
         {
-            for (const auto& x: m.m_update_vector)
+            for (const auto& x: since)
             {
-                if (&x != &m.m_update_vector.front())
+                if (&x != &*since.begin())
                     where << "OR ";
                 where << "last_changed_by = '" << x.first << "' AND last_changed_rev > '" << x.second << "'\n";
             }
         }
 
         where << "OR last_changed_by NOT IN (";
-        for (const auto& x: m.m_update_vector)
+        for (const auto& x: since)
         {
-            if (&x != &m.m_update_vector.front())
+            if (&x != &*since.begin())
                 where << ", ";
             where << "'" << x.first << "'";
         }
         where << ")\n";
 
-        result = boost::format(R"#(SELECT * FROM %1%
+        result = boost::str(boost::format(R"#(SELECT * FROM %1%
             WHERE 
                 %2% 
-        )#") % m.m_table % where.str();
+        )#") % table % where.str());
     }
     else
-        result = boost::format("SELECT * FROM %1%") % m.m_table;
+        result = boost::str(boost::format("SELECT * FROM %1%") % table);
     return result;
 }
 
-FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share):
+FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, std::string>& since):
     m_peer_id(peer_id)
     , r_share(share)
     , m_table("frozen_files_" + peer_id)
-    . m_update_vector()
+    , m_since(since)
 {
-    sqlite3pp::query q_cnt_tbl(r_share.m_db,R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
-    q_cnt_tbl.bind(1, m_table);
-    bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
-
-
     {
+        // The temporary table should not exist for this peer already
+        sqlite3pp::query q_cnt_tbl(r_share.m_db,R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
+        q_cnt_tbl.bind(1, m_table);
+        bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
+        assert(! exists);
+    }
+    {
+        // Freeze the manifest into a temporary table
         sqlite3pp::command q(r_share.m_db, R"#(CREATE TEMPORARY TABLE ? AS
             SELECT * FROM files
             WHERE
@@ -152,9 +156,10 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share):
         q.execute();
     }
     {
+        // Get the update vector, given the latest changes to files
         sqlite3pp::query q(r_share.m_db, R"#(SELECT last_changed_by, max(last_changed_rev) FROM t GROUP BY last_changed_by)#");
         for (const auto& row: q)
-            m_update_vector[row.get<string>(0)] = row.get<string>(1);
+            m_since[row.get<string>(0)] = row.get<string>(1);
     }
 }
 
@@ -587,10 +592,6 @@ bool Share::scan_step()
     if (! m_scan_in_progress)
         on_scan_finished();
     return m_scan_in_progress;
-}
-
-FrozenManifest Share::get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since)
-{
 }
 
 /**

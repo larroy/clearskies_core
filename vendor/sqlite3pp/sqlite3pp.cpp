@@ -618,7 +618,8 @@ namespace sqlite3pp
         return rows(cmd_->stmt_);
     }
 
-    query::query(database& db, char const* stmt) : statement(db, stmt)
+    query::query(database& db, char const* stmt):
+        statement(db, stmt)
     {
     }
 

@@ -155,7 +155,7 @@ namespace sqlite3pp
 
 
      protected:
-        explicit statement(database& db, char const* stmt = nullptr);
+        statement(database& db, char const* stmt = nullptr);
         ~statement();
 
 

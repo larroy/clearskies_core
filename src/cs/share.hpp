@@ -85,17 +85,23 @@ struct MFile
 
 class FrozenManifest;
 
+/**
+ * An iterator over a frozen manifest, @sa FrozenManifest
+ *
+ * Copies
+ */
 class FrozenManifestIterator: public boost::iterator_facade<FrozenManifestIterator, MFile, boost::single_pass_traversal_tag>
 {
 friend class boost::iterator_core_access;
 public:
-    FrozenManifestIterator();
     FrozenManifestIterator(FrozenManifest&);
+    FrozenManifestIterator(FrozenManifest&, bool is_end);
     FrozenManifestIterator(FrozenManifestIterator&&) = default;
     FrozenManifestIterator& operator=(FrozenManifestIterator&&) = default;
 
     ~FrozenManifestIterator();
-    std::string create_query() const;
+
+    static std::string create_query(const std::map<std::string, std::string>& since, const std::string& table);
 
 private:
     void increment();
@@ -107,6 +113,7 @@ private:
     MFile& dereference() const;
 
     FrozenManifest& r_frozen_manifest;
+    std::string m_query_str;
     std::unique_ptr<sqlite3pp::query> m_query;
     sqlite3pp::query::query_iterator m_query_it;
     mutable MFile m_file;
@@ -114,15 +121,20 @@ private:
 };
 
 /**
- * A frozen view over the manifest for a peer
+ * A frozen view over the manifest for a peer, this is a proxy object to create iterators
+ *
+ * It copies the manifest in a temporary table that remains stable during the process of
+ * transmitting the manifest
  */
 class FrozenManifest
 {
 public:
     /**
      * @param[in] peer_id the _other_ peer id which is requesting this manifest
+     * @param[in] share the share
      */
-    FrozenManifest(const std::string& peer_id, Share&);
+    FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, std::string>& since);
+
     ~FrozenManifest();
 
     FrozenManifestIterator begin()
@@ -132,13 +144,13 @@ public:
 
     FrozenManifestIterator end()
     {
-        return FrozenManifestIterator();
+        return FrozenManifestIterator(*this, false);
     }
 
     std::string m_peer_id;
     Share& r_share;
     std::string m_table;
-    std::map<std::string, std::string> m_update_vector;
+    std::map<std::string, std::string> m_since;
 };
 
 /**
@@ -297,7 +309,10 @@ public:
     /**
      * Get updates since the given changed_by, revision pairs
      */
-    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since);
+    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since)
+    {
+        return FrozenManifest(peer_id, *this, since);
+    }
 
 
 private:
