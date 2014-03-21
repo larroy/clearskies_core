@@ -1,4 +1,4 @@
-clearskies_core
+clearskies_core  ([bountysource fundraiser](https://www.bountysource.com/fundraisers/551-clearskies-open-source-file-synchronization))
 ===============
 
 [![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
