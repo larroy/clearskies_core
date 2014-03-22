@@ -88,7 +88,7 @@ class FrozenManifest;
 /**
  * An iterator over a frozen manifest, @sa FrozenManifest
  *
- * Copies
+ * Copies the manifest into a temporary table so the peer has a stable view over it.
  */
 class FrozenManifestIterator: public boost::iterator_facade<FrozenManifestIterator, MFile, boost::single_pass_traversal_tag>
 {
