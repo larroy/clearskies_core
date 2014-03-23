@@ -14,5 +14,5 @@ apt-get update -qq
 apt-get install libboost-filesystem1.55-dev libboost-test1.55-dev
 apt-get install libsqlite3-dev
 apt-get install -qq g++-4.8
-apt-get install -qq gmpxx
+#apt-get install -qq gmpxx
 apt-get install libgmp-dev
