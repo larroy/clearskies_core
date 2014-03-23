@@ -65,6 +65,13 @@ struct MFile
         , updated()
     {}
 
+    bool operator==(const MFile& o) const
+    {
+        return std::tie(path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, last_changed_by, updated) ==
+            std::tie(o.path, o.mtime, o.size, o.mode, o.scan_found, o.deleted, o.to_checksum, o.sha256, o.last_changed_rev, o.last_changed_by, o.updated);
+
+    }
+
     void from_row(const sqlite3pp::query::rows& row);
 
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
@@ -88,7 +95,7 @@ class FrozenManifest;
 /**
  * An iterator over a frozen manifest, @sa FrozenManifest
  *
- * Copies
+ * Copies the manifest into a temporary table so the peer has a stable view over it.
  */
 class FrozenManifestIterator: public boost::iterator_facade<FrozenManifestIterator, MFile, boost::single_pass_traversal_tag>
 {
@@ -98,10 +105,6 @@ public:
     FrozenManifestIterator(FrozenManifest&, bool is_end);
     FrozenManifestIterator(FrozenManifestIterator&&) = default;
     FrozenManifestIterator& operator=(FrozenManifestIterator&&) = default;
-
-    ~FrozenManifestIterator();
-
-    static std::string create_query(const std::map<std::string, std::string>& since, const std::string& table);
 
 private:
     void increment();
@@ -113,11 +116,12 @@ private:
     MFile& dereference() const;
 
     FrozenManifest& r_frozen_manifest;
-    std::string m_query_str;
+    const std::string m_query_str;
     std::unique_ptr<sqlite3pp::query> m_query;
     sqlite3pp::query::query_iterator m_query_it;
     mutable MFile m_file;
     mutable bool m_file_set;
+    bool m_is_end;
 };
 
 /**
@@ -144,7 +148,7 @@ public:
 
     FrozenManifestIterator end()
     {
-        return FrozenManifestIterator(*this, false);
+        return FrozenManifestIterator(*this, true);
     }
 
     std::string m_peer_id;
@@ -307,9 +311,12 @@ public:
     // Interface for updates
 
     /**
-     * Get updates since the given changed_by, revision pairs
+     * Get updates since the given changed_by, revision pairs.
+     *
+     * The pairs are (peer_id, revision), the latest revisions to which the peer got updates from
+     * every other peer
      */
-    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since)
+    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since = std::map<std::string, std::string>())
     {
         return FrozenManifest(peer_id, *this, since);
     }

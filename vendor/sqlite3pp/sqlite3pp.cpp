@@ -595,7 +595,16 @@ namespace sqlite3pp
         rc_ = SQLITE_DONE;
     }
 
-    query::query_iterator::query_iterator(query* cmd) : cmd_(cmd) {
+    query::query_iterator::query_iterator(query* cmd):
+        cmd_(cmd)
+    {
+        set_query(cmd);
+    }
+
+    void query::query_iterator::set_query(query* cmd)
+    {
+        assert(cmd);
+        cmd_ = cmd;
         rc_ = cmd_->step();
         if (rc_ != SQLITE_ROW && rc_ != SQLITE_DONE)
             throw database_error(cmd_->db_);
@@ -603,6 +612,7 @@ namespace sqlite3pp
 
     void query::query_iterator::increment()
     {
+        assert(cmd_);
         rc_ = cmd_->step();
         if (rc_ != SQLITE_ROW && rc_ != SQLITE_DONE)
             throw database_error(cmd_->db_);
@@ -615,6 +625,7 @@ namespace sqlite3pp
 
     query::rows query::query_iterator::dereference() const
     {
+        assert(cmd_);
         return rows(cmd_->stmt_);
     }
 

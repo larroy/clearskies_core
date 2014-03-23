@@ -107,13 +107,13 @@ BOOST_AUTO_TEST_CASE(share_insert_mfile)
     BOOST_CHECK_EQUAL(f_->sha256, f.sha256);
     BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
     cerr << "\nThe following error message is expected: statement::~statement: sqlite3_finalize returned with error..." << endl;
+    cerr << endl;
 }
 
 
 
 BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
 {
-    cerr << endl;
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
@@ -164,6 +164,29 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
 }
 
 
+BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
+{
+    Tmpdir tmp;
+    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
+    create_tree(tmp.tmpdir);
+
+    share.scan();
+    while(share.scan_step()) {};
+
+
+
+    {
+        vector<MFile> manifest;
+        for (const auto& file: share)
+            manifest.emplace_back(file);
+
+        vector<MFile> frozen_manifest;
+        FrozenManifest fm = share.get_updates("peer_01");
+        for (const auto& file: fm)
+            frozen_manifest.emplace_back(file);
+        BOOST_CHECK(manifest == frozen_manifest);
+    }
+}
 
 #if 0
 BOOST_AUTO_TEST_SUITE_END()
