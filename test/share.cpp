@@ -185,6 +185,29 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         for (const auto& file: fm)
             frozen_manifest.emplace_back(file);
         BOOST_CHECK(manifest == frozen_manifest);
+
+        // create another file, the frozen manifest should not change
+        bfs::path f = tmp.tmpdir / "newfile";
+        bfs::ofstream f_os(f);
+        f_os << "omg I'm new" << endl;
+        f_os.close();
+
+
+        share.scan();
+        while(share.scan_step()) {};
+
+        vector<MFile> manifest_2;
+        for (const auto& file: share)
+            manifest_2.emplace_back(file);
+        BOOST_CHECK(manifest != manifest_2);
+
+        vector<MFile> frozen_manifest_2;
+        for (const auto& file: fm)
+            frozen_manifest_2.emplace_back(file);
+
+        BOOST_CHECK(manifest != frozen_manifest);
+        BOOST_CHECK(manifest != frozen_manifest_2);
+        BOOST_CHECK(frozen_manifest == frozen_manifest_2);
     }
 }
 
