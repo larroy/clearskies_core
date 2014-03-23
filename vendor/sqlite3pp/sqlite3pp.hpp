@@ -301,6 +301,7 @@ namespace sqlite3pp
          public:
             query_iterator();
             explicit query_iterator(query* cmd);
+            void set_query(query* cmd);
 
          private:
             friend class boost::iterator_core_access;

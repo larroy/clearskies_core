@@ -99,10 +99,6 @@ public:
     FrozenManifestIterator(FrozenManifestIterator&&) = default;
     FrozenManifestIterator& operator=(FrozenManifestIterator&&) = default;
 
-    ~FrozenManifestIterator();
-
-    static std::string create_query(const std::map<std::string, std::string>& since, const std::string& table);
-
 private:
     void increment();
     bool equal(const FrozenManifestIterator& other) const
@@ -113,11 +109,12 @@ private:
     MFile& dereference() const;
 
     FrozenManifest& r_frozen_manifest;
-    std::string m_query_str;
+    const std::string m_query_str;
     std::unique_ptr<sqlite3pp::query> m_query;
     sqlite3pp::query::query_iterator m_query_it;
     mutable MFile m_file;
     mutable bool m_file_set;
+    bool m_is_end;
 };
 
 /**
@@ -307,7 +304,10 @@ public:
     // Interface for updates
 
     /**
-     * Get updates since the given changed_by, revision pairs
+     * Get updates since the given changed_by, revision pairs.
+     *
+     * The pairs are (peer_id, revision), the latest revisions to which the peer got updates from
+     * every other peer
      */
     FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since)
     {

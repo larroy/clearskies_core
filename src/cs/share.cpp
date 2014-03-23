@@ -64,69 +64,60 @@ void MFile::was_deleted(const std::string& peer_id, const std::string& revision)
 }
 
 
-FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest, bool):
+FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest, bool is_end):
     r_frozen_manifest(frozen_manifest)
     , m_query()
     , m_query_it()
     , m_file()
     , m_file_set()
+    , m_is_end(is_end)
 {
+    assert(is_end);
 }
 
 FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
     r_frozen_manifest(frozen_manifest)
-    , m_query_str(create_query(r_frozen_manifest.m_since, r_frozen_manifest.m_table))
+    , m_query_str(R"#(
+        SELECT
+            path
+            , mtime
+            , size
+            , mode
+            , scan_found
+            , deleted
+            , to_checksum
+            , sha256
+            , last_changed_rev
+            , last_changed_by
+            , updated
+        FROM ? ORDER BY path
+    )#")
     , m_query(make_unique<sqlite3pp::query>(r_frozen_manifest.r_share.m_db, m_query_str.c_str()))
-    , m_query_it(m_query->begin())
+    , m_query_it()
     , m_file()
     , m_file_set()
+    , m_is_end()
 {
+    m_query->bind(1, r_frozen_manifest.m_table);
+    m_query_it.set_query(m_query.get());
 }
 
-FrozenManifestIterator::~FrozenManifestIterator()
+
+void FrozenManifestIterator::increment()
 {
+    ++m_query_it;
+    m_file_set = false;
 }
 
-/**
- *
- * SELECT * FROM files
- * WHERE last_changed_by = 'A' AND last_changed_rev > 2
- * OR last_changed_by = 'B' AND last_changed_rev > 1
- * OR last_changed_by NOT IN ('A', 'B')
- *
- */
-std::string FrozenManifestIterator::create_query(const std::map<std::string, std::string>& since, const std::string& table)
+MFile& FrozenManifestIterator::dereference() const
 {
-    string result;
-    if (! since.empty())
+    assert(! m_is_end);
+    if (! m_file_set)
     {
-        ostringstream where;
-        {
-            for (const auto& x: since)
-            {
-                if (&x != &*since.begin())
-                    where << "OR ";
-                where << "last_changed_by = '" << x.first << "' AND last_changed_rev > '" << x.second << "'\n";
-            }
-        }
-
-        where << "OR last_changed_by NOT IN (";
-        for (const auto& x: since)
-        {
-            if (&x != &*since.begin())
-                where << ", ";
-            where << "'" << x.first << "'";
-        }
-        where << ")\n";
-
-        result = boost::str(boost::format(R"#(SELECT * FROM %1%
-            WHERE
-                %2%
-        )#") % table % where.str());
+        m_file.from_row(*m_query_it);
+        m_file_set = true;
     }
-    else
-        result = boost::str(boost::format("SELECT * FROM %1%") % table);
-    return result;
+    return m_file;
 }
 
 FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, std::string>& since):
@@ -143,24 +134,58 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
         assert(! exists);
     }
     {
+        /*
+         *
+         * SELECT * FROM files
+         * WHERE last_changed_by = 'A' AND last_changed_rev > 2
+         * OR last_changed_by = 'B' AND last_changed_rev > 1
+         * OR last_changed_by NOT IN ('A', 'B')
+         *
+         */
+        ostringstream where;
+        if (! since.empty())
+        {
+            where << "AND (";
+            {
+                for (const auto& x: since)
+                {
+                    if (&x != &*since.begin())
+                        where << "OR ";
+                    where << "last_changed_by = '" << x.first << "' AND last_changed_rev > '" << x.second << "'\n";
+                }
+            }
+
+            where << "OR last_changed_by NOT IN (";
+            for (const auto& x: since)
+            {
+                if (&x != &*since.begin())
+                    where << ", ";
+                where << "'" << x.first << "'";
+            }
+            where << ")\n";
+        }
         // Freeze the manifest into a temporary table
-        sqlite3pp::command q(r_share.m_db, R"#(CREATE TEMPORARY TABLE ? AS
+        const string query = boost::str(boost::format(R"#(CREATE TEMPORARY TABLE ? AS
             SELECT * FROM files
             WHERE
                 scan_found = 0
                 AND deleted = 0
                 AND to_checksum = 0
                 AND sha256 != ''
-        )#");
+                %1%
+        )#") % where.str());
+        sqlite3pp::command q(r_share.m_db, query.c_str());
         q.bind(1, m_table);
         q.execute();
     }
+#if 0
     {
         // Get the update vector, given the latest changes to files
         sqlite3pp::query q(r_share.m_db, R"#(SELECT last_changed_by, max(last_changed_rev) FROM t GROUP BY last_changed_by)#");
         for (const auto& row: q)
             m_since[row.get<string>(0)] = row.get<string>(1);
     }
+#endif
 }
 
 FrozenManifest::~FrozenManifest()
