@@ -77,7 +77,7 @@ FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest, 
 
 FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
     r_frozen_manifest(frozen_manifest)
-    , m_query_str(R"#(
+    , m_query_str(boost::str(boost::format(R"#(
         SELECT
             path
             , mtime
@@ -90,16 +90,14 @@ FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
             , last_changed_rev
             , last_changed_by
             , updated
-        FROM ? ORDER BY path
-    )#")
+        FROM %1% ORDER BY path
+    )#") % r_frozen_manifest.m_table))
     , m_query(make_unique<sqlite3pp::query>(r_frozen_manifest.r_share.m_db, m_query_str.c_str()))
-    , m_query_it()
+    , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
     , m_is_end()
 {
-    m_query->bind(1, r_frozen_manifest.m_table);
-    m_query_it.set_query(m_query.get());
 }
 
 
@@ -128,9 +126,9 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
 {
     {
         // The temporary table should not exist for this peer already
-        sqlite3pp::query q_cnt_tbl(r_share.m_db,R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
+        sqlite3pp::query q_cnt_tbl(r_share.m_db, R"#(SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?)#");
         q_cnt_tbl.bind(1, m_table);
-        bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
+        const bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
         assert(! exists);
     }
     {
@@ -165,18 +163,16 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
             where << ")\n";
         }
         // Freeze the manifest into a temporary table
-        const string query = boost::str(boost::format(R"#(CREATE TEMPORARY TABLE ? AS
+        const string query = boost::str(boost::format(R"#(CREATE TEMPORARY TABLE %1% AS
             SELECT * FROM files
             WHERE
                 scan_found = 0
                 AND deleted = 0
                 AND to_checksum = 0
                 AND sha256 != ''
-                %1%
-        )#") % where.str());
-        sqlite3pp::command q(r_share.m_db, query.c_str());
-        q.bind(1, m_table);
-        q.execute();
+                %2%
+        )#") % m_table % where.str());
+        sqlite3pp::command(r_share.m_db, query.c_str()).execute();
     }
 #if 0
     {
@@ -190,11 +186,9 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
 
 FrozenManifest::~FrozenManifest()
 {
-    sqlite3pp::command q(r_share.m_db, R"#(DROP TABLE ?)#");
-    q.bind(1, m_table);
-    q.execute();
+    const string q = boost::str(boost::format("DROP TABLE %1%") % m_table);
+    sqlite3pp::command(r_share.m_db, q.c_str()).execute();
 }
-
 
 
 Share::Share_iterator::Share_iterator():

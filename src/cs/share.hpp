@@ -148,7 +148,7 @@ public:
 
     FrozenManifestIterator end()
     {
-        return FrozenManifestIterator(*this, false);
+        return FrozenManifestIterator(*this, true);
     }
 
     std::string m_peer_id;
