@@ -51,12 +51,24 @@ BOOST_FIXTURE_TEST_SUITE(suite, F)
 
 BOOST_AUTO_TEST_CASE(Share_test_01)
 {
+    /*
+     * Check basic invariants about the share itself.
+     *
+     */
     Tmpdir tmp;
     string share_id;
+    string peer_id;
+    string psk_rw;
+    string psk_ro;
+    string psk_untrusted;
     {
         Share share(tmp.tmpdir.string(), tmp.dbpath.string());
         create_tree(tmp.tmpdir);
         share_id = share.m_share_id;
+        peer_id = share.m_peer_id;
+        psk_rw = share.m_psk_rw;
+        psk_ro = share.m_psk_ro;
+        psk_untrusted = share.m_psk_untrusted;
         BOOST_CHECK(! share.m_share_id.empty());
         BOOST_CHECK(! share.m_peer_id.empty());
         BOOST_CHECK(! share.m_psk_rw.empty());
@@ -64,8 +76,14 @@ BOOST_AUTO_TEST_CASE(Share_test_01)
         BOOST_CHECK(! share.m_psk_untrusted.empty());
     }
     {
+        // Check that the state of the share is the same when creating the class again. It should
+        // read the settings stored on the share's database
         Share share(tmp.tmpdir.string(), tmp.dbpath.string());
         BOOST_CHECK_EQUAL(share_id, share.m_share_id);
+        BOOST_CHECK_EQUAL(peer_id, share.m_peer_id);
+        BOOST_CHECK_EQUAL(psk_rw, share.m_psk_rw);
+        BOOST_CHECK_EQUAL(psk_ro, share.m_psk_ro);
+        BOOST_CHECK_EQUAL(psk_untrusted, share.m_psk_untrusted);
     }
 }
 
@@ -112,8 +130,12 @@ BOOST_AUTO_TEST_CASE(share_insert_mfile)
 
 
 
-BOOST_AUTO_TEST_CASE(share_checksum_0)
+BOOST_AUTO_TEST_CASE(share_state_0)
 {
+    /*
+     * Check that the state of the share is what is expected after adding some files, deleting one,
+     * and doing a re-scan
+     */
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
