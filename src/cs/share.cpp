@@ -409,7 +409,7 @@ void Share::initialize_tables()
         sha256 TEXT DEFAULT '',
         last_changed_rev TEXT DEFAULT '0', /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
-        updated INTEGER DEFAULT 0 /* files that were updated, we will send those */
+        updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
         )
     )#").execute();
 
