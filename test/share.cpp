@@ -213,6 +213,9 @@ BOOST_AUTO_TEST_CASE(share_state_0)
 
 BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
 {
+    // We can't use std algorithms because the iterators are currently not copyable due to the
+    // references @sa Share_iterator @sa FrozenManifestIterator
+    // Maybe it would be better to use ptrs so they are copyable.
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
