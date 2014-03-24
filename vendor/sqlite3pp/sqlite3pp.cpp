@@ -72,10 +72,13 @@ namespace sqlite3pp
 
     } // namespace
 
+    // unused by ClearSkies and deprecated in OSX 10.7 and iOS 5
+#if 0
     int enable_shared_cache(bool fenable)
     {
         return sqlite3_enable_shared_cache(fenable);
     }
+#endif
 
     database::database(char const* dbname):
         db_(nullptr)

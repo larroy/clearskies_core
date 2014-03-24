@@ -55,7 +55,7 @@ Daemon::~Daemon()
 void Daemon::daemonize()
 {
 // Sqlite dbs shouldn't be carried open across a fork
-#ifdef __unix
+#if defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
     int fd = -1;
 
     if (fork() != 0) exit(0); /* parent exits */
