@@ -268,6 +268,17 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         // it should have the changes in manifest 2
         BOOST_CHECK(manifest_2 == frozen_manifest_p02);
     }
+    // it should be able to freeze for the same peer, since we don't have it frozen anymore (out of
+    // scope)
+    vector<MFile> manifest;
+    for (const auto& file: share)
+        manifest.emplace_back(file);
+    FrozenManifest fm = share.get_updates("peer_01");
+    vector<MFile> frozen_manifest;
+    for (const auto& file: fm)
+        frozen_manifest.emplace_back(file);
+
+    BOOST_CHECK(manifest == frozen_manifest);
 }
 
 #if 0
