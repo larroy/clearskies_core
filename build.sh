@@ -5,7 +5,7 @@ set -e
 # TODO: Remove this once the bug in GYP is fixed!
 # https://groups.google.com/forum/#!topic/gyp-developer/m7LUzJwL9Zc
 if [[ `uname` == "Darwin" ]]; then
-    export CC="`which clang++` -std=c++11 -stdlib=libc++"
+    export CC="`which clang`"
     export CXX="`which clang++` -std=c++11 -stdlib=libc++"
 fi
 

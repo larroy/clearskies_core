@@ -26,6 +26,7 @@ If you want to support development of this project, you can **donate BTC** to th
 * libboost-filesystem (v3)
 * libsqlite3-dev
 * ninja  (ninja-build on debian)
+* gmp configured with --enable-cxx
 
 # Included dependencies:
 
