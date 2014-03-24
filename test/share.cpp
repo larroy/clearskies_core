@@ -256,7 +256,17 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         BOOST_CHECK(manifest == frozen_manifest_2);
         BOOST_CHECK(frozen_manifest == frozen_manifest_2);
 
+        // it should throw if we try to freeze again for the same peer
+        BOOST_CHECK_THROW(share.get_updates("peer_01"), std::runtime_error);
 
+        // it should be able to freeze for another peer
+        FrozenManifest fm_02 = share.get_updates("peer_02");
+        vector<MFile> frozen_manifest_p02;
+        for (const auto& file: fm_02)
+            frozen_manifest_p02.emplace_back(file);
+
+        // it should have the changes in manifest 2
+        BOOST_CHECK(manifest_2 == frozen_manifest_p02);
     }
 }
 
