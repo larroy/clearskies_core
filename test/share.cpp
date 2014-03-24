@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(share_insert_mfile)
 
 
 
-BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
+BOOST_AUTO_TEST_CASE(share_checksum_0)
 {
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
@@ -139,13 +139,18 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
             BOOST_CHECK(! file.sha256.empty());
         }
         BOOST_CHECK_EQUAL(nfiles, 3);
+
+        // REMOVE ONE FILE
         bfs::remove(bfs::path(tmp.tmpdir) / files.at(0).path);
     }
 
 
+    // Re-scan
     share.scan();
     while(share.scan_step()) {};
 
+
+    // Check manifest state after file removal
     {
         vector<MFile> files;
         size_t nfiles = 0;
@@ -155,11 +160,31 @@ BOOST_AUTO_TEST_CASE(share_checksum_thread_1)
             files.push_back(file);
         }
         BOOST_CHECK_EQUAL(nfiles, 3);
-        auto fpath = tmp.tmpdir / files.at(0).path;
-        //cout << fpath.string() << endl;
-        BOOST_CHECK(! bfs::exists(fpath));
-        BOOST_CHECK(files.at(0).deleted);
-        BOOST_CHECK(! files.at(0).to_checksum);
+        for (size_t i = 0; i < 3; ++i)
+        {
+            const auto fpath = tmp.tmpdir / files.at(i).path;
+            //cout << fpath.string() << endl;
+            BOOST_CHECK(! files.at(i).to_checksum);
+            if (i == 0)
+            {
+                BOOST_CHECK(! bfs::exists(fpath));
+                BOOST_CHECK(! files.at(i).mtime.empty());
+                BOOST_CHECK(files.at(i).deleted);
+                BOOST_CHECK(files.at(i).size == 0u);
+                BOOST_CHECK(files.at(i).mode == 0u);
+                BOOST_CHECK(files.at(i).sha256.empty());
+            }
+            else
+            {
+                BOOST_CHECK(bfs::exists(fpath));
+                BOOST_CHECK(! files.at(i).mtime.empty());
+                BOOST_CHECK(! files.at(i).deleted);
+                BOOST_CHECK(! files.at(i).sha256.empty());
+            }
+
+            BOOST_CHECK(! files.at(i).last_changed_rev.empty());
+            BOOST_CHECK(! files.at(i).last_changed_by.empty());
+        }
     }
 }
 
@@ -205,9 +230,11 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         for (const auto& file: fm)
             frozen_manifest_2.emplace_back(file);
 
-        BOOST_CHECK(manifest != frozen_manifest);
-        BOOST_CHECK(manifest != frozen_manifest_2);
+        BOOST_CHECK(manifest == frozen_manifest);
+        BOOST_CHECK(manifest == frozen_manifest_2);
         BOOST_CHECK(frozen_manifest == frozen_manifest_2);
+
+
     }
 }
 

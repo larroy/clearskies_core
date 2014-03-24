@@ -409,7 +409,7 @@ void Share::initialize_tables()
         sha256 TEXT DEFAULT '',
         last_changed_rev TEXT DEFAULT '0', /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
-        updated INTEGER DEFAULT 0
+        updated INTEGER DEFAULT 0 /* files that were updated, we will send those */
         )
     )#").execute();
 
@@ -652,6 +652,8 @@ bool Share::fs_scan_step()
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
             f.scan_found = true;
+            f.deleted = false;
+            f.to_checksum = false;
             scan_found(f);
 
 #if 0
@@ -706,26 +708,42 @@ void Share::scan_found(MFile& scan_file)
     ++m_scan_found_count;
     if (mfile) // found
     {
-        *mfile = scan_file;
         bool changed = false;
-        if (scan_file.mtime != mfile->mtime || scan_file.size != mfile->size);
+        if (scan_file.mtime != mfile->mtime
+            || scan_file.size != mfile->size
+            || mfile->deleted)
         {
             mfile->to_checksum = true;
             changed = true;
         }
-        if (changed || scan_file.mode != mfile->mode)
+        if (scan_file.mode != mfile->mode)
+            changed = true;
+
+        if (changed)
         {
+            *mfile = scan_file;
+            // This is a local change to the file attributes or content
+            // last_changed_rev and last_changed_by by this peer now
             mfile->last_changed_rev = m_revision.get_str();
             ++m_revision;
             mfile->last_changed_by = m_peer_id;
-            changed = true;
+            if (! mfile->to_checksum)
+                // after checksum updated is set to true, but we are not checksumming, just
+                // attributes were changed.
+                mfile->updated = true;
+
         }
-        if (changed)
-            update_mfile(*mfile);
+        else
+            mfile->scan_found = true;
+        update_mfile(*mfile);
     }
     else
     {
-        scan_file.to_checksum = true;
+        // Newly discovered file
+        scan_file.last_changed_rev = m_revision.get_str();
+        ++m_revision;
+        scan_file.last_changed_by = m_peer_id;
+        scan_file.to_checksum = true; // after checksum updated is set to true
         insert_mfile(scan_file);
     }
 }
