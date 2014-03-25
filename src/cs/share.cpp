@@ -130,6 +130,7 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
         q_cnt_tbl.bind(1, m_table);
         const bool exists = q_cnt_tbl.fetchone().get<u64>(0) != 0;
         assert(! exists);
+        (void)exists;
     }
     {
         /*

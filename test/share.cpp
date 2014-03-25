@@ -20,6 +20,7 @@
 #include <boost/test/unit_test.hpp>
 #include "cs/boost_fs_fwd.hpp"
 #include <utility>
+#include <iostream>
 
 using namespace std;
 using namespace cs::share;

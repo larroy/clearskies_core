@@ -20,6 +20,7 @@
 #include "protocolstate.hpp"
 #include "utils.hpp"
 #include <functional>
+#include <iostream>
 
 #ifdef CS_PLATFORM_UNIX
 #include <unistd.h>
@@ -80,7 +81,7 @@ void Daemon::start()
     m_tcp_listen_conn.bind6("::", m_port);
     m_tcp_listen_conn.listen(std::bind(&Daemon::on_tcp_connect, this, placeholders::_1));
     m_running = true;
-    m_loop.run();    
+    m_loop.run();
 }
 
 
@@ -112,8 +113,9 @@ void Daemon::on_tcp_connect(uvpp::error error)
     bool ip4;
     const bool getpeername_ok = tcp_conn.m_tcp_conn.getpeername(ip4, peer_ip, port);
     assert(getpeername_ok);
+    (void)getpeername_ok;
     ostringstream os;
-    os << "tcp://" << peer_ip << ":" << port; 
+    os << "tcp://" << peer_ip << ":" << port;
     string peer_ = os.str();
     //string peer_ = fs("tcp://" << peer_ip << ":" << port); // will go out of scope
 
@@ -144,7 +146,7 @@ void Daemon::on_tcp_connect(uvpp::error error)
 
     // function to be called when the the protocol needs to write
     auto do_write = [&](const char* buff, size_t sz) {
-        tcp_conn.m_tcp_conn.write(buff, sz, write_cb); 
+        tcp_conn.m_tcp_conn.write(buff, sz, write_cb);
     };
 
     auto read_cb = [&](const char* buff, ssize_t len) {
@@ -154,7 +156,7 @@ void Daemon::on_tcp_connect(uvpp::error error)
             tcp_conn.m_tcp_conn.close(close_cb);
         }
         else
-            pstate.input(buff, static_cast<size_t>(len)); 
+            pstate.input(buff, static_cast<size_t>(len));
     };
 
     // set function to call when the protocol has data to write
