@@ -29,7 +29,7 @@
     #else
         #error This flavor of Apple OS is not supported yet
     #endif
-#elif
+#else
     #error This platform is not supported yet
 #endif
 

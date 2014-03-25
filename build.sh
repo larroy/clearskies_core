@@ -11,4 +11,4 @@ fi
 
 tools/gyp/gyp -f ninja test/test.gyp --depth . --generator-output build -D uv_library=static_library -I common.gypi
 ninja -C build/out/Debug/
-#ninja -C build/out/Release/
+ninja -C build/out/Release/
