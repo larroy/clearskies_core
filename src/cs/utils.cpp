@@ -32,8 +32,10 @@ namespace
 struct tm* xgmtime_r(const time_t *timep, struct tm *result)
 {
     // FIXME ifdef windows here with gmtime_s (needs to be reentrant)
-#if defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#ifdef CS_PLATFORM_UNIX
     return gmtime_r(timep, result);
+#else
+    #error This platform is not supported yet
 #endif
 }
 

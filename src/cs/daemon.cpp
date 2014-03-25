@@ -18,11 +18,12 @@
 
 #include "daemon.hpp"
 #include "protocolstate.hpp"
-#if __linux__ or __unix
-#include <unistd.h>
-#endif
 #include "utils.hpp"
 #include <functional>
+
+#ifdef CS_PLATFORM_UNIX
+#include <unistd.h>
+#endif
 
 using namespace std;
 
@@ -55,7 +56,7 @@ Daemon::~Daemon()
 void Daemon::daemonize()
 {
 // Sqlite dbs shouldn't be carried open across a fork
-#if defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#ifdef CS_PLATFORM_UNIX
     int fd = -1;
 
     if (fork() != 0) exit(0); /* parent exits */

@@ -18,6 +18,21 @@
 
 #pragma once
 
+#ifdef __linux
+    #define CS_PLATFORM_UNIX
+    #define CS_PLATFORM_LINUX
+#elif defined __APPLE__
+    #include "TargetConditionals.h"
+    #define CS_PLATFORM_UNIX
+    #if TARGET_OS_MAC
+        #define CS_PLATFORM_OSX
+    #else
+        #error This flavor of Apple OS is not supported yet
+    #endif
+#elif
+    #error This platform is not supported yet
+#endif
+
 // gcc -E -dM - < /dev/null
 //
 #ifdef __GNUC__
