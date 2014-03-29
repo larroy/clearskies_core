@@ -290,6 +290,10 @@ BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
+
+    // FIXME
+    //bfs::copy(bfs::path("a/aa/f"), bfs::path("a/aa/f2"));
+
     share.scan();
     while(share.scan_step()) {};
 
