@@ -136,7 +136,7 @@ public:
      * @param[in] peer_id the _other_ peer id which is requesting this manifest
      * @param[in] share the share
      */
-    FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, std::string>& since);
+    FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, u64>& since);
 
     ~FrozenManifest();
 
@@ -153,7 +153,7 @@ public:
     std::string m_peer_id;
     Share& r_share;
     std::string m_table;
-    std::map<std::string, std::string> m_since;
+    std::map<std::string, u64> m_since;
 };
 
 /**
@@ -315,7 +315,7 @@ public:
      * The pairs are (peer_id, revision), the latest revisions to which the peer got updates from
      * every other peer
      */
-    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, std::string>& since = std::map<std::string, std::string>())
+    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
     {
         return FrozenManifest(peer_id, *this, since);
     }

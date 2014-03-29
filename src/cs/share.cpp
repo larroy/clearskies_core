@@ -118,7 +118,7 @@ MFile& FrozenManifestIterator::dereference() const
     return m_file;
 }
 
-FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, std::string>& since):
+FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, u64>& since):
     m_peer_id(peer_id)
     , r_share(share)
     , m_table("frozen_files_" + peer_id)
@@ -150,7 +150,7 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
                 {
                     if (&x != &*since.begin())
                         where << "OR ";
-                    where << "last_changed_by = '" << x.first << "' AND last_changed_rev > '" << x.second << "'\n";
+                    where << "last_changed_by = '" << x.first << "' AND last_changed_rev > " << x.second << "\n";
                 }
             }
 
