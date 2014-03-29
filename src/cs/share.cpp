@@ -334,6 +334,7 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_db_path(dbpath)
     , m_insert_mfile_q(m_db)
     , m_update_mfile_q(m_db)
+    , m_get_mfiles_by_content_q(m_db)
     , m_scan_in_progress()
     , m_scan_batch_sz(256)
     , m_scan_it()
@@ -489,6 +490,8 @@ void Share::initialize_statements()
     WHERE scan_found = 0 ORDER BY path)#");
     m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
     m_select_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
+
+    m_get_mfiles_by_content_q.prepare("SELECT * FROM files WHERE checksum = ?");
 }
 
 
@@ -750,6 +753,28 @@ void Share::scan_found(MFile& scan_file)
     }
 }
 
+
+std::vector<MFile_updated> Share::get_mfiles_by_content(const std::string& checksum) 
+{
+    std::vector<MFile_updated> result;
+    m_get_mfiles_by_content_q.reset();
+    m_get_mfiles_by_content_q.bind(1, checksum);
+    for (const auto& row: m_get_mfiles_by_content_q)
+    {
+        MFile_updated fu;
+        fu.mfile.from_row(row);
+        fu.up_to_date = ! was_updated(fu.mfile);
+        result.emplace_back(move(fu));
+    }
+    return result;
+}
+
+bool Share::was_updated(const MFile& file)
+{
+    bfs::path abspath = fullpath(file.path);
+    const string mtime = utils::isotime(bfs::last_write_time(abspath));
+    return file.mtime != mtime;
+}
 
 bfs::path get_tail(const bfs::path& path, size_t tail)
 {

@@ -220,7 +220,6 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
-
     share.scan();
     while(share.scan_step()) {};
 
@@ -283,6 +282,22 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         frozen_manifest.emplace_back(file);
 
     BOOST_CHECK(manifest == frozen_manifest);
+}
+
+
+BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
+{
+    Tmpdir tmp;
+    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
+    create_tree(tmp.tmpdir);
+    share.scan();
+    while(share.scan_step()) {};
+
+    auto f = share.get_file_info("a/aa/f");
+    BOOST_CHECK(f);
+    auto mfiles = share.get_mfiles_by_content(f->checksum);
+    BOOST_CHECK_EQUAL(mfiles.size(), 1u);
+    BOOST_CHECK(mfiles[0].up_to_date);
 }
 
 #if 0

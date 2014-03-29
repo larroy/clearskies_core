@@ -89,6 +89,17 @@ struct MFile
     bool updated;
 };
 
+struct MFile_updated
+{
+    MFile_updated():
+        mfile()
+        , up_to_date()
+    {}
+
+    MFile mfile;
+    bool up_to_date;
+};
+
 class FrozenManifest;
 
 /**
@@ -291,6 +302,27 @@ public:
     /// @returns true if there's more to do, false otherwise, meaning scan and cksum finished
     bool scan_step();
 
+private:
+    /// @returns true if there's more to do, this does one step in the scan part
+    bool fs_scan_step();
+
+    // called once after scanning and checksumming finishes
+    void on_scan_finished();
+
+public:
+#if 0
+    size_t scan_total() const { assert(0); }
+    size_t scan_done() const { assert(0); }
+    bool checksum_in_progress() const { assert(0); }
+    size_t checksum_total() const { assert(0); }
+    size_t checksum_done() const { assert(0); }
+#endif
+
+    /// actions to perform for each scanned file
+    void scan_found(MFile& file);
+
+
+
     /// @returns true if a scan is in progress
     bool scan_in_progress() const { return m_scan_in_progress; }
 
@@ -320,24 +352,13 @@ public:
         return FrozenManifest(peer_id, *this, since);
     }
 
+    /**
+     * Returns metadata from files that have the same checksum
+     */
+    std::vector<MFile_updated> get_mfiles_by_content(const std::string& checksum); 
 
-private:
-    /// @returns true if there's more to do, this does one step in the scan part
-    bool fs_scan_step();
-
-    // called once after scanning and checksumming finishes
-    void on_scan_finished();
-
-#if 0
-    size_t scan_total() const { assert(0); }
-    size_t scan_done() const { assert(0); }
-    bool checksum_in_progress() const { assert(0); }
-    size_t checksum_total() const { assert(0); }
-    size_t checksum_done() const { assert(0); }
-#endif
-
-    /// actions to perform for each scanned file
-    void scan_found(MFile& file);
+    /// @returns true if @arg f has been updated by comparing modification time 
+    bool was_updated(const MFile& f);
 
 public:
     std::string m_path;
@@ -348,6 +369,7 @@ public:
     std::string m_db_path;
     sqlite3pp::command m_insert_mfile_q;
     sqlite3pp::command m_update_mfile_q;
+    sqlite3pp::query m_get_mfiles_by_content_q;
 
 
     /********* SCAN ************/
