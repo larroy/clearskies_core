@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(share_insert_mfile)
     BOOST_CHECK_EQUAL(f_->mtime, f.mtime);
     BOOST_CHECK_EQUAL(f_->size, f.size);
     BOOST_CHECK_EQUAL(f_->mode, f.mode);
-    BOOST_CHECK_EQUAL(f_->sha256, f.sha256);
+    BOOST_CHECK_EQUAL(f_->checksum, f.checksum);
     BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
     cerr << "\nThe following error message is expected: statement::~statement: sqlite3_finalize returned with error..." << endl;
     cerr << endl;
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(share_state_0)
     create_tree(tmp.tmpdir);
 
     for (const auto& file: share)
-        BOOST_CHECK(file.sha256.empty());
+        BOOST_CHECK(file.checksum.empty());
 
     share.scan();
     while(share.scan_step()) {};
@@ -154,12 +154,12 @@ BOOST_AUTO_TEST_CASE(share_state_0)
         {
             //cout << file.path << endl;
             ++nfiles;
-            //cout << file.sha256 << endl;
+            //cout << file.checksum << endl;
             //cout << file.mtime << endl;
             files.emplace_back(file);
             BOOST_CHECK(! file.to_checksum);
             BOOST_CHECK(file.updated);
-            BOOST_CHECK(! file.sha256.empty());
+            BOOST_CHECK(! file.checksum.empty());
         }
         BOOST_CHECK_EQUAL(nfiles, 3);
 
@@ -195,14 +195,14 @@ BOOST_AUTO_TEST_CASE(share_state_0)
                 BOOST_CHECK(files.at(i).deleted);
                 BOOST_CHECK(files.at(i).size == 0u);
                 BOOST_CHECK(files.at(i).mode == 0u);
-                BOOST_CHECK(files.at(i).sha256.empty());
+                BOOST_CHECK(files.at(i).checksum.empty());
             }
             else
             {
                 BOOST_CHECK(bfs::exists(fpath));
                 BOOST_CHECK(! files.at(i).mtime.empty());
                 BOOST_CHECK(! files.at(i).deleted);
-                BOOST_CHECK(! files.at(i).sha256.empty());
+                BOOST_CHECK(! files.at(i).checksum.empty());
             }
 
             //BOOST_CHECK(files.at(i).last_changed_rev);

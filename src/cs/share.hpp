@@ -58,7 +58,7 @@ struct MFile
         , scan_found()
         , deleted()
         , to_checksum()
-        , sha256()
+        , checksum()
         , last_changed_rev()
         , last_changed_by()
         , updated()
@@ -66,8 +66,8 @@ struct MFile
 
     bool operator==(const MFile& o) const
     {
-        return std::tie(path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, last_changed_by, updated) ==
-            std::tie(o.path, o.mtime, o.size, o.mode, o.scan_found, o.deleted, o.to_checksum, o.sha256, o.last_changed_rev, o.last_changed_by, o.updated);
+        return std::tie(path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, updated) ==
+            std::tie(o.path, o.mtime, o.size, o.mode, o.scan_found, o.deleted, o.to_checksum, o.checksum, o.last_changed_rev, o.last_changed_by, o.updated);
 
     }
 
@@ -83,7 +83,7 @@ struct MFile
     bool scan_found;
     bool deleted;
     bool to_checksum;
-    std::string sha256;
+    std::string checksum;
     u64 last_changed_rev;
     std::string last_changed_by;
     bool updated;

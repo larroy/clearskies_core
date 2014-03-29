@@ -43,7 +43,7 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     scan_found = row.get<bool>(4);
     deleted = row.get<bool>(5);
     to_checksum = row.get<bool>(6);
-    sha256 = row.get<string>(7);
+    checksum = row.get<string>(7);
     last_changed_rev = row.get<u64>(8);
     last_changed_by = row.get<string>(9);
     updated = row.get<bool>(10);
@@ -57,7 +57,7 @@ void MFile::was_deleted(const std::string& peer_id, u64 revision)
     scan_found = true;
     deleted = true;
     to_checksum = false;
-    sha256.clear();
+    checksum.clear();
     last_changed_rev = revision;
     last_changed_by = peer_id;
     updated = true;
@@ -86,7 +86,7 @@ FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
             , scan_found
             , deleted
             , to_checksum
-            , sha256
+            , checksum
             , last_changed_rev
             , last_changed_by
             , updated
@@ -170,7 +170,7 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
                 scan_found = 0
                 AND deleted = 0
                 AND to_checksum = 0
-                AND sha256 != ''
+                AND checksum != ''
                 %2%
         )#") % m_table % where.str());
         sqlite3pp::command(r_share.m_db, query.c_str()).execute();
@@ -209,7 +209,7 @@ Share::Share_iterator::Share_iterator(Share& share):
             , scan_found
             , deleted
             , to_checksum
-            , sha256
+            , checksum
             , last_changed_rev
             , last_changed_by
             , updated
@@ -278,9 +278,9 @@ void Share::Checksummer::do_block()
     if (! *m_is)
     {
         // EOF
-        string sha256(SHA256_DIGEST_STRING_LENGTH, 0);
-        sha2::SHA256_End(&m_c256, &sha256[0]);
-        sha256.resize(sha256.size() - 1);
+        string checksum(SHA256_DIGEST_STRING_LENGTH, 0);
+        sha2::SHA256_End(&m_c256, &checksum[0]);
+        checksum.resize(checksum.size() - 1);
         if (! bfs::exists(r_share.fullpath(m_file.path)))
         {
             // check if file vanished one last time
@@ -289,7 +289,7 @@ void Share::Checksummer::do_block()
         }
         else
         {
-            m_file.sha256 = move(sha256);
+            m_file.checksum = move(checksum);
             m_file.to_checksum = false;
             m_file.updated = true;
         }
@@ -407,7 +407,7 @@ void Share::initialize_tables()
         scan_found INTEGER DEFAULT 0, /* used to find deleted files, the scanner sets this to 1 when found on fs */
         deleted INTEGER DEFAULT 0,
         to_checksum INTEGER DEFAULT 0,
-        sha256 TEXT DEFAULT '',
+        checksum TEXT DEFAULT '',
         last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
         updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
@@ -434,7 +434,7 @@ void Share::initialize_tables()
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
-        sha256 TEXT,
+        checksum TEXT,
         deleted INTEGER DEFAULT 0
         )
     )#").execute();
@@ -456,7 +456,7 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, sha256, last_changed_rev, last_changed_by, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
     m_update_mfile_q.prepare(R"#(UPDATE files SET
         mtime = ?,
         size = ?,
@@ -464,7 +464,7 @@ void Share::initialize_statements()
         scan_found = ?,
         deleted = ?,
         to_checksum = ?,
-        sha256 = ?,
+        checksum = ?,
         last_changed_rev = ?,
         last_changed_by = ?,
         updated = ?
@@ -479,7 +479,7 @@ void Share::initialize_statements()
         scan_found,
         deleted,
         to_checksum,
-        sha256,
+        checksum,
         last_changed_rev,
         last_changed_by,
         updated
@@ -575,7 +575,7 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(5, f.scan_found);
     m_insert_mfile_q.bind(6, f.deleted);
     m_insert_mfile_q.bind(7, f.to_checksum);
-    m_insert_mfile_q.bind(8, f.sha256);
+    m_insert_mfile_q.bind(8, f.checksum);
     m_insert_mfile_q.bind(9, f.last_changed_rev);
     m_insert_mfile_q.bind(10, f.last_changed_by);
     m_insert_mfile_q.bind(11, f.updated);
@@ -592,7 +592,7 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(4, f.scan_found);
     m_update_mfile_q.bind(5, f.deleted);
     m_update_mfile_q.bind(6, f.to_checksum);
-    m_update_mfile_q.bind(7, f.sha256);
+    m_update_mfile_q.bind(7, f.checksum);
     m_update_mfile_q.bind(8, f.last_changed_rev);
     m_update_mfile_q.bind(9, f.last_changed_by);
     m_update_mfile_q.bind(10, f.updated);
