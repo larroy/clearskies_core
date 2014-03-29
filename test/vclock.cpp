@@ -86,24 +86,24 @@ BOOST_AUTO_TEST_CASE(vlock_values)
 
     x.increment("A");
     x.increment("B");
-    x.increment("C", 2);
+    x.increment("C", 2u);
 
     auto values = x.get_values();
-    BOOST_CHECK_EQUAL(values.size(), 3);
+    BOOST_CHECK_EQUAL(values.size(), 3u);
 
-    BOOST_CHECK_EQUAL(values["A"], "1");
-    BOOST_CHECK_EQUAL(values["A"], "1");
-    BOOST_CHECK_EQUAL(values["C"], "2");
+    BOOST_CHECK_EQUAL(values["A"], 1u);
+    BOOST_CHECK_EQUAL(values["A"], 1u);
+    BOOST_CHECK_EQUAL(values["C"], 2u);
 }
 
 BOOST_AUTO_TEST_CASE(vlock_construction)
 {
-    map<string, string> vs;
-    vs["A"] = "5";
-    vs["B"] = "3";
+    map<string, u64> vs;
+    vs["A"] = 5;
+    vs["B"] = 3;
 
     Vclock x(vs);
-    BOOST_CHECK_EQUAL(x["A"], "5");
-    BOOST_CHECK_EQUAL(x["B"], "3");
+    BOOST_CHECK_EQUAL(x["A"], 5);
+    BOOST_CHECK_EQUAL(x["B"], 3);
     BOOST_CHECK(x.get_values() == vs);
 }

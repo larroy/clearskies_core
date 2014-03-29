@@ -39,17 +39,14 @@ class VclockImpl;
  */
 class Vclock
 {
-friend class VclockImpl;
 public:
-    Vclock();
+    Vclock():
+        m_clk()
+    {}
 
-    /// the value has to be a number in base10
-    Vclock(const std::map<std::string, std::string>&);
-
-    ~Vclock();
-
-    Vclock(Vclock&&);
-    Vclock& operator=(Vclock&&);
+    Vclock(const std::map<std::string, u64>& clk):
+        m_clk(clk)
+    {}
 
     /// @returns true if this clock is a descendant from @param other
     bool is_descendant(const Vclock& other) const;
@@ -59,16 +56,19 @@ public:
      * have value of 0
      * @returns an arbitrary precission int in base10
      */
-    std::string operator[](const std::string& key) const;
+    u64 operator[](const std::string& key) const;
 
-    std::map<std::string, std::string> get_values() const;
+    std::map<std::string, u64> get_values() const
+    {
+        return m_clk;
+    }
 
 
     /// increment clock @param key by @param val
-    void increment(const std::string& key, u32 val = 1);
+    void increment(const std::string& key, u64 val = 1);
 
 private:
-    std::unique_ptr<VclockImpl> m_p;
+    std::map<std::string, u64> m_clk;
 };
 
 } // end ns

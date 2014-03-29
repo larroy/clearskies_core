@@ -44,12 +44,12 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     deleted = row.get<bool>(5);
     to_checksum = row.get<bool>(6);
     sha256 = row.get<string>(7);
-    last_changed_rev = row.get<string>(8);
+    last_changed_rev = row.get<u64>(8);
     last_changed_by = row.get<string>(9);
     updated = row.get<bool>(10);
 }
 
-void MFile::was_deleted(const std::string& peer_id, const std::string& revision)
+void MFile::was_deleted(const std::string& peer_id, u64 revision)
 {
     // file disappeared
     size = 0;
@@ -284,7 +284,7 @@ void Share::Checksummer::do_block()
         if (! bfs::exists(r_share.fullpath(m_file.path)))
         {
             // check if file vanished one last time
-            m_file.was_deleted(r_share.m_peer_id, r_share.m_revision.get_str());
+            m_file.was_deleted(r_share.m_peer_id, r_share.m_revision);
             ++r_share.m_revision;
         }
         else
@@ -317,7 +317,7 @@ bool Share::Checksummer::next_file()
     if (! *m_is) // note that we are not checking the pointer, but the stream
     {
         // file can't be opened, it has been deleted
-        m_file.was_deleted(r_share.m_peer_id, r_share.m_revision.get_str());
+        m_file.was_deleted(r_share.m_peer_id, r_share.m_revision);
         ++r_share.m_revision;
         r_share.update_mfile(m_file);
         m_is.reset();
@@ -384,7 +384,7 @@ void Share::initialize_tables()
     //
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS share (
         share_id TEXT PRIMARY KEY,
-        revision TEXT DEFAULT '0',
+        revision INTEGER DEFAULT 0,
         peer_id TEXT NOT NULL,
         psk_rw TEXT NOT NULL,
         psk_ro TEXT NOT NULL,
@@ -408,7 +408,7 @@ void Share::initialize_tables()
         deleted INTEGER DEFAULT 0,
         to_checksum INTEGER DEFAULT 0,
         sha256 TEXT DEFAULT '',
-        last_changed_rev TEXT DEFAULT '0', /* revision in which this file was changed */
+        last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
         updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
         )
@@ -512,7 +512,7 @@ void Share::init_or_read_share_identity()
         assert(! found); // path must be unique, it's pk
 
         m_share_id = row.get<string>(0);
-        m_revision = row.get<string>(1);
+        m_revision = row.get<u64>(1);
         m_peer_id = row.get<string>(2);
         m_psk_rw = row.get<string>(3);
         m_psk_ro = row.get<string>(4);
@@ -534,7 +534,7 @@ void Share::init_or_read_share_identity()
         //
         sqlite3pp::command q(m_db, "INSERT INTO share (share_id, revision, peer_id, psk_rw, psk_ro, psk_untrusted, pkc_rw, pkc_ro) VALUES (?,?,?,?,?,?,?,?)");
         q.bind(1, m_share_id);
-        q.bind(2, m_revision.get_str());
+        q.bind(2, m_revision);
         q.bind(3, m_peer_id);
         q.bind(4, m_psk_rw);
         q.bind(5, m_psk_ro);
@@ -690,7 +690,7 @@ void Share::on_scan_finished()
     {
         MFile file;
         file.from_row(row);
-        file.was_deleted(m_peer_id, m_revision.get_str());
+        file.was_deleted(m_peer_id, m_revision);
         ++m_revision;
         update_mfile(file);
     }
@@ -725,7 +725,7 @@ void Share::scan_found(MFile& scan_file)
             *mfile = scan_file;
             // This is a local change to the file attributes or content
             // last_changed_rev and last_changed_by by this peer now
-            mfile->last_changed_rev = m_revision.get_str();
+            mfile->last_changed_rev = m_revision;
             ++m_revision;
             mfile->last_changed_by = m_peer_id;
             if (! mfile->to_checksum)
@@ -741,7 +741,7 @@ void Share::scan_found(MFile& scan_file)
     else
     {
         // Newly discovered file
-        scan_file.last_changed_rev = m_revision.get_str();
+        scan_file.last_changed_rev = m_revision;
         ++m_revision;
         scan_file.last_changed_by = m_peer_id;
         scan_file.to_checksum = true; // after checksum updated is set to true

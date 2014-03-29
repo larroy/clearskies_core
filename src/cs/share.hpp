@@ -26,7 +26,6 @@
 #include <map>
 #include <string>
 #include <thread>
-#include <gmpxx.h>
 namespace sha2
 {
 #include "sha2/sha2.h"
@@ -75,7 +74,7 @@ struct MFile
     void from_row(const sqlite3pp::query::rows& row);
 
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
-    void was_deleted(const std::string& peer_id, const std::string& rev);
+    void was_deleted(const std::string& peer_id, u64 share_revision);
 
     std::string path;
     std::string mtime;
@@ -85,7 +84,7 @@ struct MFile
     bool deleted;
     bool to_checksum;
     std::string sha256;
-    std::string last_changed_rev;
+    u64 last_changed_rev;
     std::string last_changed_by;
     bool updated;
 };
@@ -342,7 +341,7 @@ private:
 
 public:
     std::string m_path;
-    mpz_class m_revision;
+    u64 m_revision;
 
     sqlite3pp::database m_db;
     /// path to the sqlite database of the share
