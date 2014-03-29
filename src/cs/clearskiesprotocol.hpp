@@ -177,7 +177,11 @@ public:
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
+    void send_file(const bfs::path& path);
+
     // overrides from ProtocolState
+    void handle_empty_output_buff() override;
+
     void handle_message(std::unique_ptr<message::Message>) override;
     void handle_payload(const char* data, size_t len) override;
     void handle_payload_end() override;
@@ -189,6 +193,9 @@ public:
     State m_state;
 
     state_trans_table_t m_state_trans_table;
+    /// the file being transmitted to the peer when set
+    static const size_t s_txfile_block_sz = 65536;
+    std::unique_ptr<bfs::ifstream> m_txfile_is;
 };
 
 

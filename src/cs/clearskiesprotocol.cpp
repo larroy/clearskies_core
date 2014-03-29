@@ -116,6 +116,34 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std:
 #undef SET_HANDLER
 }
 
+void ClearSkiesProtocol::send_file(const bfs::path& path)
+{
+    // FIXME
+    // make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
+}
+
+/**
+ * If we are writing a file, put next chunk in the output buffer
+ */
+void ClearSkiesProtocol::handle_empty_output_buff()
+{
+    if (m_txfile_is)
+    {
+        std::string rbuff(s_txfile_block_sz, 0);
+        m_txfile_is->read(&rbuff[0], rbuff.size());
+        rbuff.resize(m_txfile_is->gcount());
+        if (! *m_txfile_is)
+        {
+            // EOF
+            send_payload_chunk(move(rbuff));
+            if (! rbuff.empty())
+                send_payload_chunk(string());
+            m_txfile_is.reset();
+        }
+    }
+}
+
+
 void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
 {
     unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];

@@ -161,6 +161,8 @@ public:
     ProtocolState():
           m_input_buff()
         , m_output_buff()
+        , m_last_has_payload()
+        , m_payload_ended(true)
         , m_read_payload(false)
         , m_pl_found()
         , m_msg_coder()
@@ -189,13 +191,22 @@ public:
     void input(const char* data, size_t len);
 
     void send_message(const message::Message&);
+    void send_payload_chunk(std::string&& chunk);
 
     void set_write_fun(do_write_t do_write)
     {
         m_do_write = do_write;
     }
+
+
     /// to be called by the event library on write when the last write finished
     void on_write_finished();
+
+    /**
+     * will write the next output buffer by calling the write function.
+     * @post m_write_in_progress will be true
+     */
+    void write_next_buff();
 
     /// called by on_write_finished to signal that we are out of data (ex. send more manifest
     /// messages)
@@ -218,6 +229,9 @@ private:
     /// queue of buffers to write, we write from front to back, new appended to back, when wrote,
     /// removed from front.
     std::deque<std::string> m_output_buff;
+
+    bool m_last_has_payload;
+    bool m_payload_ended;
 
     /// true if we are reading a payload section, false if we are reading or expecting a message
     bool m_read_payload;

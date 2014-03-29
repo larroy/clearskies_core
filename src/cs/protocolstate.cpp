@@ -249,17 +249,23 @@ void ProtocolState::input(const char* data, size_t len)
 
 void ProtocolState::send_message(const message::Message& m)
 {
+    assert(m_payload_ended);
+    m_last_has_payload = m.payload();
     const bool do_write = m_output_buff.empty() == true;
     m_output_buff.emplace_back(m_msg_coder.encode_msg(m));
     if (do_write)
-    {
-        assert(! m_write_in_progress);
-        const string& buf = m_output_buff.front();
-        m_do_write(buf.c_str(), buf.size());
-        m_write_in_progress = true;
-    }
+        write_next_buff();
 }
 
+void ProtocolState::send_payload_chunk(std::string&& chunk)
+{
+    assert(m_last_has_payload);
+    const bool do_write = m_output_buff.empty() == true;
+    m_payload_ended = chunk.empty();
+    m_output_buff.emplace_back(move(chunk));
+    if (do_write)
+        write_next_buff();
+}
 
 void ProtocolState::on_write_finished()
 {
@@ -267,13 +273,18 @@ void ProtocolState::on_write_finished()
     assert(! m_output_buff.empty());
     m_output_buff.pop_front();
     if (! m_output_buff.empty())
-    {
-        const string& buf = m_output_buff.front();
-        m_do_write(buf.c_str(), buf.size());
-        m_write_in_progress = true;
-    }
+        write_next_buff();
     else
         handle_empty_output_buff();
+}
+
+void ProtocolState::write_next_buff()
+{
+    assert(! m_write_in_progress);
+    assert(! m_output_buff.empty());
+    const string& buf = m_output_buff.front();
+    m_do_write(buf.c_str(), buf.size());
+    m_write_in_progress = true;
 }
 
 } // end ns
