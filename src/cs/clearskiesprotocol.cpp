@@ -118,8 +118,7 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std:
 
 void ClearSkiesProtocol::send_file(const bfs::path& path)
 {
-    // FIXME
-    // make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
+    m_txfile_is = make_unique<bfs::ifstream>(path, ios_base::in | ios_base::binary);
 }
 
 /**
@@ -129,17 +128,21 @@ void ClearSkiesProtocol::handle_empty_output_buff()
 {
     if (m_txfile_is)
     {
+        // a file transfer is in progress, send the next chunk
         std::string rbuff(s_txfile_block_sz, 0);
         m_txfile_is->read(&rbuff[0], rbuff.size());
         rbuff.resize(m_txfile_is->gcount());
         if (! *m_txfile_is)
         {
-            // EOF
+            // EOF, send the buffer
             send_payload_chunk(move(rbuff));
             if (! rbuff.empty())
+                // make sure to send the last empty one, given cs payload protocol
                 send_payload_chunk(string());
             m_txfile_is.reset();
         }
+        else
+            send_payload_chunk(move(rbuff));
     }
 }
 
