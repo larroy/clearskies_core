@@ -413,6 +413,7 @@ void Share::initialize_tables()
         updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
         )
     )#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_checksum ON files(checksum))#").execute();
 
     sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS files_vclock (
         path TEXT NOT NULL,
@@ -421,7 +422,7 @@ void Share::initialize_tables()
         FOREIGN KEY(path) REFERENCES files(path)
         )
     )#").execute();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").execute();
+    sqlite3pp::command(m_db, R"#(CREATE UNIQUE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").execute();
 
 
     //
