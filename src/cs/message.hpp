@@ -400,8 +400,15 @@ class Current: public MessageImpl<Current, MType::CURRENT>
 class Get: public MessageImpl<Get, MType::GET>
 {
 public:
-    std::string m_path;
-    std::vector<long long> m_range;
+    Get(const std::string& checksum):
+        m_checksum(checksum)
+    {}
+
+    Get():
+        m_checksum()
+    {}
+
+    std::string m_checksum;
 };
 
 class FileData: public MessageImpl<FileData, MType::FILE_DATA>

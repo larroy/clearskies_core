@@ -187,8 +187,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)
 {
     Get m;
     check_message_defaults(m, MType::GET);
-    BOOST_CHECK(m.m_path.empty());
-    BOOST_CHECK(m.m_range.empty());
+    BOOST_CHECK(m.m_checksum.empty());
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
