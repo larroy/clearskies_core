@@ -132,17 +132,16 @@ void ClearSkiesProtocol::handle_empty_output_buff()
         std::string rbuff(s_txfile_block_sz, 0);
         m_txfile_is->read(&rbuff[0], rbuff.size());
         rbuff.resize(m_txfile_is->gcount());
+        // send the buffer
+        send_payload_chunk(move(rbuff));
         if (! *m_txfile_is)
         {
-            // EOF, send the buffer
-            send_payload_chunk(move(rbuff));
+            // EOF
             if (! rbuff.empty())
-                // make sure to send the last empty one, given cs payload protocol
+                // make sure to send the terminating 0 size chunk, per cs payload protocol
                 send_payload_chunk(string());
             m_txfile_is.reset();
         }
-        else
-            send_payload_chunk(move(rbuff));
     }
 }
 
