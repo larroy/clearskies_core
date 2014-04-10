@@ -192,10 +192,14 @@ public:
     const std::map<std::string, share::Share>& r_shares;
     State m_state;
 
+    /// table of message visitors given a state
     state_trans_table_t m_state_trans_table;
     /// the file being transmitted to the peer when set
     static const size_t s_txfile_block_sz = 65536;
+    /// pointer to an open input stream for the file that is being sent if set
     std::unique_ptr<bfs::ifstream> m_txfile_is;
+    /// pointer to an open output stream for the file that is being recieved if set
+    std::unique_ptr<bfs::ifstream> m_rxfile_os;
 };
 
 

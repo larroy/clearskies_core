@@ -259,6 +259,7 @@ void ProtocolState::send_message(const message::Message& m)
 
 void ProtocolState::send_payload_chunk(std::string&& chunk)
 {
+    // FIXME put the size
     assert(m_last_has_payload);
     const bool do_write = m_output_buff.empty() == true;
     m_payload_ended = chunk.empty();
