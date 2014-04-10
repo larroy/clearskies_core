@@ -128,7 +128,7 @@ void ClearSkiesProtocol::handle_empty_output_buff()
 {
     if (m_txfile_is)
     {
-        // a file transfer is in progress, send the next chunk
+        // when the pointer is not null, a file transfer is in progress, send the next chunk
         std::string rbuff(s_txfile_block_sz, 0);
         m_txfile_is->read(&rbuff[0], rbuff.size());
         rbuff.resize(m_txfile_is->gcount());
