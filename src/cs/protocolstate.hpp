@@ -209,7 +209,7 @@ public:
     void write_next_buff();
 
     /// called by on_write_finished to signal that we are out of data (ex. send more manifest
-    /// messages)
+    /// messages, or send the next chunk of payload)
     virtual void handle_empty_output_buff() {}
 
     /// called when a message is completely read on the input buffer
