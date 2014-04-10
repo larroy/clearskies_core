@@ -24,6 +24,14 @@
 #include <array>
 #include <map>
 
+
+/*
+ * FIXME:
+ *  + handle messages when payload is being sent
+ *  + handle security of send_file and recieve_file functions
+ *
+ */
+
 namespace cs
 {
 namespace protocol
@@ -177,11 +185,29 @@ public:
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
+    /**
+     * open the given file and set m_txfile_is so payload chunks are read and queued to be sent each time
+     * handle_empty_output_buff is called when the output buffers are empty
+     * 
+     * Warning: Caller is responsible for the security of this function and permissions to access the given
+     * path
+     *
+     *
+     * @throws runtime_error when file can't be opened
+     */
     void send_file(const bfs::path& path);
+
+    /**
+     * open the given file for writing so recieved chunks are written there on handle_payload
+     *
+     * Warning: Caller is responsible for the security of this function and permissions to access the given
+     *
+     * @throws runtime_error when file can't be opened
+     */
+    void recieve_file(const bfs::path& path);
 
     // overrides from ProtocolState
     void handle_empty_output_buff() override;
-
     void handle_message(std::unique_ptr<message::Message>) override;
     void handle_payload(const char* data, size_t len) override;
     void handle_payload_end() override;
@@ -189,7 +215,9 @@ public:
     void handle_pl_garbage(const std::string& buff) override;
 
     const ServerInfo& r_server_info;
+    /// a reference to the shares
     const std::map<std::string, share::Share>& r_shares;
+    /// current protocol state
     State m_state;
 
     /// table of message visitors given a state
@@ -199,7 +227,7 @@ public:
     /// pointer to an open input stream for the file that is being sent if set
     std::unique_ptr<bfs::ifstream> m_txfile_is;
     /// pointer to an open output stream for the file that is being recieved if set
-    std::unique_ptr<bfs::ifstream> m_rxfile_os;
+    std::unique_ptr<bfs::ofstream> m_rxfile_os;
 };
 
 

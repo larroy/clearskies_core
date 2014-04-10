@@ -17,6 +17,7 @@
  */
 #include "clearskiesprotocol.hpp"
 #include <cassert>
+#include "boost/format.hpp"
 
 using namespace std;
 
@@ -119,6 +120,21 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std:
 void ClearSkiesProtocol::send_file(const bfs::path& path)
 {
     m_txfile_is = make_unique<bfs::ifstream>(path, ios_base::in | ios_base::binary);
+    if (! *m_txfile_is)
+    {
+        m_txfile_is.reset();
+        throw std::runtime_error(boost::str(boost::format("ClearSkiesProtocol::send \"%1%\" error, couldn't open file") % path.string())); 
+    }
+}
+
+void ClearSkiesProtocol::recieve_file(const bfs::path& path)
+{
+    m_rxfile_os = make_unique<bfs::ofstream>(path, ios_base::out | ios_base::binary);
+    if (! *m_rxfile_os)
+    {
+        m_rxfile_os.reset();
+        throw std::runtime_error(boost::str(boost::format("ClearSkiesProtocol::send \"%1%\" error, couldn't open file") % path.string())); 
+    }
 }
 
 /**
