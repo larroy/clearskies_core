@@ -27,7 +27,7 @@
 
 /*
  * FIXME:
- *  + handle messages when payload is being sent
+ *  + handle messages when payload is being sent, just cancellation should be allowed
  *  + handle security of send_file and recieve_file functions
  *
  */

@@ -129,6 +129,7 @@ void ClearSkiesProtocol::send_file(const bfs::path& path)
 
 void ClearSkiesProtocol::recieve_file(const bfs::path& path)
 {
+    // FIXME: set ios exceptions
     m_rxfile_os = make_unique<bfs::ofstream>(path, ios_base::out | ios_base::binary);
     if (! *m_rxfile_os)
     {
@@ -172,10 +173,16 @@ void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
 
 void ClearSkiesProtocol::handle_payload(const char* data, size_t len)
 {
+    if (m_rxfile_os)
+        m_rxfile_os->write(data, len);
+    else
+        // FIXME handle unexpected payload
+        assert(0);
 }
 
 void ClearSkiesProtocol::handle_payload_end()
 {
+    m_rxfile_os.reset();
 }
 
 void ClearSkiesProtocol::handle_msg_garbage(const std::string& buff)
