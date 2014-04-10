@@ -23,7 +23,7 @@
                 "daemon.cpp",
                 "conf.cpp",
                 "uvpp.cpp",
-                "server.cpp",
+                "clearskiesprotocol.cpp",
             ],
             "include_dirs": [
                 "../src",
