@@ -189,3 +189,17 @@ BOOST_AUTO_TEST_CASE(server_test_01)
 }
 
 
+BOOST_AUTO_TEST_CASE(cs_send_file)
+{
+    using namespace cs::message;
+    Tmpdir tmp;
+    CSServer server;
+    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
+    Connection& connection = server.add_connection("test");
+    UNUSED(connection);
+    Peer peer("test", server);
+    // FIXME: get by content
+    //peer.send()
+}
+
+

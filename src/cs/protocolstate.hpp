@@ -203,7 +203,7 @@ public:
     void on_write_finished();
 
     /**
-     * will write the next output buffer by calling the write function.
+     * will write the next output buffer by calling the write function @sa m_do_write
      * @post m_write_in_progress will be true
      */
     void write_next_buff();
