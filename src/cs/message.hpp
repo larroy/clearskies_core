@@ -414,7 +414,7 @@ public:
 class FileData: public MessageImpl<FileData, MType::FILE_DATA>
 {
 public:
-    std::string m_path;
+    std::vector<std::string> m_paths;
     std::vector<long long> m_range;
 };
 

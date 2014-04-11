@@ -161,7 +161,7 @@ void decode(const jsoncons::json& json, Get& msg)
 
 void decode(const jsoncons::json& json, FileData& msg)
 {
-    msg.m_path = json["path"].as_string();
+    msg.m_paths = json["paths"].as_vector<string>();
     msg.m_range = json["range"].as_vector<long long>();
 }
 
@@ -358,7 +358,7 @@ void encode(const FileData& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
-    json["path"] = msg.m_path;
+    json["paths"] = jsoncons::json(msg.m_paths.begin(), msg.m_paths.end());
     json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
 }
 
