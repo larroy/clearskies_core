@@ -58,6 +58,12 @@ struct Tmpdir
     bfs::path dbpath;
 };
 
+inline void create_file(const bfs::path& path, const std::string& content)
+{
+    create_directories(path.parent_path());
+    bfs::ofstream os(path);
+    os << content;
+}
 
 inline void create_tree(const bfs::path& path)
 {

@@ -353,7 +353,8 @@ public:
     }
 
     /**
-     * Returns metadata from files that have the same checksum
+     * Returns metadata from files that have the same checksum, with a flag indicating if the file
+     * was modified after the filesystem scan, so the metadata is outdated.
      */
     std::vector<MFile_updated> get_mfiles_by_content(const std::string& checksum); 
 

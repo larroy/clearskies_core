@@ -189,15 +189,39 @@ BOOST_AUTO_TEST_CASE(server_test_01)
 }
 
 
+namespace {
+
+void server_test_01_create_tree(const bfs::path& path)
+{
+    // Create a few files with the same content to verify get by hash functionality
+    create_file(path / "a0", "a");
+    create_file(path / "a1", "a");
+    create_file(path / "wow" / "a0", "a");
+    create_file(path / "wowa" / "a1", "a");
+
+    // different content
+    create_file(path / "wowa" / "b2", "b2");
+}
+
+Peer init_peer(const std::string& name, CSServer& server, const std::string& share_id)
+{
+    Peer peer(name, server);
+    peer.send(cs::message::Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)) });
+    return peer;
+}
+
+}
+
+
 BOOST_AUTO_TEST_CASE(cs_send_file)
 {
     using namespace cs::message;
     Tmpdir tmp;
+    server_test_01_create_tree(tmp.tmpdir);
     CSServer server;
     const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
-    Connection& connection = server.add_connection("test");
-    UNUSED(connection);
-    Peer peer("test", server);
+    server.add_connection("test");
+    Peer peer = init_peer("test", server, share_id);
     // FIXME: get by content
     //peer.send()
 }
