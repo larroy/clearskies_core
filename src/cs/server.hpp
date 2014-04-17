@@ -40,7 +40,7 @@ class Connection
 public:
     Connection(
         const ServerInfo& server_info,
-        const std::map<std::string, share::Share>& shares
+        std::map<std::string, share::Share>& shares
     ):
         m_cs_protocol(server_info, shares)
     {}

@@ -21,6 +21,7 @@
 #include "protocolstate.hpp"
 #include "serverinfo.hpp"
 #include "share.hpp"
+#include "utils.hpp"
 #include <array>
 #include <map>
 
@@ -43,18 +44,15 @@ enum State: unsigned
     INITIAL = 0,
     WAIT4_CLIENT_IDENTITY,
     CONNECTED,
+    GET,
 
 
     MAX,
 };
 
-class ProtocolError: public std::runtime_error
-{
-public:
-    explicit ProtocolError(const std::string& what):
-        std::runtime_error(what)
-    {}
-};
+
+DEFINE_RE_EXCEPTION(ProtocolError);
+DEFINE_RE_EXCEPTION(ShareNotFoundError);
 
 class ClearSkiesProtocol;
 
@@ -181,7 +179,7 @@ typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_tabl
 class ClearSkiesProtocol: public ProtocolState
 {
 public:
-    ClearSkiesProtocol(const ServerInfo&, const std::map<std::string, share::Share>& shares);
+    ClearSkiesProtocol(const ServerInfo&, std::map<std::string, share::Share>& shares);
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
@@ -214,9 +212,18 @@ public:
     void handle_msg_garbage(const std::string& buff) override;
     void handle_pl_garbage(const std::string& buff) override;
 
+    /**
+     * @returns the current selected share or throws ShareNotFoundError, this can happen if the
+     * share was detached and can't be found anymore, in this case users of this class should close
+     * the connection to clients
+     */
+    share::Share& share();
+
     const ServerInfo& r_server_info;
     /// a reference to the shares
-    const std::map<std::string, share::Share>& r_shares;
+    std::map<std::string, share::Share>& r_shares;
+    /// selected share name
+    std::string m_share;
     /// current protocol state
     State m_state;
 

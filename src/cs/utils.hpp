@@ -26,7 +26,9 @@
 #include "boost_fs_fwd.hpp"
 #include "config.hpp"
 
-
+#define DEFINE_RE_EXCEPTION(CLASS_NAME)\
+class CLASS_NAME: public std::runtime_error\
+{ public: explicit CLASS_NAME(const std::string& what): std::runtime_error(what) {} };
 
 namespace cs
 {

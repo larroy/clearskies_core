@@ -43,19 +43,18 @@ public:
      * Start on INITIAL
      */
     void visit(const message::Start& msg) override
+    try
     {
-
-        auto& shares = r_protocol.r_shares;
-        auto shr_i = shares.find(msg.m_share_id);
-        if (shr_i == shares.end())
-        {
-            r_protocol.send_message(message::CannotStart());
-            return;
-        }
-
-        r_protocol.send_message(message::StartTLS(shr_i->second.m_peer_id, message::MAccess::READ_WRITE));
+        r_protocol.m_share = msg.m_share_id;
+        share::Share& share = r_protocol.share();
+        r_protocol.send_message(message::StartTLS(share.m_peer_id, message::MAccess::READ_WRITE));
         r_protocol.send_message(message::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = WAIT4_CLIENT_IDENTITY;
+    }
+    catch (...)
+    {
+        r_protocol.send_message(message::CannotStart());
+        throw;
     }
 };
 
@@ -86,7 +85,12 @@ public:
     void visit(const message::Identity& msg) override
     {
     }
+
+    void visit(const message::Get& msg) override
+    {
+    }
 };
+
 
 
 
@@ -103,10 +107,11 @@ public:
 /**
  * ctor, sets message handlers.
  */
-ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, const std::map<std::string, share::Share>& shares):
+ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
     ProtocolState()
     , r_server_info(server_info)
     , r_shares(shares)
+    , m_share()
     , m_state(State::INITIAL)
 {
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
@@ -195,6 +200,14 @@ void ClearSkiesProtocol::handle_pl_garbage(const std::string& buff)
     assert(false);
 }
 
+
+share::Share& ClearSkiesProtocol::share()
+{
+    auto shr_i = r_shares.find(m_share);
+    if (shr_i != r_shares.end())
+        return shr_i->second;
+    throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
+}
 
 
 } // end ns
