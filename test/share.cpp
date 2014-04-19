@@ -99,34 +99,41 @@ BOOST_AUTO_TEST_CASE(tail_test)
 
 BOOST_AUTO_TEST_CASE(share_insert_mfile)
 {
-    MFile f;
-    f.path = "omg/a/path";
-    f.mtime = "12392";
-    f.size = 69;
-    f.mode = 01777;
+    REDIRECT_CERR;
+    const int stderrcpy = dup(2);
+    close(2);
+    {
+        MFile f;
+        f.path = "omg/a/path";
+        f.mtime = "12392";
+        f.size = 69;
+        f.mode = 01777;
 
-    Tmpdir tmp;
-    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
+        Tmpdir tmp;
+        Share share(tmp.tmpdir.string(), tmp.dbpath.string());
 
-    auto f_none = share.get_file_info("argsgs");
-    BOOST_CHECK(! f_none);
+        auto f_none = share.get_file_info("argsgs");
+        BOOST_CHECK(! f_none);
 
-    share.insert_mfile(f);
-    BOOST_CHECK_THROW(share.insert_mfile(f), sqlite3pp::database_error);
+        share.insert_mfile(f);
+        BOOST_CHECK_THROW(share.insert_mfile(f), sqlite3pp::database_error);
 
-    f_none = share.get_file_info("argsgs");
-    BOOST_CHECK(! f_none);
+        f_none = share.get_file_info("argsgs");
+        BOOST_CHECK(! f_none);
 
-    auto f_ = share.get_file_info(f.path);
-    BOOST_CHECK(f_);
-    BOOST_CHECK_EQUAL(f_->path, f.path);
-    BOOST_CHECK_EQUAL(f_->mtime, f.mtime);
-    BOOST_CHECK_EQUAL(f_->size, f.size);
-    BOOST_CHECK_EQUAL(f_->mode, f.mode);
-    BOOST_CHECK_EQUAL(f_->checksum, f.checksum);
-    BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
-    cerr << "\nThe following error message is expected: statement::~statement: sqlite3_finalize returned with error..." << endl;
-    cerr << endl;
+        auto f_ = share.get_file_info(f.path);
+        BOOST_CHECK(f_);
+        BOOST_CHECK_EQUAL(f_->path, f.path);
+        BOOST_CHECK_EQUAL(f_->mtime, f.mtime);
+        BOOST_CHECK_EQUAL(f_->size, f.size);
+        BOOST_CHECK_EQUAL(f_->mode, f.mode);
+        BOOST_CHECK_EQUAL(f_->checksum, f.checksum);
+        BOOST_CHECK_EQUAL(f_->deleted, f.deleted);
+        cerr << "\nThe following error message is expected: statement::~statement: sqlite3_finalize returned with error..." << endl;
+        cerr << endl;
+    }
+    dup2(stderrcpy, 2);
+    REDIRECT_CERR_END;
 }
 
 
