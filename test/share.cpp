@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
 
     auto f = share.get_file_info("a");
     BOOST_CHECK(f);
-    auto mfiles = share.get_mfiles_by_content(f->checksum);
+    auto mfiles = share.get_mfiles_by_content2(f->checksum);
     BOOST_CHECK_EQUAL(mfiles.size(), 3u);
     BOOST_CHECK(mfiles[0].up_to_date);
 }

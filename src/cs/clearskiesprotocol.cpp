@@ -88,6 +88,8 @@ public:
 
     void visit(const message::Get& msg) override
     {
+        r_protocol.do_get(msg.m_checksum);
+        m_next_state = GET;
     }
 };
 
@@ -118,6 +120,7 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, std::map<s
 
     SET_HANDLER(INITIAL, MessageHandler_INITIAL);
     SET_HANDLER(WAIT4_CLIENT_IDENTITY, MessageHandler_WAIT4_CLIENT_IDENTITY);
+    SET_HANDLER(CONNECTED, MessageHandler_CONNECTED);
 
 #undef SET_HANDLER
 }
@@ -200,6 +203,27 @@ void ClearSkiesProtocol::handle_pl_garbage(const std::string& buff)
     assert(false);
 }
 
+void ClearSkiesProtocol::do_get(const std::string& checksum)
+{
+    // get list of files that match this checksum from the share
+    const auto mfiles = share().get_mfiles_by_content(checksum);
+    vector<string> paths;
+    // some might have been changed now, send only paths that are up to date
+    transform(mfiles.begin(), mfiles.end(), back_inserter(paths), [](const share::MFile& x) {
+        return x.path;
+    });
+    if (! paths.empty())
+    {
+        message::FileData filedata(move(paths));
+        assert(filedata.payload());
+        send_message(filedata);
+        send_file(share().fullpath(bfs::path(paths.front())));
+    }
+    else
+    {
+        // FIXME!
+    }
+}
 
 share::Share& ClearSkiesProtocol::share()
 {

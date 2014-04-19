@@ -414,6 +414,19 @@ public:
 class FileData: public MessageImpl<FileData, MType::FILE_DATA>
 {
 public:
+    FileData(std::vector<std::string>&& paths):
+        m_paths(move(paths))
+        , m_range()
+    {
+        m_payload = true;
+    }
+
+    FileData():
+        m_paths()
+        , m_range()
+    {
+        m_payload = true;
+    }
     std::vector<std::string> m_paths;
     std::vector<long long> m_range;
 };

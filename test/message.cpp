@@ -193,7 +193,8 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)
 BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
 {
     FileData m;
-    check_message_defaults(m, MType::FILE_DATA);
+    BOOST_CHECK(m.payload());
+    BOOST_CHECK(!m.signature());
     BOOST_CHECK(m.m_paths.empty());
     BOOST_CHECK(m.m_range.empty());
 }

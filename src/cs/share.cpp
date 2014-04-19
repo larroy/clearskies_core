@@ -754,7 +754,7 @@ void Share::scan_found(MFile& scan_file)
 }
 
 
-std::vector<MFile_updated> Share::get_mfiles_by_content(const std::string& checksum) 
+std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& checksum) 
 {
     std::vector<MFile_updated> result;
     m_get_mfiles_by_content_q.reset();
@@ -765,6 +765,18 @@ std::vector<MFile_updated> Share::get_mfiles_by_content(const std::string& check
         fu.mfile.from_row(row);
         fu.up_to_date = ! was_updated(fu.mfile);
         result.emplace_back(move(fu));
+    }
+    return result;
+}
+
+std::vector<MFile> Share::get_mfiles_by_content(const std::string& checksum) 
+{
+    vector<MFile> result;
+    const auto mfiles = get_mfiles_by_content2(checksum);
+    for (const auto& x: mfiles)
+    {
+        if (x.up_to_date)
+            result.emplace_back(move(x.mfile));
     }
     return result;
 }

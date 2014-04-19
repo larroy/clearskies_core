@@ -65,15 +65,15 @@ class ClearSkiesProtocol;
  * m_next_state variable so the ClearSkiesProtocol class switches to the next state after handling
  * the message.
  *
+ * A message recieved in a state in which is not expected triggers a ProtocolError exception, which
+ * should result in the connection being closed.
  *
- * 1. Install handler
- *   m_state_trans_table[State::INITIAL] = make_unique<MessageHandler_INITIAL>(m_state, *this);
+ *
+ * 1. Install handler: SET_HANDLER(STATE, VISITOR_CLASS)
  * 2. Implement Handler::visit(const message::Type&)
  *  2.1 change m_next_state to the desired next state
  *
- * If an unexpected message in some state is recieved, and exception is thrown which will cause the
- * connection to be closed immediately. FIXME: write tests for these cases on the server that does
- * network IO.
+ * FIXME: write tests for these cases on the server that does network IO.
  *
  */
 class MessageHandler: public message::ConstMessageVisitor
@@ -211,6 +211,12 @@ public:
     void handle_payload_end() override;
     void handle_msg_garbage(const std::string& buff) override;
     void handle_pl_garbage(const std::string& buff) override;
+
+    // message actions, note that the handlers / visitors logic control that these actions are triggered on the
+    // appropiate states only
+
+    /// action for MType::GET
+    void do_get(const std::string& checksum);
 
     /**
      * @returns the current selected share or throws ShareNotFoundError, this can happen if the
