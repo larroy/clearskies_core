@@ -627,13 +627,13 @@ std::string json_2_str(const jsoncons::json& json)
 std::string JSONCoder::encode_msg(const Message& msg)
 {
     char prefix = 0;
-    if (! msg.payload() && ! msg.signature())
+    if (! msg.m_payload && ! msg.signature())
         prefix = 'm';
-    else if (msg.payload() && ! msg.signature())
+    else if (msg.m_payload && ! msg.signature())
         prefix = '!';
-    else if (! msg.payload() &&  msg.signature())
+    else if (! msg.m_payload &&  msg.signature())
         prefix = 's';
-    else if (msg.payload() &&  msg.signature())
+    else if (msg.m_payload &&  msg.signature())
         prefix = '$';
 
     // m3:{}\n

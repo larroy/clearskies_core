@@ -250,7 +250,7 @@ void ProtocolState::input(const char* data, size_t len)
 void ProtocolState::send_message(const message::Message& m)
 {
     assert(m_payload_ended);
-    m_last_has_payload = m.payload();
+    m_last_has_payload = m.m_payload;
     const bool do_write = m_output_buff.empty() == true;
     m_output_buff.emplace_back(m_msg_coder.encode_msg(m));
     if (do_write)

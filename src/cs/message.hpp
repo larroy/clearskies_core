@@ -192,11 +192,6 @@ public:
         return m_type;
     }
 
-    bool payload() const
-    {
-        return m_payload;
-    }
-
     bool signature() const
     {
         return ! m_signature.empty();

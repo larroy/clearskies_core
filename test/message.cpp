@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_access_to_str)
 void check_message_defaults(const Message& m, MType type)
 {
     BOOST_CHECK(m.type() == type);
-    BOOST_CHECK(!m.payload());
+    BOOST_CHECK(!m.m_payload);
     BOOST_CHECK(!m.signature());
 }
 
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_get_defaults)
 BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
 {
     FileData m;
-    BOOST_CHECK(m.payload());
+    BOOST_CHECK(m.m_payload);
     BOOST_CHECK(!m.signature());
     BOOST_CHECK(m.m_paths.empty());
     BOOST_CHECK(m.m_range.empty());

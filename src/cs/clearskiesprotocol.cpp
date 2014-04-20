@@ -215,7 +215,7 @@ void ClearSkiesProtocol::do_get(const std::string& checksum)
     if (! paths.empty())
     {
         message::FileData filedata(move(paths));
-        assert(filedata.payload());
+        assert(filedata.m_payload);
         send_message(filedata);
         send_file(share().fullpath(bfs::path(paths.front())));
     }
