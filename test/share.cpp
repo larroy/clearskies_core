@@ -151,8 +151,7 @@ BOOST_AUTO_TEST_CASE(share_state_0)
     for (const auto& file: share)
         BOOST_CHECK(file.checksum.empty());
 
-    share.scan();
-    while(share.scan_step()) {};
+    fullscan(share);
 
     {
         vector<MFile> files;
@@ -176,8 +175,7 @@ BOOST_AUTO_TEST_CASE(share_state_0)
 
 
     // Re-scan
-    share.scan();
-    while(share.scan_step()) {};
+    fullscan(share);
 
 
     // Check manifest state after file removal
@@ -227,10 +225,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
-    share.scan();
-    while(share.scan_step()) {};
-
-
+    fullscan(share);
 
     {
         vector<MFile> manifest;
@@ -249,9 +244,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         f_os << "omg I'm new" << endl;
         f_os.close();
 
-
-        share.scan();
-        while(share.scan_step()) {};
+        fullscan(share);
 
         vector<MFile> manifest_2;
         for (const auto& file: share)
@@ -300,8 +293,7 @@ BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
     create_file(tmp.tmpdir / "aa", "a content");
     create_file(tmp.tmpdir / "b" / "a", "a content");
 
-    share.scan();
-    while(share.scan_step()) {};
+    fullscan(share);
 
     auto f = share.get_file_info("a");
     BOOST_CHECK(f);

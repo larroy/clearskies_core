@@ -35,6 +35,16 @@
 #define SQLITE3_HAS_ERRMSG
 #endif
 
+namespace
+{
+
+inline void throw_err(int ret, sqlite3pp::database& db)
+{
+    if (ret != SQLITE_OK)
+        throw sqlite3pp::database_error(db);
+}
+
+}
 
 namespace sqlite3pp
 {
@@ -248,7 +258,7 @@ namespace sqlite3pp
 
     void statement::prepare(char const* stmt)
     {
-        THROW_ERR(eprepare(stmt));
+        throw_err(eprepare(stmt), db_);
     }
 
     int statement::eprepare(char const* stmt)
@@ -268,7 +278,7 @@ namespace sqlite3pp
 
     void statement::finish()
     {
-        THROW_ERR(efinish());
+        throw_err(efinish(), db_);
     }
 
     int statement::efinish()
@@ -295,7 +305,7 @@ namespace sqlite3pp
 
     statement& statement::reset()
     {
-        THROW_ERR(sqlite3_reset(stmt_));
+        throw_err(sqlite3_reset(stmt_), db_);
         return *this;
     }
 
@@ -312,19 +322,19 @@ namespace sqlite3pp
 
     statement& statement::bind(int idx, double value)
     {
-        THROW_ERR(sqlite3_bind_double(stmt_, idx, value));
+        throw_err(sqlite3_bind_double(stmt_, idx, value), db_);
         return *this;
     }
 
     statement& statement::bind(int idx, int64_t value)
     {
-        THROW_ERR(sqlite3_bind_int64(stmt_, idx, value));
+        throw_err(sqlite3_bind_int64(stmt_, idx, value), db_);
         return *this;
     }
 
     statement& statement::bind(int idx, uint64_t value)
     {
-        THROW_ERR(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)));
+        throw_err(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)), db_);
         return *this;
     }
 
@@ -332,30 +342,30 @@ namespace sqlite3pp
     {
         if (blob)
         {
-                THROW_ERR(sqlite3_bind_blob(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+                throw_err(sqlite3_bind_blob(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
         }
         else
         {
-                THROW_ERR(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+                throw_err(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
         }
         return *this;
     }
 
     statement& statement::bind(int idx, char const* value, bool fstatic)
     {
-        THROW_ERR(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+        throw_err(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
         return *this;
     }
 
     statement& statement::bind(int idx, void const* value, int n, bool fstatic)
     {
-        THROW_ERR(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT));
+        throw_err(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
         return *this;
     }
 
     statement& statement::bind(int idx)
     {
-        THROW_ERR(sqlite3_bind_null(stmt_, idx));
+        throw_err(sqlite3_bind_null(stmt_, idx), db_);
         return *this;
     }
 
@@ -462,7 +472,7 @@ namespace sqlite3pp
 
     void command::execute()
     {
-        THROW_ERR(eexecute());
+        throw_err(eexecute(), db_);
     }
 
     int command::eexecute()

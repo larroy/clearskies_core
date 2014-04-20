@@ -221,7 +221,10 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     CSServer server;
     const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
     server.add_connection("test");
+    fullscan(server.share(share_id));
+
     Peer peer = init_peer("test", server, share_id);
+    //peer.send(
     // FIXME: get by content
     //peer.send()
 }
