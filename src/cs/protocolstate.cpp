@@ -259,11 +259,15 @@ void ProtocolState::send_message(const message::Message& m)
 
 void ProtocolState::send_payload_chunk(std::string&& chunk)
 {
-    // FIXME put the size
     assert(m_last_has_payload);
     const bool do_write = m_output_buff.empty() == true;
     m_payload_ended = chunk.empty();
-    m_output_buff.emplace_back(move(chunk));
+    ostringstream os;
+    os << chunk.size() << "\n";
+    m_output_buff.emplace_back(os.str()); // size prefix
+    m_output_buff.emplace_back(move(chunk)); // payload chunk
+    // writes are like a chain, only if it's empty we start a write, otherwise on_write_finished
+    // triggers writting of the next buffer.
     if (do_write)
         write_next_buff();
 }
