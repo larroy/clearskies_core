@@ -165,6 +165,10 @@ void decode(const jsoncons::json& json, FileData& msg)
     msg.m_range = json["range"].as_vector<long long>();
 }
 
+void decode(const jsoncons::json& json, FileModified& msg)
+{
+}
+
 void decode(const jsoncons::json& json, Update& msg)
 {
     msg.m_revision = json["revision"].as_longlong();
@@ -362,6 +366,13 @@ void encode(const FileData& msg, jsoncons::json& json)
     json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
 }
 
+void encode(const FileModified& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+}
+
+
 void encode(const Update& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
@@ -434,6 +445,7 @@ protected:
     void visit(const Current&) override;
     void visit(const Get&) override;
     void visit(const FileData&) override;
+    void visit(const FileModified&) override;
     void visit(const Update&) override;
     void visit(const Move&) override;
 
@@ -561,6 +573,14 @@ try
     case MType::FILE_DATA:
     {
         auto xmsg = make_unique<FileData>();
+        decode(json, *xmsg);
+        msg = move(xmsg);
+        break;
+    }
+
+    case MType::FILE_MODIFIED:
+    {
+        auto xmsg = make_unique<FileModified>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -734,6 +754,11 @@ void JSONCoder::visit(const Get& x)
 }
 
 void JSONCoder::visit(const FileData& x)
+{
+    ENCXX;
+}
+
+void JSONCoder::visit(const FileModified& x)
 {
     ENCXX;
 }

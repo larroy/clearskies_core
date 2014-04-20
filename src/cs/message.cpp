@@ -51,6 +51,7 @@ mtype_str_table_t mtype_str_table_init()
     res[SC(MType::CURRENT)] = "current";
     res[SC(MType::GET)] = "get";
     res[SC(MType::FILE_DATA)] = "file_data";
+    res[SC(MType::FILE_MODIFIED)] = "file_modified";
     res[SC(MType::UPDATE)] = "update";
     res[SC(MType::MOVE)] = "move";
     return res;
@@ -110,6 +111,9 @@ MType mtype_from_string(const std::string& type)
 
     if (type == "file_data")
         return MType::FILE_DATA;
+
+    if (type == "file_modified")
+        return MType::FILE_MODIFIED;
 
     if (type == "update")
         return MType::UPDATE;

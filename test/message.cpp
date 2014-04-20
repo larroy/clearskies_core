@@ -199,6 +199,14 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_file_data_defaults)
     BOOST_CHECK(m.m_range.empty());
 }
 
+BOOST_AUTO_TEST_CASE(MessageTest_type_file_modified_defaults)
+{
+    FileModified m;
+    BOOST_CHECK(!m.m_payload);
+    BOOST_CHECK(!m.signature());
+}
+
+
 BOOST_AUTO_TEST_CASE(MessageTest_type_update_defaults)
 {
     Update m;

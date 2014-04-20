@@ -55,6 +55,9 @@ enum class MType: unsigned
     GET,
     /// response with contents of a file
     FILE_DATA,
+    /// response to GET when the file has been updated
+    FILE_MODIFIED,
+
     /// notification of changed file
     UPDATE,
     /// notification of moved file
@@ -107,6 +110,7 @@ class GetUpdates;
 class Current;
 class Get;
 class FileData;
+class FileModified;
 class Update;
 class Move;
 
@@ -130,6 +134,7 @@ public:
     virtual void visit(const Current&) = 0;
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
+    virtual void visit(const FileModified&) = 0;
     virtual void visit(const Update&) = 0;
     virtual void visit(const Move&) = 0;
 };
@@ -154,6 +159,7 @@ public:
     virtual void visit(Current&) = 0;
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
+    virtual void visit(FileModified&) = 0;
     virtual void visit(Update&) = 0;
     virtual void visit(Move&) = 0;
 };
@@ -425,6 +431,11 @@ public:
     std::vector<std::string> m_paths;
     std::vector<long long> m_range;
 };
+
+class FileModified: public MessageImpl<FileModified, MType::FILE_DATA>
+{
+};
+
 
 class Update: public MessageImpl<Update, MType::UPDATE>
 {

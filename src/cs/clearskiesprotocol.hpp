@@ -152,6 +152,10 @@ public:
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
+    void visit(const message::FileModified&) override
+    {
+        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+    }
     void visit(const message::Update&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
