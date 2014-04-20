@@ -215,15 +215,19 @@ Peer init_peer(const std::string& name, CSServer& server, const std::string& sha
 
 BOOST_AUTO_TEST_CASE(cs_send_file)
 {
+    using namespace cs::share;
     using namespace cs::message;
     Tmpdir tmp;
     server_test_01_create_tree(tmp.tmpdir);
+    Share share2(tmp.tmpdir.string(), tmp.dbpath.string());
+    Share share(move(share2));
+    fullscan(share);
     CSServer server;
-    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
-    server.add_connection("test");
-    fullscan(server.share(share_id));
+//    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
+//    server.add_connection("test");
+//    fullscan(server.share(share_id));
 
-    Peer peer = init_peer("test", server, share_id);
+    //Peer peer = init_peer("test", server, share_id);
     //peer.send(
     // FIXME: get by content
     //peer.send()

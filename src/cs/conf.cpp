@@ -31,7 +31,7 @@ namespace conf
 Conf::Conf(const std::string& dbpath ):
     m_tmpdir()
     , m_db_path(dbpath)
-    , m_db(m_db_path.c_str())
+    , m_db(make_shared<sqlite3pp::database>(m_db_path.c_str()))
     conf_ctor_initializers
 {
     initialize_tables();
@@ -40,7 +40,7 @@ Conf::Conf(const std::string& dbpath ):
 Conf::Conf():
     m_tmpdir(make_unique<utils::Tmpdir>())
     , m_db_path((m_tmpdir->path / "conf.db").string())
-    , m_db(m_db_path.c_str())
+    , m_db(make_shared<sqlite3pp::database>(m_db_path.c_str()))
     conf_ctor_initializers
 {
     initialize_tables();
@@ -88,7 +88,7 @@ void Conf::save()
         daemon_port = ?)#");
     q.bind(1, m_daemon_port);
     q.execute();
-    assert(m_db.changes() == 1);
+    assert(m_db->changes() == 1);
 }
 
 

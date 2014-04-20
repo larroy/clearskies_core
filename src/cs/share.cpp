@@ -238,99 +238,10 @@ MFile& Share::Share_iterator::dereference() const
 }
 
 
-Share::Checksummer::Checksummer(Share& share):
-     r_share(share)
-    , m_c256()
-    , m_file()
-    , m_is()
-
-{
-    sha2::SHA256_Init(&m_c256);
-}
-
-
-
-bool Share::Checksummer::step()
-{
-    for(size_t nblock = 0; nblock < r_share.m_cksum_batch_sz;)
-    {
-        if (m_is)
-        {
-            do_block();
-            ++nblock;
-        }
-        else
-        {
-            bool more = next_file();
-            if (! more)
-                return false;
-        }
-    }
-    return true;
-}
-
-void Share::Checksummer::do_block()
-{
-    assert(m_is);
-    std::array<char, Share::s_cksum_block_sz> rbuff;
-    m_is->read(rbuff.data(), rbuff.size());
-    sha2::SHA256_Update(&m_c256, (const cs::u8*) rbuff.data(), m_is->gcount());
-    if (! *m_is)
-    {
-        // EOF
-        string checksum(SHA256_DIGEST_STRING_LENGTH, 0);
-        sha2::SHA256_End(&m_c256, &checksum[0]);
-        checksum.resize(checksum.size() - 1);
-        if (! bfs::exists(r_share.fullpath(m_file.path)))
-        {
-            // check if file vanished one last time
-            m_file.was_deleted(r_share.m_peer_id, r_share.m_revision);
-            ++r_share.m_revision;
-        }
-        else
-        {
-            m_file.checksum = move(checksum);
-            m_file.to_checksum = false;
-            m_file.updated = true;
-        }
-        r_share.update_mfile(m_file);
-        m_is.reset();
-    }
-}
-
-
-bool Share::Checksummer::next_file()
-{
-    // the query needs to be rerun, since checksumming runs interwinded with file scanning, so there
-    // could be new files to checksum added on every step. Another solution is to first scan then
-    // checksum, but this way we should be utilizing the CPU more.
-    r_share.m_select_to_cksum_q.reset();
-    const auto to_cksum_it = r_share.m_select_to_cksum_q.begin();
-
-    // There are no more files to checksum
-    if (to_cksum_it == r_share.m_select_to_cksum_q.end())
-        return false;
-
-    m_file.from_row(*to_cksum_it);
-    m_is = make_unique<bfs::ifstream>(r_share.fullpath(bfs::path(m_file.path)), ios_base::in | ios_base::binary);
-
-    if (! *m_is) // note that we are not checking the pointer, but the stream
-    {
-        // file can't be opened, it has been deleted
-        m_file.was_deleted(r_share.m_peer_id, r_share.m_revision);
-        ++r_share.m_revision;
-        r_share.update_mfile(m_file);
-        m_is.reset();
-    }
-    m_is->exceptions(ios::badbit);
-    sha2::SHA256_Init(&m_c256);
-    return true;
-}
-
 Share::Share(const std::string& share_path, const std::string& dbpath):
       m_path(share_path)
     , m_revision(0)
-    , m_db(dbpath.c_str())
+    , m_db(make_shared<sqlite3pp::database>(dbpath.c_str()))
     , m_db_path(dbpath)
     , m_insert_mfile_q(m_db)
     , m_update_mfile_q(m_db)
@@ -343,8 +254,10 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_select_not_scan_found_q(m_db)
     , m_update_scan_found_false_q(m_db)
     , m_cksum_batch_sz(8)
-    , m_select_to_cksum_q(m_db)
-    , m_cksummer(*this)
+    , m_cksum_select_q(m_db)
+    , m_cksum_ctx_sha256()
+    , m_cksum_mfile()
+    , m_cksum_is()
     , m_share_id()
     , m_peer_id()
     , m_psk_rw()
@@ -353,6 +266,7 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_pkc_rw()
     , m_pkc_ro()
 {
+    sha2::SHA256_Init(&m_cksum_ctx_sha256);
     bfs::path share_path_(share_path);
     if (! bfs::exists(share_path_))
         throw std::runtime_error(fs("Share::Share error: " << share_path_ << " doesn't exist"));
@@ -489,7 +403,7 @@ void Share::initialize_statements()
         files
     WHERE scan_found = 0 ORDER BY path)#");
     m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
-    m_select_to_cksum_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
+    m_cksum_select_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
 
     m_get_mfiles_by_content_q.prepare("SELECT * FROM files WHERE checksum = ?");
 }
@@ -602,7 +516,7 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(10, f.updated);
     m_update_mfile_q.bind(11, f.path);
     m_update_mfile_q.execute();
-    assert(m_db.changes() == 1);
+    assert(m_db->changes() == 1);
 }
 
 
@@ -625,11 +539,87 @@ bool Share::scan_step()
         return false;
     }
     const bool scan_more = fs_scan_step();
-    const bool cksum_more = m_cksummer.step();
+    const bool cksum_more = cksum_step();
     const bool m_scan_in_progress = scan_more || cksum_more;
     if (! m_scan_in_progress)
         on_scan_finished();
     return m_scan_in_progress;
+}
+
+bool Share::cksum_step()
+{
+    for(size_t nblock = 0; nblock < m_cksum_batch_sz;)
+    {
+        if (m_cksum_is)
+        {
+            cksum_do_block();
+            ++nblock;
+        }
+        else
+        {
+            const bool more = cksum_next_file();
+            if (! more)
+                return false;
+        }
+    }
+    return true;
+}
+
+void Share::cksum_do_block()
+{
+    assert(m_cksum_is);
+    std::array<char, Share::s_cksum_block_sz> rbuff;
+    m_cksum_is->read(rbuff.data(), rbuff.size());
+    sha2::SHA256_Update(&m_cksum_ctx_sha256, (const cs::u8*) rbuff.data(), m_cksum_is->gcount());
+    if (! *m_cksum_is)
+    {
+        // EOF
+        string checksum(SHA256_DIGEST_STRING_LENGTH, 0);
+        sha2::SHA256_End(&m_cksum_ctx_sha256, &checksum[0]);
+        checksum.resize(checksum.size() - 1);
+        if (! bfs::exists(fullpath(m_cksum_mfile.path)))
+        {
+            // check if file vanished one last time
+            m_cksum_mfile.was_deleted(m_peer_id, m_revision);
+            ++m_revision;
+        }
+        else
+        {
+            m_cksum_mfile.checksum = move(checksum);
+            m_cksum_mfile.to_checksum = false;
+            m_cksum_mfile.updated = true;
+        }
+        update_mfile(m_cksum_mfile);
+        m_cksum_is.reset();
+    }
+}
+
+bool Share::cksum_next_file()
+{
+    // the query needs to be rerun, since checksumming runs interwinded with file scanning, so there
+    // could be new files to checksum added on every step. Another solution is to first scan then
+    // checksum, but this way we should be utilizing the CPU more.
+    m_cksum_select_q.reset();
+    const auto to_cksum_it = m_cksum_select_q.begin();
+
+    // There are no more files to checksum
+    if (to_cksum_it == m_cksum_select_q.end())
+        return false;
+
+    m_cksum_mfile.from_row(*to_cksum_it);
+    m_cksum_is = make_unique<bfs::ifstream>(fullpath(bfs::path(m_cksum_mfile.path)), ios_base::in | ios_base::binary);
+
+    if (! *m_cksum_is) // note that we are not checking the pointer, but the stream
+    {
+        // file can't be opened, it has been deleted
+        m_cksum_mfile.was_deleted(m_peer_id, m_revision);
+        ++m_revision;
+        update_mfile(m_cksum_mfile);
+        m_cksum_is.reset();
+    }
+    m_cksum_is->exceptions(ios::badbit);
+    sha2::SHA256_Init(&m_cksum_ctx_sha256);
+    return true;
 }
 
 /**
@@ -640,10 +630,9 @@ bool Share::fs_scan_step()
     if (! m_scan_it)
         return false;
 
-    size_t batch_i = 0; // number of files in this batch so far
     bfs::recursive_directory_iterator& it = *m_scan_it;
     bfs::recursive_directory_iterator end;
-    for ( ; it != end && batch_i < m_scan_batch_sz; ++it, ++batch_i)
+    for (size_t batch_i = 0; it != end && batch_i < m_scan_batch_sz; ++it, ++batch_i)  // batch_i is the number of files in this batch so far
     {
         const auto& dentry = *it;
         if (dentry.status().type() == bfs::regular_file)

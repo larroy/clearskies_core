@@ -51,7 +51,7 @@ public:
 
     std::unique_ptr<utils::Tmpdir> m_tmpdir;
     std::string m_db_path;
-    sqlite3pp::database m_db;
+    std::shared_ptr<sqlite3pp::database> m_db;
 
     i16 m_daemon_port;
     /// path to the sqlite database

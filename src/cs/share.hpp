@@ -230,39 +230,10 @@ public:
         mutable bool m_file_set;
     };
 
-    /**
-     * Incremental checksum of files.
-     * Files marked with to_checksum != 0 will be processed in batches controlled by
-     * Share::m_cksum_batch_sz and Share::s_cksum_block_sz
-     */
-    class Checksummer
-    {
-    public:
-        Checksummer(Share&);
-        /**
-         * step should be called until it returns false, then all the files to_checksum are processed.
-         * It checksums Share::m_cksum_batch_sz blocks or less. @returns false if there are no more
-         * blocks or files to checksum, true otherwise.
-         */
-        bool step();
-
-    private:
-        /**
-         * reads a single block from a file and updates the m_c256 context, on EOF we update the db
-         * and reset m_is
-         */
-        void do_block();
-        /// @returns true if there's more
-        bool next_file();
-        Share& r_share;
-        sha2::SHA256_CTX  m_c256;
-        MFile m_file;
-        /// when it's set means we are in the middle of checksumming a file
-        std::unique_ptr<bfs::ifstream> m_is;
-    };
-
 
     Share(const std::string& share_path, const std::string& dbpath = ":memory:");
+    Share(const Share&) = delete;
+    Share& operator=(const Share&) = delete;
     Share(Share&&) = default;
     Share& operator=(Share&&) = default;
 
@@ -301,6 +272,23 @@ public:
 
     /// @returns true if there's more to do, false otherwise, meaning scan and cksum finished
     bool scan_step();
+
+    /**
+     * Should be called until it returns false, then all the files to_checksum are processed.
+     * It checksums Share::m_cksum_batch_sz blocks or less. @returns false if there are no more
+     * blocks or files to checksum, true otherwise.
+     */
+    bool cksum_step();
+
+    /**
+     * reads a single block from a file and updates the sha256 context, on EOF we update the db
+     * and reset m_is
+     */
+    void cksum_do_block();
+
+    /// @returns true if there's more
+    bool cksum_next_file();
+
 
 private:
     /// @returns true if there's more to do, this does one step in the scan part
@@ -368,7 +356,7 @@ public:
     std::string m_path;
     u64 m_revision;
 
-    sqlite3pp::database m_db;
+    std::shared_ptr<sqlite3pp::database> m_db;
     /// path to the sqlite database of the share
     std::string m_db_path;
     sqlite3pp::command m_insert_mfile_q;
@@ -389,18 +377,24 @@ public:
 
 
     /********** CKSUM *************/
-
-    /// cksum buffer size, amount to read at once when cksumming files
+    // We cksum block by block, and then change to the next file, current file checksummer is in
+    // m_cksum_is
+    
+    /// cksum buffer size, bytes to read at once from disk when cksumming files
     static const size_t s_cksum_block_sz = 65536;
     /**
-     * number of reads to perform while calculating checksum in each step
-     * total s_cksum_block_sz * m_cksum_batch_sz bytes will be read from disk before returning, target <= 0.5s
+     * number of reads to perform while calculating checksum in each step total 
+     * s_cksum_block_sz * m_cksum_batch_sz bytes will be read from disk before returning, target <= 0.5s
      */
     size_t m_cksum_batch_sz;
 
     /// query that returns the files that need to be cksummed
-    sqlite3pp::query m_select_to_cksum_q;
-    Checksummer m_cksummer;
+    sqlite3pp::query m_cksum_select_q;
+
+    sha2::SHA256_CTX  m_cksum_ctx_sha256;
+    MFile m_cksum_mfile;
+    /// when it's set means we are in the middle of checksumming a file
+    std::unique_ptr<bfs::ifstream> m_cksum_is;
 
     /********** SHARE IDENTITY, KEYS ***********/
 
