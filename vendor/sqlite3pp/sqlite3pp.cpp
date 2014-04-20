@@ -90,6 +90,9 @@ namespace sqlite3pp
     }
 #endif
 
+
+    /********** database ************/
+
     database::database(char const* dbname):
         db_(nullptr)
     {
@@ -101,11 +104,8 @@ namespace sqlite3pp
         }
     }
 
-    database::~database()
-    {
-        disconnect();
-    }
-
+// Can cause lots of problems if it gets moved while statements refer to an open db
+#if 0
     database::database(database&& other):
         db_(other.db_)
         , bh_(other.bh_)
@@ -116,12 +116,16 @@ namespace sqlite3pp
     {
         other.db_ = nullptr;
     }
+#endif
 
+    database::~database()
+    {
+        disconnect();
+    }
 
     int database::connect(char const* dbname)
     {
         disconnect();
-
         return sqlite3_open(dbname, &db_);
     }
 
@@ -135,11 +139,11 @@ namespace sqlite3pp
     int database::disconnect()
     {
         int rc = SQLITE_OK;
-        if (db_) {
+        if (db_)
+        {
             rc = sqlite3_close(db_);
             db_ = nullptr;
         }
-
         return rc;
     }
 
@@ -227,14 +231,16 @@ namespace sqlite3pp
     }
 
 
-    statement::statement(database& db, char const* stmt):
+    /********** statement ************/
+
+    statement::statement(std::shared_ptr<database>& db, char const* stmt_str):
         db_(db),
         stmt_(0),
-        statement_(stmt ? stmt : ""),
+        statement_(),
         tail_(0)
     {
-        if (stmt)
-            prepare(stmt);
+        if (stmt_str)
+            prepare(stmt_str);
     }
 
     statement::~statement()
@@ -250,15 +256,29 @@ namespace sqlite3pp
 #ifdef SQLITE3_HAS_ERRMSG
             std::fputs(sqlite3_errstr(rc), stderr);
 #else
-            std::fputs(sqlite3_errmsg(db_.db_), stderr);
+            std::fputs(sqlite3_errmsg(db_->db_), stderr);
 #endif
             std::fputs("\n", stderr);
         }
     }
 
+    statement::statement(statement&& other):
+        db_(other.db_)
+        , stmt_()
+        , statement_()
+        , tail_()
+    {
+        // stmt_ is released on other's dtor
+        if (! other.statement_.empty())
+            prepare(other.statement_.c_str());
+    }
+
+
     void statement::prepare(char const* stmt)
     {
-        throw_err(eprepare(stmt), db_);
+        assert(stmt);
+        statement_ = stmt;
+        throw_err(eprepare(statement_.c_str()), *db_);
     }
 
     int statement::eprepare(char const* stmt)
@@ -266,47 +286,37 @@ namespace sqlite3pp
         int rc = efinish();
         if (rc != SQLITE_OK)
             return rc;
-
-        statement_ = stmt;
         return prepare_impl(stmt);
     }
 
     int statement::prepare_impl(char const* stmt)
     {
-        return sqlite3_prepare_v2(db_.db_, stmt, strlen(stmt), &stmt_, &tail_);
+        assert(db_);
+        assert(db_->db_);
+        int res = sqlite3_prepare_v2(db_->db_, stmt, strlen(stmt), &stmt_, &tail_);
+        return res;
     }
 
     void statement::finish()
     {
-        throw_err(efinish(), db_);
+        throw_err(efinish(), *db_);
     }
 
     int statement::efinish()
     {
         int rc = SQLITE_OK;
-        if (stmt_) {
+        if (stmt_)
+        {
             rc = finish_impl(stmt_);
             stmt_ = nullptr;
         }
         tail_ = nullptr;
-
         return rc;
     }
 
     int statement::finish_impl(sqlite3_stmt* stmt)
     {
         return sqlite3_finalize(stmt);
-    }
-
-    int statement::step()
-    {
-        return sqlite3_step(stmt_);
-    }
-
-    statement& statement::reset()
-    {
-        throw_err(sqlite3_reset(stmt_), db_);
-        return *this;
     }
 
     statement& statement::bind(int idx, int32_t value)
@@ -322,19 +332,19 @@ namespace sqlite3pp
 
     statement& statement::bind(int idx, double value)
     {
-        throw_err(sqlite3_bind_double(stmt_, idx, value), db_);
+        throw_err(sqlite3_bind_double(stmt_, idx, value), *db_);
         return *this;
     }
 
     statement& statement::bind(int idx, int64_t value)
     {
-        throw_err(sqlite3_bind_int64(stmt_, idx, value), db_);
+        throw_err(sqlite3_bind_int64(stmt_, idx, value), *db_);
         return *this;
     }
 
     statement& statement::bind(int idx, uint64_t value)
     {
-        throw_err(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)), db_);
+        throw_err(sqlite3_bind_int64(stmt_, idx, static_cast<int64_t>(value)), *db_);
         return *this;
     }
 
@@ -342,30 +352,30 @@ namespace sqlite3pp
     {
         if (blob)
         {
-                throw_err(sqlite3_bind_blob(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
+                throw_err(sqlite3_bind_blob(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), *db_);
         }
         else
         {
-                throw_err(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
+                throw_err(sqlite3_bind_text(stmt_, idx, value.c_str(), static_cast<int>(value.size()), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), *db_);
         }
         return *this;
     }
 
     statement& statement::bind(int idx, char const* value, bool fstatic)
     {
-        throw_err(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
+        throw_err(sqlite3_bind_text(stmt_, idx, value, strlen(value), fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), *db_);
         return *this;
     }
 
     statement& statement::bind(int idx, void const* value, int n, bool fstatic)
     {
-        throw_err(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), db_);
+        throw_err(sqlite3_bind_blob(stmt_, idx, value, n, fstatic ? SQLITE_STATIC : SQLITE_TRANSIENT), *db_);
         return *this;
     }
 
     statement& statement::bind(int idx)
     {
-        throw_err(sqlite3_bind_null(stmt_, idx), db_);
+        throw_err(sqlite3_bind_null(stmt_, idx), *db_);
         return *this;
     }
 
@@ -445,23 +455,28 @@ namespace sqlite3pp
         return *this;
     }
 
-
-    statement::statement(statement&& other):
-        db_(other.db_)
-        , stmt_(other.stmt_)
-        , statement_(move(other.statement_))
-        , tail_(other.tail_)
+    int statement::step()
     {
-        other.stmt_ = nullptr;
-        other.statement_.clear();
-        other.tail_ = nullptr;
+        return sqlite3_step(stmt_);
     }
 
-    command::bindstream::bindstream(command& cmd, int idx) : cmd_(cmd), idx_(idx)
+    statement& statement::reset()
+    {
+        throw_err(sqlite3_reset(stmt_), *db_);
+        return *this;
+    }
+
+
+    /********** command ************/
+
+    command::bindstream::bindstream(command& cmd, int idx):
+        cmd_(cmd),
+        idx_(idx)
     {
     }
 
-    command::command(database& db, char const* stmt) : statement(db, stmt)
+    command::command(std::shared_ptr<database>& db, char const* stmt):
+        statement(db, stmt)
     {
     }
 
@@ -472,7 +487,7 @@ namespace sqlite3pp
 
     void command::execute()
     {
-        throw_err(eexecute(), db_);
+        throw_err(eexecute(), *db_);
     }
 
     int command::eexecute()
@@ -507,6 +522,8 @@ namespace sqlite3pp
         return rc;
     }
 
+
+    /********** query ************/
 
     query::rows::getstream::getstream(rows* rws, int idx):
         rws_(rws)
@@ -620,7 +637,7 @@ namespace sqlite3pp
         cmd_ = cmd;
         rc_ = cmd_->step();
         if (rc_ != SQLITE_ROW && rc_ != SQLITE_DONE)
-            throw database_error(cmd_->db_);
+            throw database_error(*cmd_->db_);
     }
 
     void query::query_iterator::increment()
@@ -628,7 +645,7 @@ namespace sqlite3pp
         assert(cmd_);
         rc_ = cmd_->step();
         if (rc_ != SQLITE_ROW && rc_ != SQLITE_DONE)
-            throw database_error(cmd_->db_);
+            throw database_error(*cmd_->db_);
     }
 
     bool query::query_iterator::equal(query_iterator const& other) const
@@ -642,7 +659,7 @@ namespace sqlite3pp
         return rows(cmd_->stmt_);
     }
 
-    query::query(database& db, char const* stmt):
+    query::query(std::shared_ptr<database>& db, char const* stmt):
         statement(db, stmt)
     {
     }
@@ -666,7 +683,7 @@ namespace sqlite3pp
     {
         int rc = step(); 
         if (rc != SQLITE_ROW)
-            throw database_error(db_);
+            throw database_error(*db_);
         return query::rows(stmt_);
     }
 
@@ -680,9 +697,10 @@ namespace sqlite3pp
         return query_iterator();
     }
 
+    /********** transaction ************/
 
-    transaction::transaction(database& db, bool fcommit, bool freserve):
-        db_(&db)
+    transaction::transaction(std::shared_ptr<database>& db, bool fcommit, bool freserve):
+        db_(db)
         , fcommit_(fcommit)
     {
         db_->eexecute(freserve ? "BEGIN IMMEDIATE" : "BEGIN");
@@ -706,17 +724,15 @@ namespace sqlite3pp
 
     int transaction::commit()
     {
-        database* db = db_;
-        db_ = nullptr;
-        int rc = db->eexecute("COMMIT");
+        int rc = db_->eexecute("COMMIT");
+        db_.reset();
         return rc;
     }
 
     int transaction::rollback()
     {
-        database* db = db_;
-        db_ = nullptr;
-        int rc = db->eexecute("ROLLBACK");
+        int rc = db_->eexecute("ROLLBACK");
+        db_.reset();
         return rc;
     }
 

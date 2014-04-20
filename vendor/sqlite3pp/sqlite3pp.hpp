@@ -58,11 +58,12 @@ namespace sqlite3pp
         typedef boost::function<int (int, char const*, char const*, char const*, char const*)> authorize_handler;
 
         explicit database(char const* dbname = nullptr);
+        database(database&&) = delete;
+        ~database();
+
         database(const database&) = delete;
         database& operator=(const database&) = delete;
-        database(database&&);
-        database& operator=(database&&);
-        ~database();
+        database& operator=(database&&) = delete;
 
         int connect(char const* dbname);
         int connect_v2(char const* dbname, int flags, char const* vfs = nullptr);
@@ -111,7 +112,16 @@ namespace sqlite3pp
 
     class statement
     {
+     protected:
+        statement(std::shared_ptr<database>& db, char const* stmt = nullptr);
+        ~statement();
+
      public:
+        statement(statement&&);
+        statement& operator=(statement&&) = delete;
+        statement(const statement&) = delete;
+        statement& operator=(const statement&) = delete;
+
         void prepare(char const* stmt);
         int eprepare(char const* stmt);
 
@@ -146,24 +156,12 @@ namespace sqlite3pp
         /// reset a prepared statement ready to be re-executed, doesn't reset bindings
         statement& reset();
 
-        statement(statement&&);
-
-     private:
-        statement(const statement&) = delete;
-        statement& operator=(const statement&) = delete;
-        statement& operator=(statement&&) = delete;
-
-
-     protected:
-        statement(database& db, char const* stmt = nullptr);
-        ~statement();
-
 
         int prepare_impl(char const* stmt);
         int finish_impl(sqlite3_stmt* stmt);
 
      protected:
-        database& db_;
+        std::shared_ptr<database> db_;
         sqlite3_stmt* stmt_;
         std::string statement_;
         char const* tail_;
@@ -192,7 +190,7 @@ namespace sqlite3pp
             int idx_;
         };
 
-        explicit command(database& db, char const* stmt = nullptr);
+        explicit command(std::shared_ptr<database>& db, char const* stmt = nullptr);
 
         bindstream binder(int idx = 1);
 
@@ -315,7 +313,7 @@ namespace sqlite3pp
             int rc_;
         };
 
-        explicit query(database& db, char const* stmt = nullptr);
+        query(std::shared_ptr<database>& db, char const* stmt = nullptr);
 
         int column_count() const;
 
@@ -330,17 +328,21 @@ namespace sqlite3pp
         iterator end();
     };
 
-    class transaction : boost::noncopyable
+    class transaction
     {
      public:
-        explicit transaction(database& db, bool fcommit = false, bool freserve = false);
+        transaction(std::shared_ptr<database>& db, bool fcommit = false, bool freserve = false);
         ~transaction();
+        transaction(const transaction&) = delete;
+        transaction& operator=(const transaction&) = delete;
+        transaction(transaction&&) = default;
+        transaction& operator=(transaction&&) = default;
 
         int commit();
         int rollback();
 
      private:
-        database* db_;
+        std::shared_ptr<database> db_;
         bool fcommit_;
     };
 
