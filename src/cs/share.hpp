@@ -353,7 +353,10 @@ public:
     bool was_updated(const MFile& f);
 
 public:
+    /// path to the share
     std::string m_path;
+    /// revision number for this share / peer, incorporated in the version clock when this share
+    /// modifies a file
     u64 m_revision;
 
     std::shared_ptr<sqlite3pp::database> m_db;
@@ -364,7 +367,7 @@ public:
     sqlite3pp::query m_get_mfiles_by_content_q;
 
 
-    /********* SCAN ************/
+    /********* FS SCAN ************/
 
     bool m_scan_in_progress;
     /// number of files to scan (stat) at once. We should target <= 0.5s
@@ -376,7 +379,7 @@ public:
     sqlite3pp::command m_update_scan_found_false_q;
 
 
-    /********** CKSUM *************/
+    /********** FILE CKSUM *************/
     // We cksum block by block, and then change to the next file, current file checksummer is in
     // m_cksum_is
     
