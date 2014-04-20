@@ -219,8 +219,7 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     using namespace cs::message;
     Tmpdir tmp;
     server_test_01_create_tree(tmp.tmpdir);
-    Share share2(tmp.tmpdir.string(), tmp.dbpath.string());
-    Share share(move(share2));
+    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     fullscan(share);
     CSServer server;
 //    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());

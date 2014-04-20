@@ -302,6 +302,15 @@ BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
     BOOST_CHECK(mfiles[0].up_to_date);
 }
 
+BOOST_AUTO_TEST_CASE(Share_move)
+{
+    Tmpdir tmp;
+    create_tree(tmp.tmpdir);
+    Share share2(tmp.tmpdir.string(), tmp.dbpath.string());
+    Share share(move(share2));
+    fullscan(share);
+}
+
 #if 0
 BOOST_AUTO_TEST_SUITE_END()
 #endif
