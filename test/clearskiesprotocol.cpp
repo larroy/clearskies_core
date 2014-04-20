@@ -17,10 +17,12 @@
 
 
 #include "cs/server.hpp"
+#include "cs/share.hpp"
 #include "utils.hpp"
 #include "cs/message.hpp"
 #include "cs/messagecoder.hpp"
 #include <boost/test/unit_test.hpp>
+#include <vector>
 #include <iostream>
 
 using namespace std;
@@ -205,8 +207,10 @@ void server_test_01_create_tree(const bfs::path& path)
 
 Peer init_peer(const std::string& name, CSServer& server, const std::string& share_id)
 {
+    using namespace cs::message;
     Peer peer(name, server);
-    peer.send(cs::message::Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)) });
+    peer.send(Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)) });
+    peer.send(Identity{peer.m_name, utils::isotime(std::time(nullptr))});
     return peer;
 }
 
@@ -219,15 +223,32 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     using namespace cs::message;
     Tmpdir tmp;
     server_test_01_create_tree(tmp.tmpdir);
-    Share share(tmp.tmpdir.string(), tmp.dbpath.string());
-    fullscan(share);
-    CSServer server;
-//    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
-//    server.add_connection("test");
-//    fullscan(server.share(share_id));
 
-    //Peer peer = init_peer("test", server, share_id);
-    //peer.send(
+    CSServer server;
+    const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
+    server.add_connection("test");
+    fullscan(server.share(share_id));
+
+    vector<cs::share::MFile> manifest;
+    for (const auto& file: server.share(share_id))
+        manifest.emplace_back(file);
+
+    BOOST_CHECK_EQUAL(manifest.size(), 5u);
+
+    Peer peer = init_peer("test", server, share_id);
+    peer.read_from(server);
+
+    peer.send(Get(manifest[0].checksum));
+    peer.read_from(server);
+
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 3u);
+
+
+    FileData* file_data = 0;
+    BOOST_CHECK_NO_THROW(file_data = &dynamic_cast<FileData&>(*peer.m_messages_payload.at(2).first));
+    BOOST_CHECK_EQUAL(file_data->m_payload, true);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 1u);
+
     // FIXME: get by content
     //peer.send()
 }

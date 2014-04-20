@@ -24,6 +24,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
 #include <map>
+#include <vector>
 #include <string>
 #include <thread>
 namespace sha2
