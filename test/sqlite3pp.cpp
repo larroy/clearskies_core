@@ -24,7 +24,7 @@ using namespace sqlite3pp;
 
 BOOST_AUTO_TEST_CASE(test_get)
 {
-    database db(":memory:");
+    auto db(make_shared<database>(":memory:"));
     command(db, "CREATE TABLE test (i INTEGER, t TEXT, b BLOB)").execute();
 
     uint64_t i = std::numeric_limits<uint64_t>::max();
