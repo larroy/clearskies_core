@@ -3,7 +3,7 @@ set -e
 set -x
 
 # GYP (conflicts with the installed version of gyp)
-svn export -q http://gyp.googlecode.com/svn/trunk/ -r 1845 gyp
+#svn export -q http://gyp.googlecode.com/svn/trunk/ -r 1845 gyp
 # ninja
 wget https://github.com/martine/ninja/releases/download/v1.4.0/ninja-linux.zip
 unzip -d /usr/local/bin/ ninja-linux.zip
