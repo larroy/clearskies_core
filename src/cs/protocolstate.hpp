@@ -70,7 +70,7 @@ struct MsgRstate
         return signature_sz != 0;
     }
 
-    /// prefix !: payload $: signed &: signed payload
+    /// prefix !: payload s: signed $: signed payload
     char prefix;
     size_t msg_len;
     bool found;
