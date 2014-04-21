@@ -179,7 +179,7 @@ namespace sqlite3pp
             bindstream& operator << (T value) {
                 int rc = cmd_.bind(idx_, value);
                 if (rc != SQLITE_OK) {
-                    throw database_error(cmd_.db_);
+                    throw database_error(*cmd_.db_);
                 }
                 ++idx_;
                 return *this;
