@@ -71,6 +71,12 @@ void trim_buff(std::string& buf, std::string::const_iterator from)
  *     ^
  *     |
  * preamble_end
+ *
+ * 
+ *  s[4 bytes size]:<50bytes>[4 bytes size]:<24 bytes signature>
+ *  m[4 bytes size]:<50bytes>
+ *  ![4 bytes size]:<50bytes>[4 bytes chunk size]:<chunk size payload bytes>
+ *
  */
 MsgRstate find_message(const std::string& buff)
 {
