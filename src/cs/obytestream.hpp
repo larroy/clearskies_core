@@ -36,7 +36,17 @@ public:
         static_assert(sizeof(W) <= sizeof(T), "Write size has to be <= of original type");
         W w = x; 
         for (i8 i = sizeof(W) - 1; i >= 0; --i) 
-            m_buff.push_back(static_cast<char>(w >> i));
+            m_buff.push_back(static_cast<char>(w >> (8*i)));
+    }
+
+    u8 const* begin()
+    {
+        return reinterpret_cast<u8 const*>(&*m_buff.begin());
+    }
+
+    u8 const* end()
+    {
+        return reinterpret_cast<u8 const*>(&*m_buff.end());
     }
 
     std::string m_buff;

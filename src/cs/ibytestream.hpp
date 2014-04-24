@@ -28,7 +28,7 @@ namespace io
 class Ibytestream
 {
 public:
-    Ibytestream(char const* begin, char const* end):
+    Ibytestream(u8 const* begin, u8 const* end):
         m_next(begin)
         , m_end(end)
     {}
@@ -40,12 +40,16 @@ public:
         assert(m_next + sizeof(T) <= m_end);
         T result = 0;
         for (i8 i = sizeof(T) - 1; i >= 0; --i)
-            result |= (static_cast<T>(*m_next++) << (8*i));
+        {
+            result |= static_cast<T>(*m_next++);
+            result <<= 8;
+        }
+
         return result;
     }
 
-    char const* m_next;
-    char const* const m_end;
+    u8 const* m_next;
+    u8 const* const m_end;
 };
 
 }

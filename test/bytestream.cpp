@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(Ibytestream_test_01)
     Obytestream ob;
     u32 v = 0xa5de4137u;
     ob.write<u32>(v);
-    Ibytestream ib(&*ob.m_buff.begin(), &*ob.m_buff.end());
+    Ibytestream ib(ob.begin(), ob.end());
     u32 vr = ib.read<u32>();
     BOOST_CHECK_EQUAL(v, vr);
 }
