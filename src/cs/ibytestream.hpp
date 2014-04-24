@@ -16,6 +16,9 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <type_traits>
+#include <cassert>
+#include "config.hpp"
 
 namespace cs
 {
@@ -25,7 +28,7 @@ namespace io
 class Ibytestream
 {
 public:
-    Ibytestream(const char* begin, const char* end):
+    Ibytestream(char const* begin, char const* end):
         m_next(begin)
         , m_end(end)
     {}
@@ -33,7 +36,7 @@ public:
     template<typename T>
     T read()
     {
-        static_assert(std::is_integral<T>, "argument must be integral");
+        static_assert(std::is_integral<T>::value, "argument must be integral");
         assert(m_next + sizeof(T) <= m_end);
         T result = 0;
         for (i8 i = sizeof(T) - 1; i >= 0; --i)
@@ -41,8 +44,8 @@ public:
         return result;
     }
 
-    char* m_next;
-    const char* m_end;
+    char const* m_next;
+    char const* const m_end;
 };
 
 }

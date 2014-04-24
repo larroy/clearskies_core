@@ -14,17 +14,19 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <boost/test/unit_test.hpp>
 #include "cs/ibytestream.hpp"
 #include "cs/obytestream.hpp"
 
 using namespace std;
 using namespace cs::io;
+using namespace cs;
 
 BOOST_AUTO_TEST_CASE(Ibytestream_test_01)
 {
     Obytestream ob;
     u32 v = 0xa5de4137u;
-    ob.write(v);
+    ob.write<u32>(v);
     Ibytestream ib(&*ob.m_buff.begin(), &*ob.m_buff.end());
     u32 vr = ib.read<u32>();
     BOOST_CHECK_EQUAL(v, vr);

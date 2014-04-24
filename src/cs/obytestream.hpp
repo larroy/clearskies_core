@@ -33,13 +33,13 @@ public:
     void write(T x)
     {
         static_assert(std::is_integral<W>::value && std::is_integral<T>::value, "argument must be integral");
-        static_assert(sizeof(W) <= sizeof(T));
+        static_assert(sizeof(W) <= sizeof(T), "Write size has to be <= of original type");
         W w = x; 
         for (i8 i = sizeof(W) - 1; i >= 0; --i) 
             m_buff.push_back(static_cast<char>(w >> i));
     }
 
-    string m_buff;
+    std::string m_buff;
 };
 
 }

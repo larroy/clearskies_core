@@ -24,6 +24,7 @@
                 "conf.cpp",
                 "uvpp.cpp",
                 "clearskiesprotocol.cpp",
+                "bytestream.cpp",
             ],
             "include_dirs": [
                 "../src",
