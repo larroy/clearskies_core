@@ -94,6 +94,17 @@ public:
 };
 
 
+class MessageHandler_GET: public MessageHandler
+{
+public:
+    MessageHandler_GET(State state, ClearSkiesProtocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
+
+};
+
+
 
 
 
@@ -121,6 +132,7 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, std::map<s
     SET_HANDLER(INITIAL, MessageHandler_INITIAL);
     SET_HANDLER(WAIT4_CLIENT_IDENTITY, MessageHandler_WAIT4_CLIENT_IDENTITY);
     SET_HANDLER(CONNECTED, MessageHandler_CONNECTED);
+    SET_HANDLER(GET, MessageHandler_GET);
 
 #undef SET_HANDLER
 }
@@ -166,6 +178,8 @@ void ClearSkiesProtocol::handle_empty_output_buff()
                 // make sure to send the terminating 0 size chunk, per cs payload protocol
                 send_payload_chunk(string());
             m_txfile_is.reset();
+            assert(m_state == GET);
+            m_state = CONNECTED;
         }
     }
 }
@@ -221,7 +235,7 @@ void ClearSkiesProtocol::do_get(const std::string& checksum)
     }
     else
     {
-        // FIXME!
+        send_message(message::FileModified());
     }
 }
 
