@@ -18,8 +18,10 @@
 #pragma once
 
 #include "int_types.h"
-#include "message.hpp"
-#include "messagecoder.hpp"
+#include <string>
+#include <deque>
+#include <functional>
+#include <cassert>
 #include <stddef.h>
 
 
@@ -138,7 +140,7 @@ PayLoadFound find_payload(const std::string& buff);
 
 /**
  * @brief Base protocol state class for all protocols
- * @author plarroy
+ * @author larroy
  *
  * Low level buffer IO handling
  *
@@ -150,6 +152,22 @@ class ProtocolState
 public:
     /// type of callback for writing data
     typedef std::function<void(const char*, size_t)> do_write_t;
+
+    /// called when a message is completely read on the input buffer
+    typedef std::function<void(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload)> handle_msg_t;
+
+    /// called by on_write_finished to signal that we are out of data (ex. send more manifest
+    /// messages, or send the next chunk of payload)
+    typedef std::function<void(void)> handle_empty_output_buff_t;
+
+    /// called after a message with the payload flag was handled and payload was input
+    typedef std::function<void(const char* data, size_t len)> handle_payload_t;
+
+    /// called at the end of payload (record of size 0)
+    typedef std::function<void()> handle_payload_end_t;
+
+    /// when the protocol can't make sense of the data we should probably close the connection
+    typedef std::function<void()> handle_error_t;
 
 
     static size_t s_msg_preamble_max;
@@ -165,18 +183,23 @@ public:
         , m_payload_ended(true)
         , m_read_payload(false)
         , m_pl_found()
-        , m_msg_coder()
         , m_do_write([](const char*, size_t) { assert(false); })
         , m_write_in_progress(false)
+        , handle_empty_output_buff()
+        , handle_msg()
+        , handle_payload()
+        , handle_payload_end()
+        , handle_error()
     {
         m_input_buff.reserve(s_input_buff_size);
     }
 
-    virtual ~ProtocolState() = default;
+#if 0
     ProtocolState(const ProtocolState&) = delete;
     ProtocolState& operator=(const ProtocolState&) = delete;
     ProtocolState(ProtocolState&&) = default;
     ProtocolState& operator=(ProtocolState&&) = default;
+#endif
 
     void input(const std::string& s)
     {
@@ -190,7 +213,7 @@ public:
      */
     void input(const char* data, size_t len);
 
-    void send_message(const message::Message&);
+    void send_message(const std::string&& msg_sig_encoded, bool payload);
     void send_payload_chunk(std::string&& chunk);
 
     void set_write_fun(do_write_t do_write)
@@ -208,20 +231,6 @@ public:
      */
     void write_next_buff();
 
-    /// called by on_write_finished to signal that we are out of data (ex. send more manifest
-    /// messages, or send the next chunk of payload)
-    virtual void handle_empty_output_buff() {}
-
-    /// called when a message is completely read on the input buffer
-    virtual void handle_message(std::unique_ptr<message::Message>) = 0;
-    /// called after a message with the payload flag was handled and payload was input
-    virtual void handle_payload(const char* data, size_t len) = 0;
-    /// called at the end of payload (record of size 0)
-    virtual void handle_payload_end() = 0;
-    /// in case of garbage we should probably close the connection ASAP
-    virtual void handle_msg_garbage(const std::string& buff) {};
-    /// garbage in payload
-    virtual void handle_pl_garbage(const std::string& buff) {};
 
 private:
     /// internal input buffer accumulating data until it can be processed
@@ -237,13 +246,16 @@ private:
     bool m_read_payload;
     PayLoadFound m_pl_found;
 
-    /// encoder used for message data
-    message::Coder m_msg_coder;
-
 public:
     /// callback used to write data
     do_write_t m_do_write;
     bool m_write_in_progress;
+    handle_empty_output_buff_t handle_empty_output_buff;
+
+    handle_msg_t handle_msg;
+    handle_payload_t handle_payload;
+    handle_payload_end_t handle_payload_end;
+    handle_error_t handle_error;
 };
 } // end ns
 } // end ns

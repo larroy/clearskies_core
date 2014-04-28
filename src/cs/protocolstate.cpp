@@ -200,18 +200,16 @@ void ProtocolState::input(const char* data, size_t len)
             {
                 try
                 {
-                    unique_ptr<message::Message> msg = m_msg_coder.decode_msg(mrs.payload(), mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz);
-                    if (mrs.payload())
-                        m_read_payload = true;
-                    handle_message(move(msg));
+                    m_read_payload = mrs.payload();
+                    handle_msg(mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz, mrs.payload());
                 }
-                catch(const message::CoderError& e)
+                catch(...)
                 {
-                    handle_msg_garbage(fs("message::CoderError exception: " <<  e.what()));
+                    handle_error();
                 }
             }
             if (mrs.garbage)
-                handle_msg_garbage(m_input_buff);
+                handle_error();
 
             trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.end);
             if (mrs.end == 0)
@@ -241,7 +239,8 @@ void ProtocolState::input(const char* data, size_t len)
             }
             else if (m_pl_found.garbage)
             {
-                handle_pl_garbage(m_input_buff);
+                handle_error();
+                // FIXME: review this
                 trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
                 m_read_payload = false;
                 m_pl_found.reset();
@@ -253,12 +252,12 @@ void ProtocolState::input(const char* data, size_t len)
     }
 }
 
-void ProtocolState::send_message(const message::Message& m)
+void ProtocolState::send_message(const std::string&& msg_encoded, bool const payload)
 {
     assert(m_payload_ended);
-    m_last_has_payload = m.m_payload;
+    m_last_has_payload = payload;
     const bool do_write = m_output_buff.empty() == true;
-    m_output_buff.emplace_back(m_msg_coder.encode_msg(m));
+    m_output_buff.emplace_back(move(msg_encoded));
     if (do_write)
         write_next_buff();
 }
