@@ -41,8 +41,8 @@ public:
         T result = 0;
         for (i8 i = sizeof(T) - 1; i >= 0; --i)
         {
-            result |= static_cast<T>(*m_next++);
             result <<= 8;
+            result |= static_cast<T>(*m_next++);
         }
 
         return result;
