@@ -24,7 +24,7 @@ If you can't dedicate some time to the project you can still give support by don
 
 Or through the [bountysource fundraiser](https://www.bountysource.com/fundraisers/551-clearskies-open-source-file-synchronization)
 
-# Dependencies:
+# Dependencies
 
 * boost >= 1.49
 * libboost-test-dev
@@ -35,14 +35,14 @@ Or through the [bountysource fundraiser](https://www.bountysource.com/fundraiser
 You can use one of the `scripts/setup_environment...`  scripts to install the dependencies or as a
 guide to install the required dependencies manually.
 
-# Included dependencies:
+# Included dependencies
 
 * libuv (vendor/libuv)
 * gyp (tools/gyp) WARNING: watch out for interactions with the installed system gyp modules! this
   can produce errors as the python module search path might use the ones on the system instead of
   the installed one.
 
-# Supported compilers:
+# Supported compilers
 
 Development is done with **GCC 4.8** and boost 1.54, so far this is the only compiler guaranteed to be able to
 build the project. (My development machine runs Debian GNU/Linux testing (jessie))
@@ -56,7 +56,7 @@ standard. The following compilers should also work:
 
 Our target is to support the following platforms in order of development effort: Linux, Android, Windows, Mac, iOS.
 
-# Build instructions:
+# Build instructions
 
     ./build.sh
     ./test.sh
