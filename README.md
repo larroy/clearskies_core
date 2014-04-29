@@ -7,15 +7,18 @@ Open source, distributed data synchronization software using the clearskies prot
 
 [Protocol description](https://github.com/jewel/clearskies/blob/master/protocol/core.md)
 
-# Status of the project:
+# Status of the project
 
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
   See [CONTRIBUTING](http://larroy.github.io/clearskies_core/contributing)
 
-# Donate:
+# Donate
 
-If you want to support development of this project, you can **donate BTC** to the following address:
+We would like you to join and help with development, documentation or graphic design. Please post to
+the group first to avoid duplicating efforts.
+
+If you can't dedicate some time to the project you can still give support by donating some money such as **Bitcoin** to the following address:
 
     18QEEJuR2ACAunMVeAxZ46o4QprxFKyGkw
 
