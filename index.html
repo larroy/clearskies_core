@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Clearskies core : Open source, distributed, secure data synchronization using the clearskies protocol" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Clearskies core</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/larroy/clearskies_core">View on GitHub</a>
+
+          <h1 id="project_title">Clearskies core</h1>
+          <h2 id="project_tagline">Open source, distributed, secure data synchronization using the clearskies protocol</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/larroy/clearskies_core/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/larroy/clearskies_core/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="clearskies_core-" class="anchor" href="#clearskies_core-"><span class="octicon octicon-link"></span></a>clearskies_core </h1>
+
+<p><a href="https://travis-ci.org/larroy/clearskies_core"><img src="https://travis-ci.org/larroy/clearskies_core.png?branch=master" alt="Build Status"></a></p>
+
+<p>Open source, distributed data synchronization software using the clearskies protocol.</p>
+
+<p>Protocol description: <a href="https://github.com/jewel/clearskies/blob/master/protocol/core.md">https://github.com/jewel/clearskies/blob/master/protocol/core.md</a></p>
+
+<h1>
+<a name="status-of-the-project" class="anchor" href="#status-of-the-project"><span class="octicon octicon-link"></span></a>Status of the project:</h1>
+
+<ul>
+<li>Early stages of development, there's nothing here for users. Only if you are willing to help and
+contribute. <strong>THIS SOFTWARE IS NOT YET FUNCTIONAL</strong>
+See <a href="CONTRIBUTING.md">CONTRIBUTING</a>
+</li>
+</ul><h1>
+<a name="donate" class="anchor" href="#donate"><span class="octicon octicon-link"></span></a>Donate:</h1>
+
+<p>If you want to support development of this project, you can <strong>donate BTC</strong> to the following address:</p>
+
+<pre><code>18QEEJuR2ACAunMVeAxZ46o4QprxFKyGkw
+</code></pre>
+
+<p>Or through the <a href="https://www.bountysource.com/fundraisers/551-clearskies-open-source-file-synchronization">bountysource fundraiser</a></p>
+
+<h1>
+<a name="dependencies" class="anchor" href="#dependencies"><span class="octicon octicon-link"></span></a>Dependencies:</h1>
+
+<ul>
+<li>boost &gt;= 1.49</li>
+<li>libboost-test-dev</li>
+<li>libboost-filesystem (v3)</li>
+<li>libsqlite3-dev</li>
+<li>ninja  (ninja-build on debian)</li>
+</ul><h1>
+<a name="included-dependencies" class="anchor" href="#included-dependencies"><span class="octicon octicon-link"></span></a>Included dependencies:</h1>
+
+<ul>
+<li>libuv (vendor/libuv)</li>
+<li>gyp (tools/gyp) WARNING: watch out for interactions with the installed system gyp modules! this
+can produce errors as the python module search path might use the ones on the system instead of
+the installed one.</li>
+</ul><h1>
+<a name="supported-compilers" class="anchor" href="#supported-compilers"><span class="octicon octicon-link"></span></a>Supported compilers:</h1>
+
+<p>Development is done with <strong>GCC 4.8</strong> and boost 1.54, so far this is the only compiler guaranteed to be able to
+build the project. (My development machine runs Debian GNU/Linux testing (jessie))</p>
+
+<p>The project is implemented in C++11, the compiler should support the features used from this
+standard. The following compilers should also work:</p>
+
+<ul>
+<li>GCC &gt;= 4.7</li>
+<li>Visual Studio 2013</li>
+<li>Clang</li>
+</ul><p>Our target is to support the following platforms in order of development effort: Linux, Android, Windows, Mac, iOS.</p>
+
+<h1>
+<a name="build-instructions" class="anchor" href="#build-instructions"><span class="octicon octicon-link"></span></a>Build instructions:</h1>
+
+<pre><code>./build.sh
+./test.sh
+</code></pre>
+
+<h1>
+<a name="status-of-the-project-1" class="anchor" href="#status-of-the-project-1"><span class="octicon octicon-link"></span></a>Status of the project</h1>
+
+<ul>
+<li>Low level assembling of messages and payload completed</li>
+<li>Implementing the CS protocol</li>
+<li>Integrating required libraries</li>
+<li>Implementing share infrastructure</li>
+</ul><h2>
+<a name="discussion-group" class="anchor" href="#discussion-group"><span class="octicon octicon-link"></span></a>Discussion group</h2>
+
+<p><a href="https://groups.google.com/forum/#!forum/clearskies-dev">https://groups.google.com/forum/#!forum/clearskies-dev</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Clearskies core maintained by <a href="https://github.com/larroy">larroy</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
