@@ -5,13 +5,13 @@ clearskies_core
 
 Open source, distributed data synchronization software using the clearskies protocol.
 
-Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/core.md
+[Protocol description](https://github.com/jewel/clearskies/blob/master/protocol/core.md)
 
 # Status of the project:
 
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
-  See [CONTRIBUTING](CONTRIBUTING.md)
+  See [CONTRIBUTING](http://larroy.github.io/clearskies_core/contributing)
 
 # Donate:
 
