@@ -29,6 +29,9 @@ Or through the [bountysource fundraiser](https://www.bountysource.com/fundraiser
 * libsqlite3-dev
 * ninja  (ninja-build on debian)
 
+You can use one of the `scripts/setup_environment...`  scripts to install the dependencies or as a
+guide to install the required dependencies manually.
+
 # Included dependencies:
 
 * libuv (vendor/libuv)
