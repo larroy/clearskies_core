@@ -1,4 +1,4 @@
-clearskies_core  ([bountysource fundraiser](https://www.bountysource.com/fundraisers/551-clearskies-open-source-file-synchronization))
+clearskies_core
 ===============
 
 [![Build Status](https://travis-ci.org/larroy/clearskies_core.png?branch=master)](https://travis-ci.org/larroy/clearskies_core)
@@ -18,6 +18,8 @@ Protocol description: https://github.com/jewel/clearskies/blob/master/protocol/c
 If you want to support development of this project, you can **donate BTC** to the following address:
 
     18QEEJuR2ACAunMVeAxZ46o4QprxFKyGkw
+
+Or through the [bountysource fundraiser](https://www.bountysource.com/fundraisers/551-clearskies-open-source-file-synchronization)
 
 # Dependencies:
 
@@ -64,6 +66,7 @@ Our target is to support the following platforms in order of development effort:
 ## Discussion group
 
 https://groups.google.com/forum/#!forum/clearskies-dev
+
 
 
 
