@@ -17,8 +17,8 @@
  */
 
 #pragma once
-#include "config.hpp"
-#include "server.hpp"
+#include "../config.hpp"
+#include "../server.hpp"
 #include "uvpp/uvpp.hpp"
 #include <string>
 #include <unordered_map>
@@ -33,7 +33,7 @@ class TCPConnection: public server::Connection
 public:
     TCPConnection(
         const ServerInfo& server_info,
-        std::map<std::string, share::Share>& shares,
+        std::map<std::string, core::share::Share>& shares,
         uvpp::loop& loop
     ):
         server::Connection(server_info, shares)

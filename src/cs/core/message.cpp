@@ -26,6 +26,8 @@ namespace cs
 {
 namespace core
 {
+namespace msg
+{
 
 
 #define SC(X) static_cast<size_t>(X)
@@ -152,6 +154,7 @@ MAccess maccess_from_string(const std::string& access)
 
 size_t Message::MAX_SIZE = 1ULL << 24; // 16 MB
 
+} // end ns
 } // end ns
 } // end ns
 

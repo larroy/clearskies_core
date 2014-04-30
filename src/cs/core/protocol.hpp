@@ -17,11 +17,13 @@
  */
 #pragma once
 
-#include "config.hpp"
-#include "protocolstate.hpp"
+#include "../config.hpp"
+#include "message.hpp"
 #include "serverinfo.hpp"
 #include "share.hpp"
-#include "utils.hpp"
+#include "coder.hpp"
+#include "../utils.hpp"
+#include "../protocolstate.hpp"
 #include <array>
 #include <map>
 
@@ -55,7 +57,7 @@ enum State: unsigned
 DEFINE_RE_EXCEPTION(ProtocolError);
 DEFINE_RE_EXCEPTION(ShareNotFoundError);
 
-class ClearSkiesProtocol;
+class Protocol;
 
 /**
  * Base class for handling messages, throws if the message type is not expected in the current
@@ -63,7 +65,7 @@ class ClearSkiesProtocol;
  *
  * To handle a message, we have to know in which state we want to handle it. We install a handler
  * for this state, and in the visit function we perform desired actions and if applicable, we change
- * m_next_state variable so the ClearSkiesProtocol class switches to the next state after handling
+ * m_next_state variable so the Protocol class switches to the next state after handling
  * the message.
  *
  * A message recieved in a state in which is not expected triggers a ProtocolError exception, which
@@ -71,16 +73,16 @@ class ClearSkiesProtocol;
  *
  *
  * 1. Install handler: SET_HANDLER(STATE, VISITOR_CLASS)
- * 2. Implement Handler::visit(const message::Type&)
+ * 2. Implement Handler::visit(const msg::Type&)
  *  2.1 change m_next_state to the desired next state
  *
  * FIXME: write tests for these cases on the server that does network IO.
  *
  */
-class MessageHandler: public message::ConstMessageVisitor
+class MessageHandler: public msg::ConstMessageVisitor
 {
 public:
-    explicit MessageHandler(State state, ClearSkiesProtocol& protocol):
+    explicit MessageHandler(State state, Protocol& protocol):
           m_state(state)
         , m_next_state(state)
         , r_protocol(protocol)
@@ -93,82 +95,82 @@ public:
 
 // FIXME: message type in string
 
-    void visit(const message::Unknown&) override
+    void visit(const msg::Unknown&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::InternalStart&) override
+    void visit(const msg::InternalStart&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Ping&) override
+    void visit(const msg::Ping&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Greeting&) override
+    void visit(const msg::Greeting&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Start&) override
+    void visit(const msg::Start&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::CannotStart&) override
+    void visit(const msg::CannotStart&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::StartTLS&) override
+    void visit(const msg::StartTLS&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Identity&) override
+    void visit(const msg::Identity&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Keys&) override
+    void visit(const msg::Keys&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::KeysAcknowledgment&) override
+    void visit(const msg::KeysAcknowledgment&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Manifest&) override
+    void visit(const msg::Manifest&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::GetUpdates&) override
+    void visit(const msg::GetUpdates&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Current&) override
+    void visit(const msg::Current&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Get&) override
+    void visit(const msg::Get&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::FileData&) override
+    void visit(const msg::FileData&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::FileModified&) override
+    void visit(const msg::FileModified&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Update&) override
+    void visit(const msg::Update&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const message::Move&) override
+    void visit(const msg::Move&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
 
     State m_state;
     State m_next_state;
-    ClearSkiesProtocol& r_protocol;
+    Protocol& r_protocol;
 };
 
 /**
@@ -179,12 +181,18 @@ public:
 typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_table_t;
 
 /**
- * This class specializes ProtocolState to implement the clearskies protocol on the message level
+ * Implements the clearskies core protocol
  */
-class ClearSkiesProtocol: public ProtocolState
+class Protocol
 {
 public:
-    ClearSkiesProtocol(const ServerInfo&, std::map<std::string, share::Share>& shares);
+    typedef std::function<void(const std::string&& msg_sig_encoded, bool payload)> handle_send_message_t;
+    typedef std::function<void(const std::string&& chunk)> handle_send_payload_chunk_t;
+
+    Protocol(const ServerInfo&, std::map<std::string, share::Share>& shares);
+
+    void send_message(const msg::Message& m);
+
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
 
@@ -209,13 +217,11 @@ public:
      */
     void recieve_file(const bfs::path& path);
 
-    // overrides from ProtocolState
-    void handle_empty_output_buff() override;
-    void handle_message(std::unique_ptr<message::Message>) override;
-    void handle_payload(const char* data, size_t len) override;
-    void handle_payload_end() override;
-    void handle_msg_garbage(const std::string& buff) override;
-    void handle_pl_garbage(const std::string& buff) override;
+    // callbacks for connecting to @sa cs::ProtocolState
+    void handle_empty_output_buff();
+    void handle_msg(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload);
+    void handle_payload(const char* data, size_t len);
+    void handle_payload_end();
 
     // message actions, note that the handlers / visitors logic control that these actions are triggered on the
     // appropiate states only
@@ -246,8 +252,14 @@ public:
     std::unique_ptr<bfs::ifstream> m_txfile_is;
     /// pointer to an open output stream for the file that is being recieved if set
     std::unique_ptr<bfs::ofstream> m_rxfile_os;
+
+    /// encodes messages into bytes
+    msg::Coder m_coder;
+    handle_send_message_t m_handle_send_message;
+    handle_send_payload_chunk_t m_handle_send_payload_chunk;
 };
 
+void connect(ProtocolState&, Protocol&);
 
 } // end ns
 } // end ns

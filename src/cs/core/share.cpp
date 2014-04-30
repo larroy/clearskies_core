@@ -16,7 +16,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "share.hpp"
-#include "utils.hpp"
+#include "../utils.hpp"
 #include <iostream>
 #include "boost/format.hpp"
 using namespace std;

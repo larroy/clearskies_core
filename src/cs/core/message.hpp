@@ -17,14 +17,16 @@
  */
 
 #pragma once
-#include "int_types.h"
-#include "utils.hpp"
+#include "../int_types.h"
+#include "../utils.hpp"
 #include <string>
 #include <vector>
 
 namespace cs
 {
 namespace core
+{
+namespace msg
 {
 
 enum class MType: unsigned
@@ -452,5 +454,6 @@ public:
 };
 
 
+} // end ns
 } // end ns
 } // end ns

@@ -15,7 +15,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
-#include "cs/daemon.hpp"
+#include "cs/daemon/daemon.hpp"
 #include "cs/config.hpp"
 #include "cs/utils.hpp"
 

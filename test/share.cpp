@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "cs/share.hpp"
+#include "cs/core/share.hpp"
 #include "cs/utils.hpp"
 #include "utils.hpp"
 #include <boost/test/unit_test.hpp>
@@ -23,8 +23,8 @@
 #include <iostream>
 
 using namespace std;
-using namespace cs::share;
-using cs::File;
+using namespace cs::core::share;
+//using cs::File;
 
 #if 0
 
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(share_state_0)
     for (const auto& file: share)
         BOOST_CHECK(file.checksum.empty());
 
-    fullscan(share);
+    share.fullscan();
 
     {
         vector<MFile> files;
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(share_state_0)
 
 
     // Re-scan
-    fullscan(share);
+    share.fullscan();
 
 
     // Check manifest state after file removal
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
     Tmpdir tmp;
     Share share(tmp.tmpdir.string(), tmp.dbpath.string());
     create_tree(tmp.tmpdir);
-    fullscan(share);
+    share.fullscan();
 
     {
         vector<MFile> manifest;
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         f_os << "omg I'm new" << endl;
         f_os.close();
 
-        fullscan(share);
+        share.fullscan();
 
         vector<MFile> manifest_2;
         for (const auto& file: share)
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(Share_get_mfiles_by_content_test)
     create_file(tmp.tmpdir / "aa", "a content");
     create_file(tmp.tmpdir / "b" / "a", "a content");
 
-    fullscan(share);
+    share.fullscan();
 
     auto f = share.get_file_info("a");
     BOOST_CHECK(f);
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(Share_move)
     create_tree(tmp.tmpdir);
     Share share2(tmp.tmpdir.string(), tmp.dbpath.string());
     Share share(move(share2));
-    fullscan(share);
+    share.fullscan();
 }
 
 #if 0

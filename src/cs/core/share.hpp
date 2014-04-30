@@ -17,9 +17,8 @@
  */
 
 #pragma once
-#include "config.hpp"
-#include "file.hpp"
-#include "boost_fs_fwd.hpp"
+#include "../config.hpp"
+#include "../boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
@@ -355,7 +354,12 @@ public:
     /// @returns true if @arg f has been updated by comparing modification time 
     bool was_updated(const MFile& f);
 
-public:
+    void fullscan()
+    {
+        scan();
+        while(scan_step()) {};
+    }
+
     /// path to the share
     std::string m_path;
     /// revision number for this share / peer, incorporated in the version clock when this share

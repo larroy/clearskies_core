@@ -17,10 +17,10 @@
 
 
 #include "cs/server.hpp"
-#include "cs/share.hpp"
+#include "cs/core/share.hpp"
 #include "utils.hpp"
-#include "cs/message.hpp"
-#include "cs/messagecoder.hpp"
+#include "cs/core/coder.hpp"
+#include "cs/core/message.hpp"
 #include <boost/test/unit_test.hpp>
 #include <vector>
 #include <iostream>
@@ -50,7 +50,7 @@ public:
         return conn;
     }
 
-    void receive(const std::string& connection, const message::Message& m)
+    void receive(const std::string& connection, const core::msg::Message& m)
     {
         auto i = m_connections.find(connection);
         if (i == m_connections.end())

@@ -14,8 +14,8 @@
             ],
             "sources": [
                 "int_types.h",
-                "daemon.hpp",
-                "daemon.cpp",
+                "daemon/daemon.hpp",
+                "daemon/daemon.cpp",
                 "core/message.cpp",
                 "core/message.hpp",
                 "core/coder.cpp",

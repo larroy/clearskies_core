@@ -31,6 +31,8 @@ namespace cs
 {
 namespace core
 {
+namespace msg
+{
 
 enum class CoderType: unsigned
 {
@@ -72,5 +74,6 @@ private:
     std::unique_ptr<CoderImpl> m_p;
 };
 
+} // end ns
 } // end ns
 } // end ns

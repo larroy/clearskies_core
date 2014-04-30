@@ -17,7 +17,7 @@
  */
 #pragma once
 
-#include "int_types.h"
+#include "config.hpp"
 #include <string>
 #include <deque>
 #include <functional>
@@ -149,7 +149,7 @@ class ProtocolState
 {
 public:
     /// type of callback for writing data
-    typedef std::function<void(const char*, size_t)> do_write_t;
+    typedef std::function<void(char const*, size_t)> do_write_t;
 
     /// called when a message is completely read on the input buffer
     typedef std::function<void(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload)> handle_msg_t;
@@ -159,7 +159,7 @@ public:
     typedef std::function<void(void)> handle_empty_output_buff_t;
 
     /// called after a message with the payload flag was handled and payload was input
-    typedef std::function<void(const char* data, size_t len)> handle_payload_t;
+    typedef std::function<void(char const* data, size_t len)> handle_payload_t;
 
     /// called at the end of payload (record of size 0)
     typedef std::function<void()> handle_payload_end_t;
@@ -181,13 +181,13 @@ public:
         , m_payload_ended(true)
         , m_read_payload(false)
         , m_pl_found()
-        , m_do_write([](const char*, size_t) { assert(false); })
+        , m_do_write([](char const*, size_t) { assert(false); })
         , m_write_in_progress(false)
         , handle_empty_output_buff()
         , handle_msg()
         , handle_payload()
         , handle_payload_end()
-        , handle_error()
+        , handle_error([]() { assert(false);} )
     {
         m_input_buff.reserve(s_input_buff_size);
     }
