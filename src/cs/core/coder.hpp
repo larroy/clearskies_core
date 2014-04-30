@@ -23,14 +23,13 @@
 #include <stdexcept>
 
 /**
- * @file messagecoder.hpp
- * Encoding and decoding of messages, implementation uses the private implementation technique to
- * hide the particular message coding format.
+ * @file message_core_coder.hpp
+ * Encoding and decoding of core messages, implementation uses the private implementation technique
+ * to hide the particular message coding format and/or to support multiple encodings at runtime
  */
-
 namespace cs
 {
-namespace message
+namespace core
 {
 
 enum class CoderType: unsigned

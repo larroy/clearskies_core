@@ -27,8 +27,6 @@
 
 namespace cs
 {
-namespace protocol
-{
 
 inline bool has_signature(const char c)
 {
@@ -257,5 +255,4 @@ public:
     handle_payload_end_t handle_payload_end;
     handle_error_t handle_error;
 };
-} // end ns
 } // end ns

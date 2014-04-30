@@ -30,6 +30,8 @@ namespace
 
 namespace cs
 {
+namespace core
+{
 namespace share
 {
 
@@ -795,5 +797,6 @@ bfs::path get_tail(const bfs::path& path, size_t tail)
 }
 
 
+} // end ns
 } // end ns
 } // end ns

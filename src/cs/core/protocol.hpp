@@ -35,8 +35,9 @@
 
 namespace cs
 {
-namespace protocol
+namespace core
 {
+
 
 enum State: unsigned
 {

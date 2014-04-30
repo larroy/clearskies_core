@@ -16,7 +16,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "messagecoder.hpp"
+#include "message_core_coder.hpp"
 #include "jsoncons/json.hpp"
 #include <cassert>
 
@@ -24,7 +24,7 @@ using namespace std;
 
 namespace cs
 {
-namespace message
+namespace core
 {
 
 class CoderImpl

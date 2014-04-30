@@ -24,7 +24,7 @@ using namespace std;
 
 namespace cs
 {
-namespace message
+namespace core
 {
 
 

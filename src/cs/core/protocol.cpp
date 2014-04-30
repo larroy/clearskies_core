@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "clearskiesprotocol.hpp"
+#include "protocol_core.hpp"
 #include <cassert>
 #include "boost/format.hpp"
 
@@ -23,9 +23,10 @@ using namespace std;
 
 namespace cs
 {
+namespace core
+{
 namespace protocol
 {
-
 
 /*
  * Handlers -------------------------------------
@@ -248,5 +249,6 @@ share::Share& ClearSkiesProtocol::share()
 }
 
 
+} // end ns
 } // end ns
 } // end ns

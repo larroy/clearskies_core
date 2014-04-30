@@ -43,6 +43,8 @@ namespace sha2
 
 namespace cs
 {
+namespace core
+{
 namespace share
 {
 
@@ -423,5 +425,6 @@ public:
 bfs::path get_tail(const bfs::path& path, size_t tail);
 
 
+} // end ns
 } // end ns
 } // end ns

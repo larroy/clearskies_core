@@ -24,9 +24,8 @@
 
 namespace cs
 {
-namespace message
+namespace core
 {
-
 
 enum class MType: unsigned
 {

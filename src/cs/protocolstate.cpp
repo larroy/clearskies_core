@@ -16,15 +16,12 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "protocolstate.hpp"
-#include "message.hpp"
 #include <cstdlib>
 #include <cassert>
 
 using namespace std;
 
 namespace cs
-{
-namespace protocol
 {
 
 namespace
@@ -297,5 +294,4 @@ void ProtocolState::write_next_buff()
     m_write_in_progress = true;
 }
 
-} // end ns
 } // end ns
