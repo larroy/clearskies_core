@@ -42,7 +42,8 @@ public:
         const ServerInfo& server_info,
         std::map<std::string, core::share::Share>& shares
     ):
-        m_protocol(server_info, shares)
+          m_protocol(server_info, shares)
+        , m_protocolstate()
     {}
 
     virtual ~Connection() = default;
@@ -52,7 +53,8 @@ public:
     Connection(Connection&&) = default;
     Connection& operator=(Connection&&) = default;
 
-    cs::core::Protocol m_protocol;
+    cs::core::protocol::Protocol m_protocol;
+    cs::ProtocolState m_protocolstate;
 };
 
 

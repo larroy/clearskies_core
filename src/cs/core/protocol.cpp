@@ -43,18 +43,18 @@ public:
     /**
      * Start on INITIAL
      */
-    void visit(const message::Start& msg) override
+    void visit(const msg::Start& msg) override
     try
     {
         r_protocol.m_share = msg.m_share_id;
         share::Share& share = r_protocol.share();
-        r_protocol.send_message(message::StartTLS(share.m_peer_id, message::MAccess::READ_WRITE));
-        r_protocol.send_message(message::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
+        r_protocol.send_msg(msg::StartTLS(share.m_peer_id, msg::MAccess::READ_WRITE));
+        r_protocol.send_msg(msg::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = WAIT4_CLIENT_IDENTITY;
     }
     catch (...)
     {
-        r_protocol.send_message(message::CannotStart());
+        r_protocol.send_msg(msg::CannotStart());
         throw;
     }
 };
@@ -68,7 +68,7 @@ public:
     {
     }
 
-    void visit(const message::Identity& msg) override
+    void visit(const msg::Identity& msg) override
     {
         m_next_state = CONNECTED;
     }
@@ -83,11 +83,11 @@ public:
     {
     }
 
-    void visit(const message::Identity& msg) override
+    void visit(const msg::Identity& msg) override
     {
     }
 
-    void visit(const message::Get& msg) override
+    void visit(const msg::Get& msg) override
     {
         r_protocol.do_get(msg.m_checksum);
         m_next_state = GET;
@@ -122,8 +122,7 @@ public:
  * ctor, sets message handlers.
  */
 Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
-    ProtocolState()
-    , r_server_info(server_info)
+      r_server_info(server_info)
     , r_shares(shares)
     , m_share()
     , m_state(State::INITIAL)
@@ -131,7 +130,7 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
     , m_txfile_is()
     , m_rxfile_os()
     , m_coder()
-    , m_handle_send_message()
+    , m_handle_send_msg()
 {
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
 
@@ -144,9 +143,9 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
 }
 
 
-void Protocol::send_message(const msg::Message& m)
+void Protocol::send_msg(const msg::Message& m)
 {
-    
+    m_handle_send_msg(m_coder.encode_msg(m), m.m_payload);
 }
 
 void Protocol::send_file(const bfs::path& path)
@@ -182,13 +181,13 @@ void Protocol::handle_empty_output_buff()
         m_txfile_is->read(&rbuff[0], rbuff.size());
         rbuff.resize(m_txfile_is->gcount());
         // send the buffer
-        send_payload_chunk(move(rbuff));
+        m_handle_send_payload_chunk(move(rbuff));
         if (! *m_txfile_is)
         {
             // EOF
             if (! rbuff.empty())
                 // make sure to send the terminating 0 size chunk, per cs payload protocol
-                send_payload_chunk(string());
+                m_handle_send_payload_chunk(string());
             m_txfile_is.reset();
             assert(m_state == GET);
             m_state = CONNECTED;
@@ -233,14 +232,14 @@ void Protocol::do_get(const std::string& checksum)
     });
     if (! paths.empty())
     {
-        message::FileData filedata(move(paths));
+        msg::FileData filedata(move(paths));
         assert(filedata.m_payload);
-        send_message(filedata);
+        send_msg(filedata);
         send_file(share().fullpath(bfs::path(filedata.m_paths.front())));
     }
     else
     {
-        send_message(message::FileModified());
+        send_msg(msg::FileModified());
     }
 }
 
@@ -254,7 +253,7 @@ share::Share& Protocol::share()
 
 void connect(ProtocolState& pstate, Protocol& protocol)
 {
-    protocol.m_handle_send_payload_chunk = bind(&ProtocolState::send_payload_chunk, &pstate);
+    protocol.m_handle_send_payload_chunk = bind(&ProtocolState::send_payload_chunk, &pstate, placeholders::_1);
     // FIXME
 }
 

@@ -212,7 +212,7 @@ public:
     void input(const char* data, size_t len);
 
     void send_message(const std::string&& msg_sig_encoded, bool payload);
-    void send_payload_chunk(std::string&& chunk);
+    void send_payload_chunk(const std::string& chunk);
 
     void set_write_fun(do_write_t do_write)
     {

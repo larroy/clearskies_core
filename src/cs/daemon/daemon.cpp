@@ -106,7 +106,8 @@ void Daemon::on_tcp_connect(uvpp::error error)
     auto tcp_conn_ptr = make_unique<TCPConnection>(m_server_info, m_shares, m_loop);
     TCPConnection& tcp_conn = *tcp_conn_ptr;
     m_tcp_listen_conn.accept(tcp_conn.m_tcp_conn);
-    ProtocolState& pstate = tcp_conn.m_protocol;
+    //core::protocol::Protocol& protocol = tcp_conn.m_protocol;
+    ProtocolState& pstate = tcp_conn.m_protocolstate;
 
     string peer_ip;
     int port;

@@ -39,7 +39,8 @@ namespace cs
 {
 namespace core
 {
-
+namespace protocol
+{
 
 enum State: unsigned
 {
@@ -186,12 +187,12 @@ typedef std::array<std::unique_ptr<MessageHandler>, State::MAX> state_trans_tabl
 class Protocol
 {
 public:
-    typedef std::function<void(const std::string&& msg_sig_encoded, bool payload)> handle_send_message_t;
-    typedef std::function<void(const std::string&& chunk)> handle_send_payload_chunk_t;
+    typedef std::function<void(const std::string&& msg_sig_encoded, bool payload)> handle_send_msg_t;
+    typedef std::function<void(const std::string& chunk)> handle_send_payload_chunk_t;
 
     Protocol(const ServerInfo&, std::map<std::string, share::Share>& shares);
 
-    void send_message(const msg::Message& m);
+    void send_msg(const msg::Message& m);
 
     State state() const { return m_state; }
     void set_state(State state) { m_state = state; }
@@ -255,11 +256,12 @@ public:
 
     /// encodes messages into bytes
     msg::Coder m_coder;
-    handle_send_message_t m_handle_send_message;
+    handle_send_msg_t m_handle_send_msg;
     handle_send_payload_chunk_t m_handle_send_payload_chunk;
 };
 
 void connect(ProtocolState&, Protocol&);
 
+} // end ns
 } // end ns
 } // end ns
