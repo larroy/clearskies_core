@@ -36,6 +36,9 @@ The class ProtocolState is responsible for reading data until a full message or 
 be assembled. Then the encoded message is handled to a "Coder" class which encodes/decodes the
 message into a concrete C++ class representing the message.
 
+We use the function cs::core::protocol::connect to bind the protocolstate which reads a stream of
+bytes and assembles messages and payload chunks with the concrete protocol implementation at the
+message level, cs::core::Protocol.
 
 For example in the case of messages for the "core" part of the protocol the IO flow is the
 following:
@@ -53,7 +56,7 @@ following:
      |
      | handle_msg(char const* msg_encoded, size_t msg_sz...)
 +-----------------------------------------------+
-|    |   ClearskiesProtocol                     |
+|    |   cs::core::Protocol                     |
 |    |                                          |
 |  +-v-------------------+                      |
 |  |message::core::Coder |   decode_msg(...)    |
@@ -81,7 +84,7 @@ For the control protocol, it would look like this:
 |    |   ControlProtocol                        |
 |    |                                          |
 |  +-+---------------------+                    |
-|  |message::control::Coder| decode_msg(...)    |
+|  | msg::control::Coder   | decode_msg(...)    |
 |  +-----------------------+                    |
 |                                               |
 +-----------------------------------------------+
