@@ -253,8 +253,11 @@ share::Share& Protocol::share()
 
 void connect(ProtocolState& pstate, Protocol& protocol)
 {
+    protocol.m_handle_send_msg = bind(&ProtocolState::send_msg, &pstate, placeholders::_1, placeholders::_2);
     protocol.m_handle_send_payload_chunk = bind(&ProtocolState::send_payload_chunk, &pstate, placeholders::_1);
-    // FIXME
+    pstate.m_handle_empty_output_buff = bind(&Protocol::handle_empty_output_buff, &protocol);
+    pstate.m_handle_payload = bind(&Protocol::handle_payload, &protocol, placeholders::_1, placeholders::_2);
+    pstate.m_handle_payload_end = bind(&Protocol::handle_payload_end, &protocol);
 }
 
 

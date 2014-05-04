@@ -98,9 +98,9 @@ public:
         , m_protocolstate()
         , m_coder()
     {
-        m_protocolstate.handle_msg = bind(&Peer::handle_msg, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-        m_protocolstate.handle_payload = bind(&Peer::handle_payload, this, placeholders::_1, placeholders::_2);
-        m_protocolstate.handle_payload_end = bind(&Peer::handle_payload_end, this);
+        m_protocolstate.m_handle_msg = bind(&Peer::handle_msg, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+        m_protocolstate.m_handle_payload = bind(&Peer::handle_payload, this, placeholders::_1, placeholders::_2);
+        m_protocolstate.m_handle_payload_end = bind(&Peer::handle_payload_end, this);
     }
 
     /// read all the output buffers from the server

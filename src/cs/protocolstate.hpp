@@ -183,11 +183,11 @@ public:
         , m_pl_found()
         , m_do_write([](char const*, size_t) { assert(false); })
         , m_write_in_progress(false)
-        , handle_empty_output_buff()
-        , handle_msg()
-        , handle_payload()
-        , handle_payload_end()
-        , handle_error([]() { assert(false);} )
+        , m_handle_empty_output_buff()
+        , m_handle_msg()
+        , m_handle_payload()
+        , m_handle_payload_end()
+        , m_handle_error([]() { assert(false);} )
     {
         m_input_buff.reserve(s_input_buff_size);
     }
@@ -211,7 +211,7 @@ public:
      */
     void input(const char* data, size_t len);
 
-    void send_message(const std::string&& msg_sig_encoded, bool payload);
+    void send_msg(const std::string&& msg_sig_encoded, bool payload);
     void send_payload_chunk(const std::string& chunk);
 
     void set_write_fun(do_write_t do_write)
@@ -248,11 +248,11 @@ public:
     /// callback used to write data
     do_write_t m_do_write;
     bool m_write_in_progress;
-    handle_empty_output_buff_t handle_empty_output_buff;
 
-    handle_msg_t handle_msg;
-    handle_payload_t handle_payload;
-    handle_payload_end_t handle_payload_end;
-    handle_error_t handle_error;
+    handle_empty_output_buff_t m_handle_empty_output_buff;
+    handle_msg_t m_handle_msg;
+    handle_payload_t m_handle_payload;
+    handle_payload_end_t m_handle_payload_end;
+    handle_error_t m_handle_error;
 };
 } // end ns

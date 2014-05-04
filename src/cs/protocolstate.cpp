@@ -198,15 +198,15 @@ void ProtocolState::input(const char* data, size_t len)
                 try
                 {
                     m_read_payload = mrs.payload();
-                    handle_msg(mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz, mrs.payload());
+                    m_handle_msg(mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz, mrs.payload());
                 }
                 catch(...)
                 {
-                    handle_error();
+                    m_handle_error();
                 }
             }
             if (mrs.garbage)
-                handle_error();
+                m_handle_error();
 
             trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.end);
             if (mrs.end == 0)
@@ -224,11 +224,11 @@ void ProtocolState::input(const char* data, size_t len)
             if (m_pl_found && (m_input_buff.size() >= m_pl_found.total_size()))
             {
                 if (m_pl_found.data_sz != 0)
-                    handle_payload(&m_input_buff[m_pl_found.size_plus_newline_sz], m_pl_found.data_sz);
+                    m_handle_payload(&m_input_buff[m_pl_found.size_plus_newline_sz], m_pl_found.data_sz);
                 else
                 {
                     // last chunk has 0 size
-                    handle_payload_end();
+                    m_handle_payload_end();
                     m_read_payload = false;
                 }
                 trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
@@ -236,7 +236,7 @@ void ProtocolState::input(const char* data, size_t len)
             }
             else if (m_pl_found.garbage)
             {
-                handle_error();
+                m_handle_error();
                 // FIXME: review this
                 trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
                 m_read_payload = false;
@@ -249,7 +249,7 @@ void ProtocolState::input(const char* data, size_t len)
     }
 }
 
-void ProtocolState::send_message(const std::string&& msg_encoded, bool const payload)
+void ProtocolState::send_msg(const std::string&& msg_encoded, bool const payload)
 {
     assert(m_payload_ended);
     m_last_has_payload = payload;
@@ -282,7 +282,7 @@ void ProtocolState::on_write_finished()
     if (! m_output_buff.empty())
         write_next_buff();
     else
-        handle_empty_output_buff();
+        m_handle_empty_output_buff();
 }
 
 void ProtocolState::write_next_buff()
