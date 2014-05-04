@@ -198,13 +198,11 @@ void Protocol::handle_empty_output_buff()
 
 void Protocol::handle_msg(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload)
 {
-// FIXME: fix, decode
-#if 0
+    auto msg = m_coder.decode_msg(payload, msg_encoded, msg_sz, signature, signature_sz);
     unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];
     assert(handler);
     msg->accept(*handler);
     m_state = handler->next_state();
-#endif
 }
 
 void Protocol::handle_payload(const char* data, size_t len)

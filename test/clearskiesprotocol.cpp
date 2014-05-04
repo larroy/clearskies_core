@@ -93,7 +93,7 @@ public:
           m_name{name}
         , m_id{utils::random_bytes(16)}
         , m_messages_payload{}
-        , m_payload_end{}
+        , m_payload_end{true}
         , r_server(server)
         , m_protocolstate()
         , m_coder()
