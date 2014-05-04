@@ -44,7 +44,9 @@ public:
     ):
           m_protocol(server_info, shares)
         , m_protocolstate()
-    {}
+    {
+        cs::core::protocol::connect(m_protocolstate, m_protocol);
+    }
 
     virtual ~Connection() = default;
 
