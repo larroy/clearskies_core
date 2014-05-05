@@ -30,20 +30,20 @@ std::string Server::attach_share(const std::string& share_path, const std::strin
     string share_id;
     if (dbpath.empty())
     {
-        share::Share share(share_path);
+        core::share::Share share(share_path);
         share_id = share.m_share_id;
         m_shares.emplace(share_id, move(share));
     }
     else
     {
-        share::Share share(share_path, dbpath);
+        core::share::Share share(share_path, dbpath);
         share_id = share.m_share_id;
         m_shares.emplace(share_id, move(share));
     }
     return share_id;
 }
 
-share::Share& Server::share(const std::string& share_id)
+core::share::Share& Server::share(const std::string& share_id)
 {
     auto res = m_shares.find(share_id);
     if (res == m_shares.end())

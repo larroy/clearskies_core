@@ -14,7 +14,7 @@
             "sources": [
                 "main.cpp",
                 "message.cpp",
-                "messagecoder.cpp",
+                "core_coder.cpp",
                 "protocolstate.cpp",
                 "share.cpp",
                 "utils.cpp",
@@ -24,6 +24,7 @@
                 "conf.cpp",
                 "uvpp.cpp",
                 "clearskiesprotocol.cpp",
+                "bytestream.cpp",
             ],
             "include_dirs": [
                 "../src",

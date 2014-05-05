@@ -88,8 +88,3 @@ inline void create_tree(const bfs::path& path)
     bfs::create_directory(path / "c");
 }
 
-inline void fullscan(cs::share::Share& share)
-{
-    share.scan();
-    while(share.scan_step()) {};
-}

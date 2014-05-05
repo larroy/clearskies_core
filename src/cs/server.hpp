@@ -18,10 +18,10 @@
 
 #pragma once
 #include "config.hpp"
-#include "share.hpp"
-#include "serverinfo.hpp"
+#include "core/share.hpp"
+#include "core/serverinfo.hpp"
 #include "protocolstate.hpp"
-#include "clearskiesprotocol.hpp"
+#include "core/protocol.hpp"
 #include <string>
 #include <map>
 
@@ -40,10 +40,13 @@ class Connection
 public:
     Connection(
         const ServerInfo& server_info,
-        std::map<std::string, share::Share>& shares
+        std::map<std::string, core::share::Share>& shares
     ):
-        m_cs_protocol(server_info, shares)
-    {}
+          m_protocol(server_info, shares)
+        , m_protocolstate()
+    {
+        cs::core::protocol::connect(m_protocolstate, m_protocol);
+    }
 
     virtual ~Connection() = default;
 
@@ -52,7 +55,8 @@ public:
     Connection(Connection&&) = default;
     Connection& operator=(Connection&&) = default;
 
-    cs::protocol::ClearSkiesProtocol m_cs_protocol;
+    cs::core::protocol::Protocol m_protocol;
+    cs::ProtocolState m_protocolstate;
 };
 
 
@@ -82,14 +86,14 @@ public:
     std::string attach_share(const std::string& share_path, const std::string& dbpath = std::string());
 
     /// @returns a reference to the given share, @throws runtime_error if share is not known 
-    share::Share& share(const std::string& share_id);
+    core::share::Share& share(const std::string& share_id);
 
     /// @returns the list of known share_ids
     std::vector<std::string> shares() const;
 
 protected:
-    /// share id to @sa share::Share, the share knows the path
-    std::map<std::string, share::Share> m_shares;
+    /// share id to @sa core::share::Share, the share knows the path
+    std::map<std::string, core::share::Share> m_shares;
     /// connection identifier to Connection
     std::map<std::string, std::unique_ptr<Connection>> m_connections;
 

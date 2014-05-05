@@ -1,5 +1,6 @@
 /*
- *  This file is part of clearskies_core.
+ *  This file is part of clearskies_core file synchronization program
+ *  Copyright (C) 2014 Pedro Larroy
 
  *  clearskies_core is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -14,24 +15,28 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <boost/test/unit_test.hpp>
-#include "cs/daemon/daemon.hpp"
-#include "cs/config.hpp"
-#include "cs/utils.hpp"
 
-using namespace std;
-using namespace cs::daemon;
+#pragma once
+#include "../config.hpp"
 
-#if 0
-
-BOOST_AUTO_TEST_CASE(daemon_test_01)
+namespace cs
 {
-    cs::utils::Tmpdir tmpdir;
-    Daemon d;
-    d.attach_share(tmpdir.path.string());
-    d.set_port(4000);
-    d.start();
-    BOOST_CHECK_THROW(d.set_port(1025), std::runtime_error);
-}
 
-#endif
+
+struct ServerInfo
+{
+    ServerInfo():
+        m_name()
+        , m_software()
+        , m_protocol()
+        , m_features()
+    {}
+
+    std::string m_name;
+    std::string m_software;
+    i32 m_protocol;
+    std::vector<std::string> m_features;
+};
+
+
+} // end ns

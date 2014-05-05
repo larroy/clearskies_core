@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "clearskiesprotocol.hpp"
+#include "protocol.hpp"
 #include <cassert>
 #include "boost/format.hpp"
 
@@ -23,9 +23,10 @@ using namespace std;
 
 namespace cs
 {
+namespace core
+{
 namespace protocol
 {
-
 
 /*
  * Handlers -------------------------------------
@@ -34,7 +35,7 @@ namespace protocol
 class MessageHandler_INITIAL: public MessageHandler
 {
 public:
-    MessageHandler_INITIAL(State state, ClearSkiesProtocol& protocol):
+    MessageHandler_INITIAL(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
@@ -42,18 +43,18 @@ public:
     /**
      * Start on INITIAL
      */
-    void visit(const message::Start& msg) override
+    void visit(const msg::Start& msg) override
     try
     {
         r_protocol.m_share = msg.m_share_id;
         share::Share& share = r_protocol.share();
-        r_protocol.send_message(message::StartTLS(share.m_peer_id, message::MAccess::READ_WRITE));
-        r_protocol.send_message(message::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
+        r_protocol.send_msg(msg::StartTLS(share.m_peer_id, msg::MAccess::READ_WRITE));
+        r_protocol.send_msg(msg::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = WAIT4_CLIENT_IDENTITY;
     }
     catch (...)
     {
-        r_protocol.send_message(message::CannotStart());
+        r_protocol.send_msg(msg::CannotStart());
         throw;
     }
 };
@@ -62,12 +63,12 @@ public:
 class MessageHandler_WAIT4_CLIENT_IDENTITY: public MessageHandler
 {
 public:
-    MessageHandler_WAIT4_CLIENT_IDENTITY(State state, ClearSkiesProtocol& protocol):
+    MessageHandler_WAIT4_CLIENT_IDENTITY(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
 
-    void visit(const message::Identity& msg) override
+    void visit(const msg::Identity& msg) override
     {
         m_next_state = CONNECTED;
     }
@@ -77,16 +78,16 @@ public:
 class MessageHandler_CONNECTED: public MessageHandler
 {
 public:
-    MessageHandler_CONNECTED(State state, ClearSkiesProtocol& protocol):
+    MessageHandler_CONNECTED(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
 
-    void visit(const message::Identity& msg) override
+    void visit(const msg::Identity& msg) override
     {
     }
 
-    void visit(const message::Get& msg) override
+    void visit(const msg::Get& msg) override
     {
         r_protocol.do_get(msg.m_checksum);
         m_next_state = GET;
@@ -97,7 +98,7 @@ public:
 class MessageHandler_GET: public MessageHandler
 {
 public:
-    MessageHandler_GET(State state, ClearSkiesProtocol& protocol):
+    MessageHandler_GET(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
@@ -110,7 +111,7 @@ public:
 
 
 /*
- * ClearSkiesProtocol -------------------------------------
+ * Protocol -------------------------------------
  */
 
 
@@ -120,12 +121,16 @@ public:
 /**
  * ctor, sets message handlers.
  */
-ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
-    ProtocolState()
-    , r_server_info(server_info)
+Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
+      r_server_info(server_info)
     , r_shares(shares)
     , m_share()
     , m_state(State::INITIAL)
+    , m_state_trans_table()
+    , m_txfile_is()
+    , m_rxfile_os()
+    , m_coder()
+    , m_handle_send_msg()
 {
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
 
@@ -137,31 +142,37 @@ ClearSkiesProtocol::ClearSkiesProtocol(const ServerInfo& server_info, std::map<s
 #undef SET_HANDLER
 }
 
-void ClearSkiesProtocol::send_file(const bfs::path& path)
+
+void Protocol::send_msg(const msg::Message& m)
+{
+    m_handle_send_msg(m_coder.encode_msg(m), m.m_payload);
+}
+
+void Protocol::send_file(const bfs::path& path)
 {
     m_txfile_is = make_unique<bfs::ifstream>(path, ios_base::in | ios_base::binary);
     if (! *m_txfile_is)
     {
         m_txfile_is.reset();
-        throw std::runtime_error(boost::str(boost::format("ClearSkiesProtocol::send \"%1%\" error, couldn't open file") % path.string())); 
+        throw std::runtime_error(boost::str(boost::format("Protocol::send \"%1%\" error, couldn't open file") % path.string())); 
     }
 }
 
-void ClearSkiesProtocol::recieve_file(const bfs::path& path)
+void Protocol::recieve_file(const bfs::path& path)
 {
     // FIXME: set ios exceptions
     m_rxfile_os = make_unique<bfs::ofstream>(path, ios_base::out | ios_base::binary);
     if (! *m_rxfile_os)
     {
         m_rxfile_os.reset();
-        throw std::runtime_error(boost::str(boost::format("ClearSkiesProtocol::send \"%1%\" error, couldn't open file") % path.string())); 
+        throw std::runtime_error(boost::str(boost::format("Protocol::send \"%1%\" error, couldn't open file") % path.string())); 
     }
 }
 
 /**
  * If we are writing a file, put next chunk in the output buffer
  */
-void ClearSkiesProtocol::handle_empty_output_buff()
+void Protocol::handle_empty_output_buff()
 {
     if (m_txfile_is)
     {
@@ -170,13 +181,13 @@ void ClearSkiesProtocol::handle_empty_output_buff()
         m_txfile_is->read(&rbuff[0], rbuff.size());
         rbuff.resize(m_txfile_is->gcount());
         // send the buffer
-        send_payload_chunk(move(rbuff));
+        m_handle_send_payload_chunk(move(rbuff));
         if (! *m_txfile_is)
         {
             // EOF
             if (! rbuff.empty())
                 // make sure to send the terminating 0 size chunk, per cs payload protocol
-                send_payload_chunk(string());
+                m_handle_send_payload_chunk(string());
             m_txfile_is.reset();
             assert(m_state == GET);
             m_state = CONNECTED;
@@ -185,15 +196,16 @@ void ClearSkiesProtocol::handle_empty_output_buff()
 }
 
 
-void ClearSkiesProtocol::handle_message(std::unique_ptr<message::Message> msg)
+void Protocol::handle_msg(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload)
 {
+    auto msg = m_coder.decode_msg(payload, msg_encoded, msg_sz, signature, signature_sz);
     unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];
     assert(handler);
     msg->accept(*handler);
     m_state = handler->next_state();
 }
 
-void ClearSkiesProtocol::handle_payload(const char* data, size_t len)
+void Protocol::handle_payload(const char* data, size_t len)
 {
     if (m_rxfile_os)
         m_rxfile_os->write(data, len);
@@ -202,22 +214,12 @@ void ClearSkiesProtocol::handle_payload(const char* data, size_t len)
         assert(0);
 }
 
-void ClearSkiesProtocol::handle_payload_end()
+void Protocol::handle_payload_end()
 {
     m_rxfile_os.reset();
 }
 
-void ClearSkiesProtocol::handle_msg_garbage(const std::string& buff)
-{
-    assert(false);
-}
-
-void ClearSkiesProtocol::handle_pl_garbage(const std::string& buff)
-{
-    assert(false);
-}
-
-void ClearSkiesProtocol::do_get(const std::string& checksum)
+void Protocol::do_get(const std::string& checksum)
 {
     // get list of files that match this checksum from the share
     const auto mfiles = share().get_mfiles_by_content(checksum);
@@ -228,18 +230,18 @@ void ClearSkiesProtocol::do_get(const std::string& checksum)
     });
     if (! paths.empty())
     {
-        message::FileData filedata(move(paths));
+        msg::FileData filedata(move(paths));
         assert(filedata.m_payload);
-        send_message(filedata);
+        send_msg(filedata);
         send_file(share().fullpath(bfs::path(filedata.m_paths.front())));
     }
     else
     {
-        send_message(message::FileModified());
+        send_msg(msg::FileModified());
     }
 }
 
-share::Share& ClearSkiesProtocol::share()
+share::Share& Protocol::share()
 {
     auto shr_i = r_shares.find(m_share);
     if (shr_i != r_shares.end())
@@ -247,6 +249,20 @@ share::Share& ClearSkiesProtocol::share()
     throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
 }
 
+void connect(ProtocolState& pstate, Protocol& protocol)
+{
+    // bind output handlers
+    protocol.m_handle_send_msg = bind(&ProtocolState::send_msg, &pstate, placeholders::_1, placeholders::_2);
+    protocol.m_handle_send_payload_chunk = bind(&ProtocolState::send_payload_chunk, &pstate, placeholders::_1);
 
+    // bind input handlers
+    pstate.m_handle_msg = bind(&Protocol::handle_msg, &protocol, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+    pstate.m_handle_empty_output_buff = bind(&Protocol::handle_empty_output_buff, &protocol);
+    pstate.m_handle_payload = bind(&Protocol::handle_payload, &protocol, placeholders::_1, placeholders::_2);
+    pstate.m_handle_payload_end = bind(&Protocol::handle_payload_end, &protocol);
+}
+
+
+} // end ns
 } // end ns
 } // end ns

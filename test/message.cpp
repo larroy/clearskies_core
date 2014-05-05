@@ -15,11 +15,11 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs/message.hpp"
+#include "cs/core/message.hpp"
 #include <boost/test/unit_test.hpp>
 
 using namespace std;
-using namespace cs::message;
+using namespace cs::core::msg;
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
 {

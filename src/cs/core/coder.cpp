@@ -16,7 +16,7 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "messagecoder.hpp"
+#include "coder.hpp"
 #include "jsoncons/json.hpp"
 #include <cassert>
 
@@ -24,7 +24,9 @@ using namespace std;
 
 namespace cs
 {
-namespace message
+namespace core
+{
+namespace msg
 {
 
 class CoderImpl
@@ -816,5 +818,6 @@ std::string Coder::encode_msg(const Message& m) const
 
 
 
+} // end ns
 } // end ns
 } // end ns

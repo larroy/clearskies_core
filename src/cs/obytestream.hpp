@@ -15,28 +15,43 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
-#include "config.hpp"
+#include "cs/config.hpp"
 
 namespace cs
 {
-
-
-struct ServerInfo
+namespace io
 {
-    ServerInfo():
-        m_name()
-        , m_software()
-        , m_protocol()
-        , m_features()
-    {}
 
-    std::string m_name;
-    std::string m_software;
-    i32 m_protocol;
-    std::vector<std::string> m_features;
+class Obytestream
+{
+public:
+
+    /// W type to write as
+    /// T argument type
+    template<typename W, typename T>
+    void write(T x)
+    {
+        static_assert(std::is_integral<W>::value && std::is_integral<T>::value, "argument must be integral");
+        static_assert(sizeof(W) <= sizeof(T), "Write size has to be <= of original type");
+        W w = x; 
+        for (i8 i = sizeof(W) - 1; i >= 0; --i) 
+            m_buff.push_back(static_cast<char>(w >> (8*i)));
+    }
+
+    u8 const* begin()
+    {
+        return reinterpret_cast<u8 const*>(&*m_buff.begin());
+    }
+
+    u8 const* end()
+    {
+        return reinterpret_cast<u8 const*>(&*m_buff.end());
+    }
+
+    std::string m_buff;
 };
 
+}
+}
 
-} // end ns

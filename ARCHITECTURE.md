@@ -21,7 +21,7 @@ Input IO is sent to the library via ProtocolState::input.
 
 The "do_write" function provided to ProtocolState::set_write_fun will be used to write data, typically to write
 data in the specific way that the chose asynchronous IO library requires. When the write has
-finished, the function ProtocolState::on_write_finished should be called. 
+finished, the function ProtocolState::on_write_finished should be called.
 
 Then either the next write will be scheduled by calling "do_write" again, or nothing will happen if
 there's no more data to be writen.
@@ -33,6 +33,62 @@ o
 
 
 The class ProtocolState is responsible for reading data until a full message or a payload chunk can
-be assembled.
+be assembled. Then the encoded message is handled to a "Coder" class which encodes/decodes the
+message into a concrete C++ class representing the message.
+
+We use the function cs::core::protocol::connect to bind the protocolstate which reads a stream of
+bytes and assembles messages and payload chunks with the concrete protocol implementation at the
+message level, cs::core::Protocol.
+
+For example in the case of messages for the "core" part of the protocol the IO flow is the
+following:
+
+
+```
+     input(char const*, size_t)
+       +
+       |
+       |
+       |
+   +---v---------------------+
+   | protocol::ProtocolState |
+   +-+-----------------------+
+     |
+     | handle_msg(char const* msg_encoded, size_t msg_sz...)
++-----------------------------------------------+
+|    |   cs::core::Protocol                     |
+|    |                                          |
+|  +-v-------------------+                      |
+|  |message::core::Coder |   decode_msg(...)    |
+|  +---------------------+                      |
+|                                               |
++-----------------------------------------------+
+
+```
+
+For the control protocol, it would look like this:
+
+
+```
+     input(char const*, size_t)
+       +
+       |
+       |
+       |
+   +---v---------------------+
+   | protocol::ProtocolState |
+   +-+-----------------------+
+     |
+     | handle_msg(char const* msg_encoded, size_t msg_sz...)
++-----------------------------------------------+
+|    |   ControlProtocol                        |
+|    |                                          |
+|  +-+---------------------+                    |
+|  | msg::control::Coder   | decode_msg(...)    |
+|  +-----------------------+                    |
+|                                               |
++-----------------------------------------------+
+
+```
 
 

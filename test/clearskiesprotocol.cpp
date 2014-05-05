@@ -17,17 +17,20 @@
 
 
 #include "cs/server.hpp"
-#include "cs/share.hpp"
+#include "cs/core/share.hpp"
 #include "utils.hpp"
-#include "cs/message.hpp"
-#include "cs/messagecoder.hpp"
+#include "cs/core/coder.hpp"
+#include "cs/core/message.hpp"
 #include <boost/test/unit_test.hpp>
 #include <vector>
 #include <iostream>
+#include <functional>
 
 using namespace std;
 using namespace cs::server;
 using namespace cs;
+using namespace cs::core;
+using namespace cs::core::msg;
 
 /**
  * A local server
@@ -46,17 +49,17 @@ public:
             m_out_buff[name] = {buff,sz};
         };
         Connection& conn = *res.first->second;
-        conn.m_cs_protocol.set_write_fun(do_write);
+        conn.m_protocolstate.set_write_fun(do_write);
         return conn;
     }
 
-    void receive(const std::string& connection, const message::Message& m)
+    void receive(const std::string& connection, const core::msg::Message& m)
     {
         auto i = m_connections.find(connection);
         if (i == m_connections.end())
             throw std::runtime_error(fs("Connection: " << connection << " not found"));
         Connection& conn = *i->second;
-        conn.m_cs_protocol.input(message::Coder().encode_msg(m));
+        conn.m_protocolstate.input(Coder().encode_msg(m));
     }
 
     /// @returns data and notify protocol
@@ -72,7 +75,7 @@ public:
         Connection& conn = *ci->second;
         if (! res.empty())
             /// this triggers the next write and fills the buffer, so we can write while(! empty) to read everything
-            conn.m_cs_protocol.on_write_finished();
+            conn.m_protocolstate.on_write_finished();
         return move(res);
     }
 
@@ -83,19 +86,21 @@ public:
 /**
  * Just a class excite the Server acting as a Peer
  */
-class Peer: public protocol::ProtocolState
+class Peer
 {
 public:
     Peer(const std::string& name, CSServer& server):
-          ProtocolState{}
-        , m_name{name}
+          m_name{name}
         , m_id{utils::random_bytes(16)}
         , m_messages_payload{}
-        , m_payload_end{}
-        , m_msg_garbage_cb{[](const string&){}}
-        , m_pl_garbage_cb{[](const string&){}}
+        , m_payload_end{true}
         , r_server(server)
+        , m_protocolstate()
+        , m_coder()
     {
+        m_protocolstate.m_handle_msg = bind(&Peer::handle_msg, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+        m_protocolstate.m_handle_payload = bind(&Peer::handle_payload, this, placeholders::_1, placeholders::_2);
+        m_protocolstate.m_handle_payload_end = bind(&Peer::handle_payload_end, this);
     }
 
     /// read all the output buffers from the server
@@ -104,60 +109,47 @@ public:
         string server_output = server.tx_write(m_name);
         while(! server_output.empty())
         {
-            input(server_output);
+            m_protocolstate.input(server_output);
             server_output = server.tx_write(m_name);
         }
     }
 
-    void send(const message::Message& m)
+    void send(const Message& m)
     {
         r_server.receive(m_name, m);
     }
 
-    void handle_message(unique_ptr<message::Message> msg) override
+    void handle_msg(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload)
     {
+        assert(m_payload_end);
+        auto msg = m_coder.decode_msg(payload, msg_encoded, msg_sz, signature, signature_sz);
         m_messages_payload.emplace_back(move(msg), string());
+        m_payload_end = ! payload;
     }
 
-    void handle_payload(const char* data, size_t len) override
+    void handle_payload(const char* data, size_t len)
     {
         assert(! m_messages_payload.empty());
         m_messages_payload.back().second.append(data, len);
     }
 
-    void handle_payload_end() override
+    void handle_payload_end()
     {
         m_payload_end = true;
     }
 
-    void handle_msg_garbage(const std::string& buff) override
-    {
-        m_msg_garbage_cb(buff);
-        cout << "handle_msg_garbage: " << buff << endl;
-        assert(false);
-    }
-
-    void handle_pl_garbage(const std::string& buff) override
-    {
-        m_pl_garbage_cb(buff);
-        cout << "handle_pl_garbage: " << buff << endl;
-        assert(false);
-    }
-
-
     std::string m_name;
     std::string m_id;
-    vector<pair<unique_ptr<message::Message>, string>> m_messages_payload;
+    vector<pair<unique_ptr<Message>, string>> m_messages_payload;
     bool m_payload_end;
-    std::function<void(const std::string&)> m_msg_garbage_cb;
-    std::function<void(const std::string&)> m_pl_garbage_cb;
     CSServer& r_server;
+    ProtocolState m_protocolstate;
+    Coder m_coder;
 };
 
 
 BOOST_AUTO_TEST_CASE(server_test_01)
 {
-    using namespace cs::message;
     Tmpdir tmp;
     create_tree(tmp.tmpdir);
 
@@ -175,7 +167,7 @@ BOOST_AUTO_TEST_CASE(server_test_01)
         "read_write",
         utils::bin_to_hex(utils::random_bytes(16))  // peer id
     });
-    share::Share& tmpshare = server.share(share_id);
+    cs::core::share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
     BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_peer_id, MAccess::READ_WRITE));
@@ -207,7 +199,6 @@ void server_test_01_create_tree(const bfs::path& path)
 
 Peer init_peer(const std::string& name, CSServer& server, const std::string& share_id)
 {
-    using namespace cs::message;
     Peer peer(name, server);
     peer.send(Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)) });
     peer.send(Identity{peer.m_name, utils::isotime(std::time(nullptr))});
@@ -219,18 +210,18 @@ Peer init_peer(const std::string& name, CSServer& server, const std::string& sha
 
 BOOST_AUTO_TEST_CASE(cs_send_file)
 {
-    using namespace cs::share;
-    using namespace cs::message;
+    using namespace cs::core::share;
     Tmpdir tmp;
     server_test_01_create_tree(tmp.tmpdir);
 
     CSServer server;
     const string share_id = server.attach_share(tmp.tmpdir.string(), tmp.dbpath.string());
     server.add_connection("test");
-    fullscan(server.share(share_id));
+    auto& share = server.share(share_id);
+    share.fullscan();
 
-    vector<cs::share::MFile> manifest;
-    for (const auto& file: server.share(share_id))
+    vector<share::MFile> manifest;
+    for (const auto& file: share)
         manifest.emplace_back(file);
 
     BOOST_CHECK_EQUAL(manifest.size(), 5u);

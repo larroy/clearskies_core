@@ -16,15 +16,12 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "protocolstate.hpp"
-#include "message.hpp"
 #include <cstdlib>
 #include <cassert>
 
 using namespace std;
 
 namespace cs
-{
-namespace protocol
 {
 
 namespace
@@ -71,6 +68,12 @@ void trim_buff(std::string& buf, std::string::const_iterator from)
  *     ^
  *     |
  * preamble_end
+ *
+ * 
+ *  s[4 bytes size]:<50bytes>[4 bytes size]:<24 bytes signature>
+ *  m[4 bytes size]:<50bytes>
+ *  ![4 bytes size]:<50bytes>[4 bytes chunk size]:<chunk size payload bytes>
+ *
  */
 MsgRstate find_message(const std::string& buff)
 {
@@ -194,18 +197,16 @@ void ProtocolState::input(const char* data, size_t len)
             {
                 try
                 {
-                    unique_ptr<message::Message> msg = m_msg_coder.decode_msg(mrs.payload(), mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz);
-                    if (mrs.payload())
-                        m_read_payload = true;
-                    handle_message(move(msg));
+                    m_read_payload = mrs.payload();
+                    m_handle_msg(mrs.encoded, mrs.encoded_sz, mrs.signature, mrs.signature_sz, mrs.payload());
                 }
-                catch(const message::CoderError& e)
+                catch(...)
                 {
-                    handle_msg_garbage(fs("message::CoderError exception: " <<  e.what()));
+                    m_handle_error();
                 }
             }
             if (mrs.garbage)
-                handle_msg_garbage(m_input_buff);
+                m_handle_error();
 
             trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.end);
             if (mrs.end == 0)
@@ -223,11 +224,11 @@ void ProtocolState::input(const char* data, size_t len)
             if (m_pl_found && (m_input_buff.size() >= m_pl_found.total_size()))
             {
                 if (m_pl_found.data_sz != 0)
-                    handle_payload(&m_input_buff[m_pl_found.size_plus_newline_sz], m_pl_found.data_sz);
+                    m_handle_payload(&m_input_buff[m_pl_found.size_plus_newline_sz], m_pl_found.data_sz);
                 else
                 {
                     // last chunk has 0 size
-                    handle_payload_end();
+                    m_handle_payload_end();
                     m_read_payload = false;
                 }
                 trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
@@ -235,7 +236,8 @@ void ProtocolState::input(const char* data, size_t len)
             }
             else if (m_pl_found.garbage)
             {
-                handle_pl_garbage(m_input_buff);
+                m_handle_error();
+                // FIXME: review this
                 trim_buff(m_input_buff, cbegin(m_input_buff) + m_pl_found.total_size());
                 m_read_payload = false;
                 m_pl_found.reset();
@@ -247,17 +249,17 @@ void ProtocolState::input(const char* data, size_t len)
     }
 }
 
-void ProtocolState::send_message(const message::Message& m)
+void ProtocolState::send_msg(const std::string&& msg_encoded, bool const payload)
 {
     assert(m_payload_ended);
-    m_last_has_payload = m.m_payload;
+    m_last_has_payload = payload;
     const bool do_write = m_output_buff.empty() == true;
-    m_output_buff.emplace_back(m_msg_coder.encode_msg(m));
+    m_output_buff.emplace_back(move(msg_encoded));
     if (do_write)
         write_next_buff();
 }
 
-void ProtocolState::send_payload_chunk(std::string&& chunk)
+void ProtocolState::send_payload_chunk(const std::string& chunk)
 {
     assert(m_last_has_payload);
     const bool do_write = m_output_buff.empty() == true;
@@ -265,7 +267,7 @@ void ProtocolState::send_payload_chunk(std::string&& chunk)
     ostringstream os;
     os << chunk.size() << "\n";
     m_output_buff.emplace_back(os.str()); // size prefix
-    m_output_buff.emplace_back(move(chunk)); // payload chunk
+    m_output_buff.emplace_back(chunk); // payload chunk
     // writes are like a chain, only if it's empty we start a write, otherwise on_write_finished
     // triggers writting of the next buffer.
     if (do_write)
@@ -280,7 +282,7 @@ void ProtocolState::on_write_finished()
     if (! m_output_buff.empty())
         write_next_buff();
     else
-        handle_empty_output_buff();
+        m_handle_empty_output_buff();
 }
 
 void ProtocolState::write_next_buff()
@@ -292,5 +294,4 @@ void ProtocolState::write_next_buff()
     m_write_in_progress = true;
 }
 
-} // end ns
 } // end ns
