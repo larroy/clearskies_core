@@ -97,15 +97,14 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_02)
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_03)
 {
-    string buff = "m2:{}\n";
-    //             01234 5 6
+    string buff("m\x00\x00\x00\x02:{}", 8);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
     BOOST_CHECK_EQUAL(mrs.prefix, 'm');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{}");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 2u);
-    BOOST_CHECK_EQUAL(mrs.end, 6);
+    BOOST_CHECK_EQUAL(mrs.end, 8);
     BOOST_CHECK(! mrs.has_signature());
 }
 
