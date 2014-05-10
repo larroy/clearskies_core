@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_03)
     BOOST_CHECK_EQUAL(mrs.prefix, 'm');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{}");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 2u);
-    BOOST_CHECK_EQUAL(mrs.end, 8);
+    BOOST_CHECK_EQUAL(mrs.enc_sig_sz, 8);
     BOOST_CHECK(! mrs.has_signature());
 }
 
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_04)
     BOOST_CHECK_EQUAL(mrs.prefix, '!');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
-    BOOST_CHECK_EQUAL(mrs.end, 13u);
+    BOOST_CHECK_EQUAL(mrs.enc_sig_sz, 13u);
 }
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_05)

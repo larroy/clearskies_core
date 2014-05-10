@@ -105,7 +105,6 @@ MsgRstate find_message(const std::string& buff)
         {
             if (buff.size() >= prefix_sz + result.encoded_sz + sign_prefix_sz)
             {
-                ibytestream.skip(1 + result.encoded_sz);
                 result.signature_sz = ibytestream.read<u32>();
                 if (*ibytestream.m_next != ':')
                     return result.set_garbage();
@@ -117,7 +116,7 @@ MsgRstate find_message(const std::string& buff)
                 result.signature = reinterpret_cast<const char*>(ibytestream.skip(1));
                 ibytestream.skip(result.signature_sz);
                 result.found = true;
-                result.end = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
+                result.enc_sig_sz = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
                 return result;
             }
             else
@@ -127,7 +126,7 @@ MsgRstate find_message(const std::string& buff)
         else
         {
             result.found = true;
-            result.end = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
+            result.enc_sig_sz = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
             return result;
         }
     }
@@ -186,8 +185,8 @@ void ProtocolState::input(const char* data, size_t len)
             if (mrs.garbage)
                 m_handle_error();
 
-            trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.end);
-            if (mrs.end == 0)
+            trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.enc_sig_sz);
+            if (mrs.enc_sig_sz == 0)
                 // no data was consumed, stop processing
                 break;
         }

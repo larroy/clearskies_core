@@ -50,7 +50,7 @@ struct MsgRstate
         , encoded_sz()
         , signature()
         , signature_sz()
-        , end()
+        , enc_sig_sz()
     {}
 
     MsgRstate& set_garbage()
@@ -78,7 +78,7 @@ struct MsgRstate
     const char* signature;
     size_t signature_sz;
     /// pos where msg ends, data is processed and destroyed until this pos
-    size_t end;
+    size_t enc_sig_sz;
 };
 
 
