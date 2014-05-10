@@ -17,6 +17,7 @@
 
 #include "cs/core/coder.hpp"
 #include <boost/test/unit_test.hpp>
+#include "cs/protocolstate.hpp"
 
 using namespace std;
 using namespace cs::core;
@@ -51,7 +52,9 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_keys) {
 
     // Check encoding
     std::string output = coder.encode_msg(*msg.get());
-    unique_ptr<Keys> out_msg(static_cast<Keys*>(coder.decode_msg(false, output.c_str(), output.size(), "sig", 3).release()));
+    cs::MsgRstate msgrstate = cs::find_message(output);
+    assert(msgrstate.found);
+    unique_ptr<Keys> out_msg(static_cast<Keys*>(coder.decode_msg(false, msgrstate.encoded, msgrstate.encoded_sz, "sig", 3).release()));
 
     BOOST_CHECK(msg->m_type == out_msg->m_type);
     BOOST_CHECK(msg->m_access == out_msg->m_access);

@@ -18,6 +18,8 @@
 #include "protocolstate.hpp"
 #include <cstdlib>
 #include <cassert>
+#include "ibytestream.hpp"
+#include "obytestream.hpp"
 
 using namespace std;
 
@@ -77,61 +79,57 @@ void trim_buff(std::string& buf, std::string::const_iterator from)
  */
 MsgRstate find_message(const std::string& buff)
 {
+    static const size_t prefix_sz = 6; // s[sz]:
+    static const size_t sign_prefix_sz = 5;
     MsgRstate result;
-    const size_t colon_pos = buff.find(':');
-    if (colon_pos == string::npos)
-    {
-        if (buff.size() > ProtocolState::s_msg_preamble_max)
-            return result.set_garbage();
-        else
-            // keep getting data
-            return result;
-    }
-    assert(colon_pos != string::npos);
-    if (colon_pos > ProtocolState::s_msg_preamble_max)
-        return result.set_garbage();
-    assert(! buff.empty());
+    if (buff.size() < prefix_sz)
+        return result;
     result.prefix = buff[0];
-    auto b10 = to_base10(&buff[1], &buff[colon_pos]);
-    if (! b10.first)
+    if (result.prefix != 'm' && result.prefix != '$' && result.prefix != 's' && result.prefix != '!')
         return result.set_garbage();
-    result.msg_len = b10.second;
-    const size_t encoded_start = colon_pos + 1;
-    const size_t encoded_end = encoded_start + result.msg_len; // \n position
-    const size_t msg_have = buff.size() - encoded_start;
-    size_t msg_plus_sig_end = encoded_end + 1;
-    if (msg_have >= result.msg_len + 1)
+
+    io::Ibytestream ibytestream(reinterpret_cast<u8 const*>(buff.data()), reinterpret_cast<u8 const*>(buff.data() + buff.size()));
+    ibytestream.skip(1);
+    result.encoded_sz = ibytestream.read<u32>();
+
+    if (*ibytestream.m_next != ':' || result.encoded_sz > ProtocolState::s_msg_size_max)
+        return result.set_garbage();
+
+    result.encoded = reinterpret_cast<const char*>(ibytestream.skip(1));
+    ibytestream.skip(result.encoded_sz);
+
+    const size_t msg_have = buff.size() - prefix_sz;
+    if (msg_have >= result.encoded_sz)
     {
         // process message
         if (has_signature(result.prefix))
         {
-            const size_t newline_pos = buff.find('\n', msg_plus_sig_end);
-            if (newline_pos == string::npos)
+            if (buff.size() >= prefix_sz + result.encoded_sz + sign_prefix_sz)
             {
-                assert(encoded_end <= buff.size());
-                size_t signature_have = buff.size() - (encoded_end + 1);
-                if (signature_have > ProtocolState::s_msg_signature_max)
+                result.signature_sz = ibytestream.read<u32>();
+                if (*ibytestream.m_next != ':')
                     return result.set_garbage();
-                else
-                    // keep reading
-                    return result;
+
+                if (result.encoded_sz + result.signature_sz > ProtocolState::s_msg_size_max)
+                    // we don't like this
+                    return result.set_garbage();
+
+                result.signature = reinterpret_cast<const char*>(ibytestream.skip(1));
+                ibytestream.skip(result.signature_sz);
+                result.found = true;
+                result.enc_sig_sz = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
+                return result;
             }
-            assert(newline_pos != string::npos);
-            if (newline_pos > ProtocolState::s_msg_signature_max)
-                return result.set_garbage();
-            const size_t sig_start = msg_plus_sig_end;
-            const size_t sig_end = newline_pos;
-            msg_plus_sig_end = sig_end + 1;
-            assert(sig_start <= sig_end);
-            result.signature = &buff[sig_start];
-            result.signature_sz = sig_end - sig_start;
+            else
+                // keep reading
+                return result;
         }
-        assert(encoded_start <= encoded_end);
-        result.encoded = &buff[encoded_start];
-        result.encoded_sz = result.msg_len;
-        result.found = true;
-        result.end = msg_plus_sig_end;
-        return result;
+        else
+        {
+            result.found = true;
+            result.enc_sig_sz = reinterpret_cast<const char*>(ibytestream.m_next) - buff.data();
+            return result;
+        }
     }
     // keep reading
     return result;
@@ -141,41 +139,24 @@ MsgRstate find_message(const std::string& buff)
 PayLoadFound find_payload(const std::string& buff)
 {
     PayLoadFound result;
-    const size_t newline_pos = buff.find('\n');
-    if (newline_pos == string::npos) // 9 comes from 16 MB limit in ascii + \n
-    {
-        if (buff.size() > 9)
-        {
-            // ignore all the garbage we recieved
-            result.size_plus_newline_sz = buff.size();
-            return result.set_garbage();
-        }
-        else
-            // wait for \n
-            return result;
-    }
-    assert(newline_pos != string::npos);
-    result.size_plus_newline_sz = newline_pos + 1;
-    if (result.size_plus_newline_sz > 21)
-        // got too much stuff before \n
+    static const size_t payload_prefix_sz = 5;
+    if (buff.size() < payload_prefix_sz)
+        return result;
+
+    io::Ibytestream ibytestream(reinterpret_cast<u8 const*>(buff.data()), reinterpret_cast<u8 const*>(buff.data() + buff.size()));
+
+    result.data_sz = ibytestream.read<u32>();
+    if (*ibytestream.m_next != ':')
         return result.set_garbage();
 
-    auto b10 = to_base10(&buff[0], &buff[newline_pos]);
-    if (! b10.first)
-        // something not numeric in base10
-        return result.set_garbage();
-    result.data_sz = b10.second;
     if (result.data_sz > ProtocolState::s_payload_chunk_size_max)
-    {
-        // ignore a chunk which is too big
-        result.data_sz = 0;
         return result.set_garbage();
-    }
-    result.found = true;
+
+    if (buff.size() >= result.data_sz + payload_prefix_sz)
+        result.found = true;
     return result;
 }
 
-size_t ProtocolState::s_msg_preamble_max = 22; // m[20 digits]:
 size_t ProtocolState::s_msg_signature_max = 512;
 size_t ProtocolState::s_msg_size_max = 16777216;
 size_t ProtocolState::s_payload_chunk_size_max = 16777216;
@@ -208,8 +189,8 @@ void ProtocolState::input(const char* data, size_t len)
             if (mrs.garbage)
                 m_handle_error();
 
-            trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.end);
-            if (mrs.end == 0)
+            trim_buff(m_input_buff, cbegin(m_input_buff) + mrs.enc_sig_sz);
+            if (mrs.enc_sig_sz == 0)
                 // no data was consumed, stop processing
                 break;
         }
@@ -224,7 +205,7 @@ void ProtocolState::input(const char* data, size_t len)
             if (m_pl_found && (m_input_buff.size() >= m_pl_found.total_size()))
             {
                 if (m_pl_found.data_sz != 0)
-                    m_handle_payload(&m_input_buff[m_pl_found.size_plus_newline_sz], m_pl_found.data_sz);
+                    m_handle_payload(&m_input_buff[PayLoadFound::prefix_sz], m_pl_found.data_sz);
                 else
                 {
                     // last chunk has 0 size
@@ -261,11 +242,15 @@ void ProtocolState::send_msg(const std::string&& msg_encoded, bool const payload
 
 void ProtocolState::send_payload_chunk(const std::string& chunk)
 {
+    using namespace cs::io;
     assert(m_last_has_payload);
     const bool do_write = m_output_buff.empty() == true;
     m_payload_ended = chunk.empty();
+
+    Obytestream ob;
+    ob.write<u32>(chunk.size());
     ostringstream os;
-    os << chunk.size() << "\n";
+    os << ob.m_buff << ':';
     m_output_buff.emplace_back(os.str()); // size prefix
     m_output_buff.emplace_back(chunk); // payload chunk
     // writes are like a chain, only if it's empty we start a write, otherwise on_write_finished

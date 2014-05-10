@@ -48,6 +48,13 @@ public:
         return result;
     }
 
+    u8 const* skip(size_t count)
+    {
+        assert(m_next + count <= m_end);
+        m_next += count;
+        return m_next;
+    }
+
     u8 const* m_next;
     u8 const* const m_end;
 };

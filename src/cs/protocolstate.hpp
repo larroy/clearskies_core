@@ -44,14 +44,13 @@ struct MsgRstate
 {
     MsgRstate():
           prefix()
-        , msg_len()
         , found(false)
         , garbage(false)
         , encoded()
         , encoded_sz()
         , signature()
         , signature_sz()
-        , end()
+        , enc_sig_sz()
     {}
 
     MsgRstate& set_garbage()
@@ -72,16 +71,14 @@ struct MsgRstate
 
     /// prefix !: payload s: signed $: signed payload
     char prefix;
-    size_t msg_len;
     bool found;
     bool garbage;
-    bool too_big;
     const char* encoded;
     size_t encoded_sz;
     const char* signature;
     size_t signature_sz;
     /// pos where msg ends, data is processed and destroyed until this pos
-    size_t end;
+    size_t enc_sig_sz;
 };
 
 
@@ -94,7 +91,6 @@ struct PayLoadFound
     PayLoadFound():
         found()
         , garbage()
-        , size_plus_newline_sz()
         , data_sz()
     {}
 
@@ -102,7 +98,6 @@ struct PayLoadFound
     {
         found = false;
         garbage = false;
-        size_plus_newline_sz = 0;
         data_sz = 0;
     }
 
@@ -114,23 +109,24 @@ struct PayLoadFound
 
     bool error() const
     {
-        return garbage || too_big;
+        return garbage;
     }
 
     explicit operator bool() const
     {
         return found;
     }
+
     size_t total_size() const
     {
-        return size_plus_newline_sz + data_sz;
+        assert(found);
+        return prefix_sz + data_sz;
     }
+
     bool found;
     bool garbage;
-    bool too_big;
-    /// size field + newline
-    size_t size_plus_newline_sz;
     size_t data_sz;
+    static const size_t prefix_sz = 5;
 };
 
 /// @return info about a payload chunk on the input buffer
@@ -168,7 +164,6 @@ public:
     typedef std::function<void()> handle_error_t;
 
 
-    static size_t s_msg_preamble_max;
     static size_t s_msg_signature_max;
     static size_t s_msg_size_max;
     static size_t s_payload_chunk_size_max;

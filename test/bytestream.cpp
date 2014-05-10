@@ -15,6 +15,10 @@
  *  along with clearskies_core.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <boost/test/unit_test.hpp>
+#include <iterator>
+#include <algorithm>
+#include <iostream>
+#include "cs/utils.hpp"
 #include "cs/ibytestream.hpp"
 #include "cs/obytestream.hpp"
 
@@ -30,5 +34,33 @@ BOOST_AUTO_TEST_CASE(Ibytestream_test_01)
     Ibytestream ib(ob.begin(), ob.end());
     u32 vr = ib.read<u32>();
     BOOST_CHECK_EQUAL(v, vr);
+}
+
+template<typename T>
+void test_encode_decode(const size_t count)
+{
+    Obytestream ob;
+    const auto v = utils::random_uniform_vector<T>(count);
+    for (const auto& x: v)
+        ob.write<T>(x);
+
+    Ibytestream ib(ob.begin(), ob.end());
+    vector<T> read;
+    generate_n(back_inserter(read), count, [&] { return ib.read<T>(); });
+    BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(), read.begin(), read.end());
+}
+
+BOOST_AUTO_TEST_CASE(Ibytestream_test_02)
+{
+    test_encode_decode<u8>(1024);
+    test_encode_decode<u16>(1024);
+    test_encode_decode<u32>(1024);
+    test_encode_decode<u64>(1024);
+
+    test_encode_decode<i8>(1024);
+    test_encode_decode<i16>(1024);
+    test_encode_decode<i32>(1024);
+    test_encode_decode<i64>(1024);
+
 }
 

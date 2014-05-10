@@ -22,6 +22,9 @@
 #include <ctime>
 #include <cassert>
 #include <cctype>
+#include <algorithm>
+#include <random>
+
 #include "int_types.h"
 #include "boost_fs_fwd.hpp"
 #include "config.hpp"
@@ -163,6 +166,17 @@ template<typename T>
 static inline ScopeGuardTemplate<T> make_scope_guard(T&& function)
 {
     return ScopeGuardTemplate<T>(std::forward<T>(function));
+}
+
+
+template<typename T>
+std::vector<T> random_uniform_vector(size_t count)
+{
+    std::vector<T> result;
+    std::random_device rng;
+    std::uniform_int_distribution<T> udist;
+    generate_n(back_inserter(result), count, [&] { return udist(rng); });
+    return result;
 }
 
 

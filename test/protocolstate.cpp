@@ -97,21 +97,20 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_02)
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_03)
 {
-    string buff = "m2:{}\n";
-    //             01234 5 6
+    string buff("m\x00\x00\x00\x02:{}", 8);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
     BOOST_CHECK_EQUAL(mrs.prefix, 'm');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{}");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 2u);
-    BOOST_CHECK_EQUAL(mrs.end, 6);
+    BOOST_CHECK_EQUAL(mrs.enc_sig_sz, 8);
     BOOST_CHECK(! mrs.has_signature());
 }
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_04)
 {
-    string buff = "!7:{jsonz}\n";
+    string buff("!\x00\x00\x00\x07:{jsonz}", 13);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
@@ -119,13 +118,12 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_04)
     BOOST_CHECK_EQUAL(mrs.prefix, '!');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
-    BOOST_CHECK_EQUAL(mrs.end, 11);
+    BOOST_CHECK_EQUAL(mrs.enc_sig_sz, 13u);
 }
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_05)
 {
-    string buff = "!7:{jsonz}\n5\npayld";
-    //             01234 5 6
+    string buff("!\x00\x00\x00\x07:{jsonz}\x00\x00\x00\x05:payld", 23);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
@@ -138,8 +136,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_05)
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_06)
 {
-    string buff = "s7:{jsonz}\nsignz\n";
-    //             01234 5 6
+    string buff("s\x00\x00\x00\x07:{jsonz}\x00\x00\x00\x05:signz", 23);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
@@ -149,13 +146,13 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_06)
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
     BOOST_CHECK(mrs.has_signature());
     BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "signz");
+    BOOST_CHECK_EQUAL(mrs.signature_sz, 5u);
 }
 
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_07)
 {
-    string buff = "$7:{jsonz}\nsign\n5\npayld";
-    //             01234 5 6
+    string buff("$\x00\x00\x00\x07:{jsonz}\x00\x00\x00\x05:signz\x00\x00\x00\x05:payld", 34);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
@@ -163,7 +160,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_07)
     BOOST_CHECK(mrs.has_signature());
     BOOST_CHECK_EQUAL(mrs.prefix, '$');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
-    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "sign");
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "signz");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
 }
 

@@ -18,6 +18,7 @@
 
 #include "coder.hpp"
 #include "jsoncons/json.hpp"
+#include "cs/obytestream.hpp"
 #include <cassert>
 
 using namespace std;
@@ -648,6 +649,7 @@ std::string json_2_str(const jsoncons::json& json)
 
 std::string JSONCoder::encode_msg(const Message& msg)
 {
+    using namespace cs::io;
     char prefix = 0;
     if (! msg.m_payload && ! msg.signature())
         prefix = 'm';
@@ -658,17 +660,23 @@ std::string JSONCoder::encode_msg(const Message& msg)
     else if (msg.m_payload &&  msg.signature())
         prefix = '$';
 
-    // m3:{}\n
-    msg.accept(*this);
+    msg.accept(*this); // fills m_encoded_msg with the selected encoder
     ostringstream result;
     result << prefix;
+    Obytestream ob;
     assert(m_encoded_msg.size() <= Message::MAX_SIZE);
-    result << m_encoded_msg.size();
+    ob.write<u32>(m_encoded_msg.size());
+    result << ob.m_buff;
     result << ':';
     result << m_encoded_msg;
-    result << '\n';
     if (msg.signature())
-        result << msg.m_signature << '\n';
+    {
+        Obytestream obs;
+        obs.write<u32>(msg.m_signature.size());
+        result << obs.m_buff;
+        result << ':';
+        result << msg.m_signature;
+    }
 
     /******/
     // reset m_encoded_msg
