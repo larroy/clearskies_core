@@ -139,6 +139,9 @@ PayLoadFound find_payload(const std::string& buff)
 {
     PayLoadFound result;
     static const size_t payload_prefix_sz = 5;
+    if (buff.size() < payload_prefix_sz)
+        return result;
+
     io::Ibytestream ibytestream(reinterpret_cast<u8 const*>(buff.data()), reinterpret_cast<u8 const*>(buff.data() + buff.size()));
 
     result.data_sz = ibytestream.read<u32>();
