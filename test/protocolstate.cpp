@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_06)
 
 BOOST_AUTO_TEST_CASE(find_messsage_test_07)
 {
-    string buff = "$\x00\x00\x00\x07:{jsonz}\x00\x00\x00\x05:signz\x00\x00\x00\x05:payld";
+    string buff("$\x00\x00\x00\x07:{jsonz}\x00\x00\x00\x05:signz\x00\x00\x00\x05:payld", 34);
     MsgRstate mrs = find_message(buff);
     BOOST_CHECK(mrs.found);
     BOOST_CHECK(! mrs.garbage);
