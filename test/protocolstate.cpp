@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(find_messsage_test_07)
     BOOST_CHECK(mrs.has_signature());
     BOOST_CHECK_EQUAL(mrs.prefix, '$');
     BOOST_CHECK_EQUAL(string(mrs.encoded, mrs.encoded_sz), "{jsonz}");
-    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "sign");
+    BOOST_CHECK_EQUAL(string(mrs.signature, mrs.signature_sz), "signz");
     BOOST_CHECK_EQUAL(mrs.encoded_sz, 7u);
 }
 
