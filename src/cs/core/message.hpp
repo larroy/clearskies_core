@@ -247,6 +247,9 @@ public:
  */
 class InternalStart: public MessageImpl<InternalStart, MType::INTERNAL_START>
 {
+public:
+    /// the share id of the initiated connection
+    std::string m_share_id;
 };
 
 
