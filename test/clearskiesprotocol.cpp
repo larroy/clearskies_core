@@ -188,7 +188,7 @@ namespace {
 void server_test_01_create_tree(const bfs::path& path)
 {
     // Create a few files with the same content to verify get by hash functionality
-    create_file(path / "a0", "a");
+    create_file(path / "a0", "adios con los contents de este fichero");
     create_file(path / "a1", "a");
     create_file(path / "wow" / "a0", "a");
     create_file(path / "wowa" / "a1", "a");
@@ -238,7 +238,8 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     FileData* file_data = 0;
     BOOST_CHECK_NO_THROW(file_data = &dynamic_cast<FileData&>(*peer.m_messages_payload.at(2).first));
     BOOST_CHECK_EQUAL(file_data->m_payload, true);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 1u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 38u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second, cs::utils::read_file(share.fullpath(file_data->m_paths.at(0))));
 
     // FIXME: get by content
     //peer.send()
