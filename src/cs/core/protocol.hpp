@@ -104,7 +104,7 @@ public:
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const msg::InternalStart&) override
+    void visit(const msg::InternalSendStart&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }

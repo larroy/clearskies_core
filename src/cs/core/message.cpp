@@ -39,7 +39,7 @@ mtype_str_table_t mtype_str_table_init()
 {
     mtype_str_table_t res;
     res[SC(MType::UNKNOWN)] = "unknown";
-    res[SC(MType::INTERNAL_START)] = "__internal_start";
+    res[SC(MType::INTERNAL_SEND_START)] = "__internal_send_start";
     res[SC(MType::PING)] = "ping";
     res[SC(MType::GREETING)] = "greeting";
     res[SC(MType::START)] = "start";
@@ -72,8 +72,8 @@ MType mtype_from_string(const std::string& type)
     if (type == "unknown")
         return MType::UNKNOWN;
 
-    if (type == "__internal_start")
-        return MType::INTERNAL_START;
+    if (type == "__internal_send_start")
+        return MType::INTERNAL_SEND_START;
 
     if (type == "ping")
         return MType::PING;

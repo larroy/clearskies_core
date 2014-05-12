@@ -58,8 +58,9 @@ void decode(const jsoncons::json& json, Unknown& msg)
     msg.m_content = json_os.str();
 }
 
-void decode(const jsoncons::json& json, InternalStart& msg)
+void decode(const jsoncons::json& json, InternalSendStart& msg)
 {
+    msg.m_share_id = json["share_id"].as_string();
 }
 
 void decode(const jsoncons::json& json, Ping& msg)
@@ -228,9 +229,11 @@ void encode(const Unknown& msg, jsoncons::json& json)
     assert(0);
 }
 
-void encode(const InternalStart& msg, jsoncons::json& json)
+void encode(const InternalSendStart& msg, jsoncons::json& json)
 {
+    using namespace jsoncons;
     encode_type(msg, json);
+    json["share_id"] = msg.m_share_id;
 }
 
 void encode(const Ping& msg, jsoncons::json& json)
@@ -434,7 +437,7 @@ public:
 
 protected:
     void visit(const Unknown&) override;
-    void visit(const InternalStart&) override;
+    void visit(const InternalSendStart&) override;
     void visit(const Ping&) override;
     void visit(const Greeting&) override;
     void visit(const Start&) override;
@@ -469,9 +472,9 @@ try
     unique_ptr<Message> msg;
     switch(type)
     {
-    case MType::INTERNAL_START:
+    case MType::INTERNAL_SEND_START:
     {
-        auto xmsg = make_unique<InternalStart>();
+        auto xmsg = make_unique<InternalSendStart>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -698,7 +701,7 @@ void JSONCoder::visit(const Unknown&)
     assert(0);
 }
 
-void JSONCoder::visit(const InternalStart& x)
+void JSONCoder::visit(const InternalSendStart& x)
 {
     ENCXX;
 }

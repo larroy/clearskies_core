@@ -61,7 +61,7 @@ public:
         throw;
     }
 
-    void visit(const msg::InternalStart& msg) override
+    void visit(const msg::InternalSendStart& msg) override
     {
         share::Share& share = r_protocol.share(msg.m_share_id);
         UNUSED(share);

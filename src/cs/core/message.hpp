@@ -34,7 +34,7 @@ enum class MType: unsigned
     UNKNOWN = 0,
 
     // Internal messages
-    INTERNAL_START,
+    INTERNAL_SEND_START,
 
     PING,
     GREETING,
@@ -97,7 +97,7 @@ struct MFile
 
 // forward declaration of message classes to avoid circular dependency below
 class Unknown;
-class InternalStart;
+class InternalSendStart;
 class Ping;
 class Greeting;
 class Start;
@@ -121,7 +121,7 @@ class ConstMessageVisitor
 public:
     virtual ~ConstMessageVisitor() {};
     virtual void visit(const Unknown&) = 0;
-    virtual void visit(const InternalStart&) = 0;
+    virtual void visit(const InternalSendStart&) = 0;
     virtual void visit(const Ping&) = 0;
     virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
@@ -146,7 +146,7 @@ class MutatingMessageVisitor
 public:
     virtual ~MutatingMessageVisitor() {};
     virtual void visit(Unknown&) = 0;
-    virtual void visit(InternalStart&) = 0;
+    virtual void visit(InternalSendStart&) = 0;
     virtual void visit(Ping&) = 0;
     virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
@@ -245,7 +245,7 @@ public:
 /**
  * Internal message to start the ClearSkiesProtocol and send a greeting
  */
-class InternalStart: public MessageImpl<InternalStart, MType::INTERNAL_START>
+class InternalSendStart: public MessageImpl<InternalSendStart, MType::INTERNAL_SEND_START>
 {
 public:
     /// the share id of the initiated connection

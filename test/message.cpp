@@ -24,7 +24,7 @@ using namespace cs::core::msg;
 BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
 {
     BOOST_CHECK(mtype_from_string("unknown") == MType::UNKNOWN);
-    BOOST_CHECK(mtype_from_string("__internal_start") == MType::INTERNAL_START);
+    BOOST_CHECK(mtype_from_string("__internal_send_start") == MType::INTERNAL_SEND_START);
     BOOST_CHECK(mtype_from_string("ping") == MType::PING);
     BOOST_CHECK(mtype_from_string("greeting") == MType::GREETING);
     BOOST_CHECK(mtype_from_string("start") == MType::START);
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
 BOOST_AUTO_TEST_CASE(MessageTest_type_to_str)
 {
     BOOST_CHECK(mtype_to_string(MType::UNKNOWN) == "unknown");
-    BOOST_CHECK(mtype_to_string(MType::INTERNAL_START) == "__internal_start");
+    BOOST_CHECK(mtype_to_string(MType::INTERNAL_SEND_START) == "__internal_send_start");
     BOOST_CHECK(mtype_to_string(MType::PING) == "ping");
     BOOST_CHECK(mtype_to_string(MType::GREETING) == "greeting");
     BOOST_CHECK(mtype_to_string(MType::START) == "start");
@@ -89,10 +89,10 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_unknown_defaults)
     check_message_defaults(m, MType::UNKNOWN);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_internal_start_defaults)
+BOOST_AUTO_TEST_CASE(MessageTest_type_internal_send_start_defaults)
 {
-    InternalStart m;
-    check_message_defaults(m, MType::INTERNAL_START);
+    InternalSendStart m;
+    check_message_defaults(m, MType::INTERNAL_SEND_START);
 }
 
 BOOST_AUTO_TEST_CASE(MessageTest_type_ping_defaults)
