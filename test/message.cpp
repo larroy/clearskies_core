@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_from_str)
     BOOST_CHECK(mtype_from_string("greeting") == MType::GREETING);
     BOOST_CHECK(mtype_from_string("start") == MType::START);
     BOOST_CHECK(mtype_from_string("cannot_start") == MType::CANNOT_START);
-    BOOST_CHECK(mtype_from_string("starttls") == MType::STARTTLS);
+    BOOST_CHECK(mtype_from_string("go") == MType::GO);
     BOOST_CHECK(mtype_from_string("identity") == MType::IDENTITY);
     BOOST_CHECK(mtype_from_string("keys") == MType::KEYS);
     BOOST_CHECK(mtype_from_string("keys_acknowledgment") == MType::KEYS_ACKNOWLEDGMENT);
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_to_str)
     BOOST_CHECK(mtype_to_string(MType::GREETING) == "greeting");
     BOOST_CHECK(mtype_to_string(MType::START) == "start");
     BOOST_CHECK(mtype_to_string(MType::CANNOT_START) == "cannot_start");
-    BOOST_CHECK(mtype_to_string(MType::STARTTLS) == "starttls");
+    BOOST_CHECK(mtype_to_string(MType::GO) == "go");
     BOOST_CHECK(mtype_to_string(MType::IDENTITY) == "identity");
     BOOST_CHECK(mtype_to_string(MType::KEYS) == "keys");
     BOOST_CHECK(mtype_to_string(MType::KEYS_ACKNOWLEDGMENT) == "keys_acknowledgment");
@@ -128,10 +128,10 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_cannot_start_defaults)
     check_message_defaults(m, MType::CANNOT_START);
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_type_starttls_defaults)
+BOOST_AUTO_TEST_CASE(MessageTest_type_go_defaults)
 {
-    StartTLS m;
-    check_message_defaults(m, MType::STARTTLS);
+    Go m;
+    check_message_defaults(m, MType::GO);
     BOOST_CHECK(m.m_peer.empty());
     BOOST_CHECK(m.m_access == MAccess::UNKNOWN);
 }
@@ -235,14 +235,14 @@ BOOST_AUTO_TEST_CASE(MessageTest_Start_operator)
         Start("a", 1, vector<string>(), "asdas", "read_write", "1231"));
 }
 
-BOOST_AUTO_TEST_CASE(MessageTest_StartTLS_operator)
+BOOST_AUTO_TEST_CASE(MessageTest_Go_operator)
 {
-    BOOST_CHECK(StartTLS("b", MAccess::READ_ONLY) ==
-        StartTLS("b", MAccess::READ_ONLY));
+    BOOST_CHECK(Go("b", MAccess::READ_ONLY) ==
+        Go("b", MAccess::READ_ONLY));
 
-    BOOST_CHECK(StartTLS("b", MAccess::READ_ONLY) !=
-        StartTLS("a", MAccess::READ_ONLY));
+    BOOST_CHECK(Go("b", MAccess::READ_ONLY) !=
+        Go("a", MAccess::READ_ONLY));
 
-    BOOST_CHECK(StartTLS("a", MAccess::READ_ONLY) !=
-        StartTLS("a", MAccess::READ_WRITE));
+    BOOST_CHECK(Go("a", MAccess::READ_ONLY) !=
+        Go("a", MAccess::READ_WRITE));
 }

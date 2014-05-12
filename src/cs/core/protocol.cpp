@@ -51,7 +51,7 @@ public:
         r_protocol.m_access = msg.m_access;
         r_protocol.m_features = msg.m_features;
         r_protocol.m_software = msg.m_software;
-        r_protocol.send_msg(msg::StartTLS(share.m_peer_id, msg::MAccess::READ_WRITE));
+        r_protocol.send_msg(msg::Go(share.m_peer_id, msg::MAccess::READ_WRITE));
         r_protocol.send_msg(msg::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = WAIT4_IDENTITY;
     }
@@ -68,21 +68,21 @@ public:
         // FIXME access, peer discovery
         const ServerInfo& si = r_protocol.r_server_info;
         r_protocol.send_msg(msg::Start(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id));
-        m_next_state = WAIT4_STARTTLS;
+        m_next_state = WAIT4_GO;
     }
 
 };
 
 
-class MessageHandler_WAIT4_STARTTLS: public MessageHandler
+class MessageHandler_WAIT4_GO: public MessageHandler
 {
 public:
-    MessageHandler_WAIT4_STARTTLS(State state, Protocol& protocol):
+    MessageHandler_WAIT4_GO(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
 
-    void visit(const msg::StartTLS& msg) override
+    void visit(const msg::Go& msg) override
     {
         r_protocol.m_peer = msg.m_peer;
         m_next_state = WAIT4_IDENTITY;
@@ -170,7 +170,7 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
 
     SET_HANDLER(INITIAL, MessageHandler_INITIAL);
-    SET_HANDLER(WAIT4_STARTTLS, MessageHandler_WAIT4_STARTTLS);
+    SET_HANDLER(WAIT4_GO, MessageHandler_WAIT4_GO);
     SET_HANDLER(WAIT4_IDENTITY, MessageHandler_WAIT4_IDENTITY);
     SET_HANDLER(CONNECTED, MessageHandler_CONNECTED);
     SET_HANDLER(GET, MessageHandler_GET);

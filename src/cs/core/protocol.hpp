@@ -48,7 +48,7 @@ enum State: unsigned
     INITIAL = 0,
 
     // first state when this client initiates the connection
-    WAIT4_STARTTLS,
+    WAIT4_GO,
 
     WAIT4_IDENTITY,
     CONNECTED,
@@ -124,7 +124,7 @@ public:
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const msg::StartTLS&) override
+    void visit(const msg::Go&) override
     {
         throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
     }

@@ -90,7 +90,7 @@ void decode(const jsoncons::json& json, CannotStart& msg)
 {
 }
 
-void decode(const jsoncons::json& json, StartTLS& msg)
+void decode(const jsoncons::json& json, Go& msg)
 {
     msg.m_peer = json["peer"].as_string();
     msg.m_access = maccess_from_string(json["access"].as_string());
@@ -279,7 +279,7 @@ void encode(const CannotStart& msg, jsoncons::json& json)
     encode_type(msg, json);
 }
 
-void encode(const StartTLS& msg, jsoncons::json& json)
+void encode(const Go& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
@@ -442,7 +442,7 @@ protected:
     void visit(const Greeting&) override;
     void visit(const Start&) override;
     void visit(const CannotStart&) override;
-    void visit(const StartTLS&) override;
+    void visit(const Go&) override;
     void visit(const Identity&) override;
     void visit(const Keys&) override;
     void visit(const KeysAcknowledgment&) override;
@@ -512,9 +512,9 @@ try
         break;
     }
 
-    case MType::STARTTLS:
+    case MType::GO:
     {
-        auto xmsg = make_unique<StartTLS>();
+        auto xmsg = make_unique<Go>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -726,7 +726,7 @@ void JSONCoder::visit(const CannotStart& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const StartTLS& x)
+void JSONCoder::visit(const Go& x)
 {
     ENCXX;
 }

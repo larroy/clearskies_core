@@ -44,7 +44,7 @@ mtype_str_table_t mtype_str_table_init()
     res[SC(MType::GREETING)] = "greeting";
     res[SC(MType::START)] = "start";
     res[SC(MType::CANNOT_START)] = "cannot_start";
-    res[SC(MType::STARTTLS)] = "starttls";
+    res[SC(MType::GO)] = "go";
     res[SC(MType::IDENTITY)] = "identity";
     res[SC(MType::KEYS)] = "keys";
     res[SC(MType::KEYS_ACKNOWLEDGMENT)] = "keys_acknowledgment";
@@ -87,8 +87,8 @@ MType mtype_from_string(const std::string& type)
     if (type == "cannot_start")
         return MType::CANNOT_START;
 
-    if (type == "starttls")
-        return MType::STARTTLS;
+    if (type == "go")
+        return MType::GO;
 
     if (type == "identity")
         return MType::IDENTITY;

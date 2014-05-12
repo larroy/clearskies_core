@@ -40,7 +40,7 @@ enum class MType: unsigned
     GREETING,
     START,
     CANNOT_START,
-    STARTTLS,
+    GO,
     IDENTITY,
     /// key content
     KEYS,
@@ -102,7 +102,7 @@ class Ping;
 class Greeting;
 class Start;
 class CannotStart;
-class StartTLS;
+class Go;
 class Identity;
 class Keys;
 class KeysAcknowledgment;
@@ -126,7 +126,7 @@ public:
     virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
     virtual void visit(const CannotStart&) = 0;
-    virtual void visit(const StartTLS&) = 0;
+    virtual void visit(const Go&) = 0;
     virtual void visit(const Identity&) = 0;
     virtual void visit(const Keys&) = 0;
     virtual void visit(const KeysAcknowledgment&) = 0;
@@ -151,7 +151,7 @@ public:
     virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
     virtual void visit(CannotStart&) = 0;
-    virtual void visit(StartTLS&) = 0;
+    virtual void visit(Go&) = 0;
     virtual void visit(Identity&) = 0;
     virtual void visit(Keys&) = 0;
     virtual void visit(KeysAcknowledgment&) = 0;
@@ -319,25 +319,25 @@ class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 };
 
 
-class StartTLS: public MessageImpl<StartTLS, MType::STARTTLS>
+class Go: public MessageImpl<Go, MType::GO>
 {
 public:
-    StartTLS():
+    Go():
           m_peer{}
         , m_access{MAccess::UNKNOWN}
     {}
 
-    StartTLS(const std::string& peer, MAccess access):
+    Go(const std::string& peer, MAccess access):
           m_peer{peer}
         , m_access{access}
     {}
 
-    bool operator==(const StartTLS& other)
+    bool operator==(const Go& other)
     {
         return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
     }
 
-    bool operator!=(const StartTLS& o)
+    bool operator!=(const Go& o)
     {
         return ! (*this == o);
     }
