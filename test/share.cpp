@@ -239,10 +239,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         BOOST_CHECK(manifest == frozen_manifest);
 
         // create another file, the frozen manifest should not change
-        bfs::path f = tmp.tmpdir / "newfile";
-        bfs::ofstream f_os(f);
-        f_os << "omg I'm new" << endl;
-        f_os.close();
+        cs::utils::create_file(tmp.tmpdir / "newfile", "I'm new");
 
         share.fullscan();
 
