@@ -336,6 +336,10 @@ public:
      *
      * The pairs are (peer_id, revision), the latest revisions to which the peer got updates from
      * every other peer
+     *
+     * @param[in] peer_id is the peer_id that is requesting this manifest. 
+     * With the current implementation there can't be multiple instances of this class, since it
+     * creates a temporary table.
      */
     FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
     {
