@@ -135,6 +135,7 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
         (void)exists;
     }
     {
+        // Freeze the manifest into a temporary table
         /*
          *
          * SELECT * FROM files
@@ -143,29 +144,6 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
          * OR last_changed_by NOT IN ('A', 'B')
          *
          */
-        ostringstream where;
-        if (! since.empty())
-        {
-            where << "AND (";
-            {
-                for (const auto& x: since)
-                {
-                    if (&x != &*since.begin())
-                        where << "OR ";
-                    where << "last_changed_by = '" << x.first << "' AND last_changed_rev > " << x.second << "\n";
-                }
-            }
-
-            where << "OR last_changed_by NOT IN (";
-            for (const auto& x: since)
-            {
-                if (&x != &*since.begin())
-                    where << ", ";
-                where << "'" << x.first << "'";
-            }
-            where << ")\n";
-        }
-        // Freeze the manifest into a temporary table
         const string query = boost::str(boost::format(R"#(CREATE TEMPORARY TABLE %1% AS
             SELECT * FROM files
             WHERE
@@ -174,7 +152,7 @@ FrozenManifest::FrozenManifest(const std::string& peer_id, Share& share, const s
                 AND to_checksum = 0
                 AND checksum != ''
                 %2%
-        )#") % m_table % where.str());
+        )#") % m_table % where_condition(since));
         sqlite3pp::command(r_share.m_db, query.c_str()).execute();
     }
 #if 0
@@ -191,6 +169,33 @@ FrozenManifest::~FrozenManifest()
 {
     const string q = boost::str(boost::format("DROP TABLE %1%") % m_table);
     sqlite3pp::command(r_share.m_db, q.c_str()).execute();
+}
+
+std::string FrozenManifest::where_condition(const std::map<std::string, u64>& since)
+{
+    ostringstream where;
+    if (! since.empty())
+    {
+        where << "AND (";
+        {
+            for (const auto& x: since)
+            {
+                if (&x != &*since.begin())
+                    where << "OR ";
+                where << "last_changed_by = '" << x.first << "' AND last_changed_rev > " << x.second << "\n";
+            }
+        }
+
+        where << "OR last_changed_by NOT IN (";
+        for (const auto& x: since)
+        {
+            if (&x != &*since.begin())
+                where << ", ";
+            where << "'" << x.first << "'";
+        }
+        where << ")\n";
+    }
+    return where.str();
 }
 
 

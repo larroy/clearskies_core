@@ -46,24 +46,55 @@ public:
     void visit(const msg::Start& msg) override
     try
     {
-        r_protocol.m_share = msg.m_share_id;
-        share::Share& share = r_protocol.share();
-        r_protocol.send_msg(msg::StartTLS(share.m_peer_id, msg::MAccess::READ_WRITE));
+        share::Share& share = r_protocol.share(msg.m_share_id);
+        r_protocol.m_peer = msg.m_peer;
+        r_protocol.m_access = msg.m_access;
+        r_protocol.m_features = msg.m_features;
+        r_protocol.m_software = msg.m_software;
+        r_protocol.send_msg(msg::Go(share.m_peer_id, msg::MAccess::READ_WRITE));
         r_protocol.send_msg(msg::Identity(r_protocol.r_server_info.m_name, utils::isotime(std::time(nullptr))));
-        m_next_state = WAIT4_CLIENT_IDENTITY;
+        m_next_state = WAIT4_IDENTITY;
     }
     catch (...)
     {
         r_protocol.send_msg(msg::CannotStart());
         throw;
     }
+
+    void visit(const msg::InternalSendStart& msg) override
+    {
+        share::Share& share = r_protocol.share(msg.m_share_id);
+        UNUSED(share);
+        // FIXME access, peer discovery
+        const ServerInfo& si = r_protocol.r_server_info;
+        r_protocol.send_msg(msg::Start(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id));
+        m_next_state = WAIT4_GO;
+    }
+
 };
 
 
-class MessageHandler_WAIT4_CLIENT_IDENTITY: public MessageHandler
+class MessageHandler_WAIT4_GO: public MessageHandler
 {
 public:
-    MessageHandler_WAIT4_CLIENT_IDENTITY(State state, Protocol& protocol):
+    MessageHandler_WAIT4_GO(State state, Protocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
+
+    void visit(const msg::Go& msg) override
+    {
+        r_protocol.m_peer = msg.m_peer;
+        m_next_state = WAIT4_IDENTITY;
+    }
+};
+
+
+
+class MessageHandler_WAIT4_IDENTITY: public MessageHandler
+{
+public:
+    MessageHandler_WAIT4_IDENTITY(State state, Protocol& protocol):
         MessageHandler{state, protocol}
     {
     }
@@ -125,6 +156,10 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
       r_server_info(server_info)
     , r_shares(shares)
     , m_share()
+    , m_peer()
+    , m_access()
+    , m_features()
+    , m_software()
     , m_state(State::INITIAL)
     , m_state_trans_table()
     , m_txfile_is()
@@ -135,7 +170,8 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
 
     SET_HANDLER(INITIAL, MessageHandler_INITIAL);
-    SET_HANDLER(WAIT4_CLIENT_IDENTITY, MessageHandler_WAIT4_CLIENT_IDENTITY);
+    SET_HANDLER(WAIT4_GO, MessageHandler_WAIT4_GO);
+    SET_HANDLER(WAIT4_IDENTITY, MessageHandler_WAIT4_IDENTITY);
     SET_HANDLER(CONNECTED, MessageHandler_CONNECTED);
     SET_HANDLER(GET, MessageHandler_GET);
 
@@ -160,8 +196,8 @@ void Protocol::send_file(const bfs::path& path)
 
 void Protocol::recieve_file(const bfs::path& path)
 {
-    // FIXME: set ios exceptions
     m_rxfile_os = make_unique<bfs::ofstream>(path, ios_base::out | ios_base::binary);
+    m_rxfile_os->exceptions(ifstream::eofbit | ifstream::failbit | ifstream::badbit);
     if (! *m_rxfile_os)
     {
         m_rxfile_os.reset();
@@ -241,11 +277,15 @@ void Protocol::do_get(const std::string& checksum)
     }
 }
 
-share::Share& Protocol::share()
+share::Share& Protocol::share(const std::string& share)
 {
+    if (! share.empty())
+        m_share = share;
     auto shr_i = r_shares.find(m_share);
     if (shr_i != r_shares.end())
+    {
         return shr_i->second;
+    }
     throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
 }
 

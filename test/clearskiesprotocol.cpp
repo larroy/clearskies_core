@@ -18,7 +18,7 @@
 
 #include "cs/server.hpp"
 #include "cs/core/share.hpp"
-#include "utils.hpp"
+#include "test_utils.hpp"
 #include "cs/core/coder.hpp"
 #include "cs/core/message.hpp"
 #include <boost/test/unit_test.hpp>
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     cs::core::share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);
     BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
-    BOOST_CHECK(dynamic_cast<StartTLS&>(*peer.m_messages_payload.at(0).first) == StartTLS(tmpshare.m_peer_id, MAccess::READ_WRITE));
+    BOOST_CHECK(dynamic_cast<Go&>(*peer.m_messages_payload.at(0).first) == Go(tmpshare.m_peer_id, MAccess::READ_WRITE));
     Identity* identity_msg = 0;
     BOOST_CHECK_NO_THROW(identity_msg = &dynamic_cast<Identity&>(*peer.m_messages_payload.at(1).first));
     BOOST_CHECK_EQUAL(identity_msg->m_name, server.m_server_info.m_name);
@@ -188,10 +188,11 @@ namespace {
 void server_test_01_create_tree(const bfs::path& path)
 {
     // Create a few files with the same content to verify get by hash functionality
-    create_file(path / "a0", "a");
-    create_file(path / "a1", "a");
+    string content = "adios con los contents de este fichero";
+    create_file(path / "a0", content);
+    create_file(path / "a1", content);
     create_file(path / "wow" / "a0", "a");
-    create_file(path / "wowa" / "a1", "a");
+    create_file(path / "wowa" / "a1", content);
 
     // different content
     create_file(path / "wowa" / "b2", "b2");
@@ -238,7 +239,9 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     FileData* file_data = 0;
     BOOST_CHECK_NO_THROW(file_data = &dynamic_cast<FileData&>(*peer.m_messages_payload.at(2).first));
     BOOST_CHECK_EQUAL(file_data->m_payload, true);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 1u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 38u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second, cs::utils::read_file(share.fullpath(file_data->m_paths.at(0))));
+    BOOST_CHECK_EQUAL(file_data->m_paths.size(), 3u);
 
     // FIXME: get by content
     //peer.send()

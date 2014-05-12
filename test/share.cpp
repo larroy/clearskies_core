@@ -16,7 +16,7 @@
  */
 #include "cs/core/share.hpp"
 #include "cs/utils.hpp"
-#include "utils.hpp"
+#include "test_utils.hpp"
 #include <boost/test/unit_test.hpp>
 #include "cs/boost_fs_fwd.hpp"
 #include <utility>
@@ -239,10 +239,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         BOOST_CHECK(manifest == frozen_manifest);
 
         // create another file, the frozen manifest should not change
-        bfs::path f = tmp.tmpdir / "newfile";
-        bfs::ofstream f_os(f);
-        f_os << "omg I'm new" << endl;
-        f_os.close();
+        cs::utils::create_file(tmp.tmpdir / "newfile", "I'm new");
 
         share.fullscan();
 

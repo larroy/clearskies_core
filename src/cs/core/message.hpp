@@ -34,13 +34,13 @@ enum class MType: unsigned
     UNKNOWN = 0,
 
     // Internal messages
-    INTERNAL_START,
+    INTERNAL_SEND_START,
 
     PING,
     GREETING,
     START,
     CANNOT_START,
-    STARTTLS,
+    GO,
     IDENTITY,
     /// key content
     KEYS,
@@ -97,12 +97,12 @@ struct MFile
 
 // forward declaration of message classes to avoid circular dependency below
 class Unknown;
-class InternalStart;
+class InternalSendStart;
 class Ping;
 class Greeting;
 class Start;
 class CannotStart;
-class StartTLS;
+class Go;
 class Identity;
 class Keys;
 class KeysAcknowledgment;
@@ -121,12 +121,12 @@ class ConstMessageVisitor
 public:
     virtual ~ConstMessageVisitor() {};
     virtual void visit(const Unknown&) = 0;
-    virtual void visit(const InternalStart&) = 0;
+    virtual void visit(const InternalSendStart&) = 0;
     virtual void visit(const Ping&) = 0;
     virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
     virtual void visit(const CannotStart&) = 0;
-    virtual void visit(const StartTLS&) = 0;
+    virtual void visit(const Go&) = 0;
     virtual void visit(const Identity&) = 0;
     virtual void visit(const Keys&) = 0;
     virtual void visit(const KeysAcknowledgment&) = 0;
@@ -146,12 +146,12 @@ class MutatingMessageVisitor
 public:
     virtual ~MutatingMessageVisitor() {};
     virtual void visit(Unknown&) = 0;
-    virtual void visit(InternalStart&) = 0;
+    virtual void visit(InternalSendStart&) = 0;
     virtual void visit(Ping&) = 0;
     virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
     virtual void visit(CannotStart&) = 0;
-    virtual void visit(StartTLS&) = 0;
+    virtual void visit(Go&) = 0;
     virtual void visit(Identity&) = 0;
     virtual void visit(Keys&) = 0;
     virtual void visit(KeysAcknowledgment&) = 0;
@@ -245,8 +245,11 @@ public:
 /**
  * Internal message to start the ClearSkiesProtocol and send a greeting
  */
-class InternalStart: public MessageImpl<InternalStart, MType::INTERNAL_START>
+class InternalSendStart: public MessageImpl<InternalSendStart, MType::INTERNAL_SEND_START>
 {
+public:
+    /// the share id of the initiated connection
+    std::string m_share_id;
 };
 
 
@@ -316,25 +319,25 @@ class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 };
 
 
-class StartTLS: public MessageImpl<StartTLS, MType::STARTTLS>
+class Go: public MessageImpl<Go, MType::GO>
 {
 public:
-    StartTLS():
+    Go():
           m_peer{}
         , m_access{MAccess::UNKNOWN}
     {}
 
-    StartTLS(const std::string& peer, MAccess access):
+    Go(const std::string& peer, MAccess access):
           m_peer{peer}
         , m_access{access}
     {}
 
-    bool operator==(const StartTLS& other)
+    bool operator==(const Go& other)
     {
         return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
     }
 
-    bool operator!=(const StartTLS& o)
+    bool operator!=(const Go& o)
     {
         return ! (*this == o);
     }

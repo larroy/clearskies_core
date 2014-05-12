@@ -179,6 +179,14 @@ std::vector<T> random_uniform_vector(size_t count)
     return result;
 }
 
+inline void create_file(const bfs::path& path, const std::string& content)
+{
+    create_directories(path.parent_path());
+    bfs::ofstream os(path);
+    os << content;
+}
+
+std::string read_file(const bfs::path&);
 
 
 } // end ns
