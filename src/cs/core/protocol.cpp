@@ -160,8 +160,8 @@ void Protocol::send_file(const bfs::path& path)
 
 void Protocol::recieve_file(const bfs::path& path)
 {
-    // FIXME: set ios exceptions
     m_rxfile_os = make_unique<bfs::ofstream>(path, ios_base::out | ios_base::binary);
+    m_rxfile_os->exceptions(ifstream::eofbit | ifstream::failbit | ifstream::badbit);
     if (! *m_rxfile_os)
     {
         m_rxfile_os.reset();
