@@ -16,7 +16,7 @@
  */
 #include "cs/core/share.hpp"
 #include "cs/utils.hpp"
-#include "utils.hpp"
+#include "test_utils.hpp"
 #include <boost/test/unit_test.hpp>
 #include "cs/boost_fs_fwd.hpp"
 #include <utility>

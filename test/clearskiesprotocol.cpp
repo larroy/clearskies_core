@@ -18,7 +18,7 @@
 
 #include "cs/server.hpp"
 #include "cs/core/share.hpp"
-#include "utils.hpp"
+#include "test_utils.hpp"
 #include "cs/core/coder.hpp"
 #include "cs/core/message.hpp"
 #include <boost/test/unit_test.hpp>
