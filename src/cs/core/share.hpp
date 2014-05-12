@@ -163,6 +163,10 @@ public:
         return FrozenManifestIterator(*this, true);
     }
 
+private:
+    static std::string where_condition(const std::map<std::string, u64>& since);
+
+public:
     std::string m_peer_id;
     Share& r_share;
     std::string m_table;
