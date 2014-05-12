@@ -90,3 +90,12 @@ BOOST_AUTO_TEST_CASE(Tmpdir_test)
     assert(! bfs::exists(p));
 }
 
+BOOST_AUTO_TEST_CASE(create_file_read_file_test)
+{
+    Tmpdir tmp;
+    const auto fpath = tmp.path / "testfile";
+    const string content = "abrakadabra";
+    create_file(fpath, content);
+    const auto rcontent = read_file(fpath);
+    BOOST_CHECK_EQUAL(content, rcontent);
+}

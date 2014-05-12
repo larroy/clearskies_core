@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include "boost/format.hpp"
 
 
 using namespace std;
@@ -79,6 +80,26 @@ std::string random_bytes(size_t count)
     return result;
 }
 
+
+std::string read_file(const bfs::path& path)
+{
+    string result;
+    const size_t BSIZE = 8192;
+    std::array<char, BSIZE > rbuff;
+    bfs::ifstream ifs(path);
+    if (! ifs)
+        throw std::runtime_error(boost::str(boost::format("utils::read_file %1%") % path.string()));
+
+    ifs.exceptions(ios::badbit);
+    do
+    {
+        ifs.read(rbuff.data(), rbuff.size());
+        result.append(rbuff.data(), ifs.gcount());
+    }
+    while (ifs);
+
+    return result;
+}
 
 
 } // end ns
