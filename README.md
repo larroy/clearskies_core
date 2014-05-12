@@ -11,12 +11,17 @@ Open source, distributed data synchronization software using the clearskies prot
 
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
-  See [CONTRIBUTING](http://larroy.github.io/clearskies_core/contributing)
 
-# Donate
+# Contributing
 
 We would like you to join and help with development, documentation or graphic design. Please post to
 the group first to avoid duplicating efforts.
+
+
+* See [ARCHITECTURE](http://larroy.github.io/clearskies_core/architecture) for a high level description of the software.
+* See [CONTRIBUTING](http://larroy.github.io/clearskies_core/contributing)
+
+# Donate
 
 If you can't dedicate some time to the project you can still give support by donating some money such as **Bitcoin** to the following address:
 
