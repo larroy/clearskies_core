@@ -35,6 +35,54 @@
  *
  */
 
+
+
+/* Active is the peer that opens the connection
+ *
+ * Active    Start       Passive
+ *        ---------->  
+ *
+ *           Go
+ *        <----------  
+ *
+ *          GetUpdates(since: {A:1, B:2, C:3})
+ *        ---------->  
+ *
+ *          Updates({
+ *              revision,
+ *              partial,
+ *              values:
+ *              [
+ *                  {
+ *                      checksum: "...",
+ *                      paths: ["x/y", "z/k"],
+ *                      last_changed_by,
+ *                      last_changed_rev,size,...
+ *                  },
+ *                  ...
+ *              ]
+ *          )
+ *        <--------
+ *
+ *         Get({checksum}) 
+ *
+ *        ---------->  
+ *
+ *         FileData(
+ *              {
+ *              }
+ *         )
+ *
+ *        <--------
+ *
+ *
+ *
+ *        ....
+ *
+ *        Updates
+ *        ---------->  
+ */
+
 namespace cs
 {
 namespace core
@@ -44,17 +92,12 @@ namespace protocol
 
 enum State: unsigned
 {
-    // initial state, we can start and send a greeting by sending a message to ourselves.
     INITIAL = 0,
-
-    // first state when this client initiates the connection
     WAIT4_GO,
-
     WAIT4_IDENTITY,
     CONNECTED,
     GET,
-
-
+    ////
     MAX,
 };
 

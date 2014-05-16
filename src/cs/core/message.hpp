@@ -260,30 +260,26 @@ public:
 };
 
 
-class Greeting: public MessageImpl<Greeting, MType::GREETING>
-{
-public:
-    std::string m_software;
-    std::vector<int> m_protocol;
-    std::vector<std::string> m_features;
-};
-
-
 class Start: public MessageImpl<Start, MType::START>
 {
 public:
-    Start(const std::string& software,
+    Start(
+        const std::string& software,
         const int protocol,
         const std::vector<std::string>& features,
         const std::string& id,
         const std::string& access,
-        const std::string& peer
+        const std::string& peer,
+        const std::string& name,
+        const std::string& time 
     ):
           m_software(software)
         , m_protocol(protocol)
         , m_share_id(id)
         , m_access(access)
         , m_peer(peer)
+        , m_name(name)
+        , m_time(time)
     {}
 
     Start():
@@ -292,12 +288,14 @@ public:
         , m_share_id()
         , m_access()
         , m_peer()
+        , m_name()
+        , m_time()
     {}
 
     bool operator==(const Start& o)
     {
-        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer) ==
-            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer);
+        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer, m_name, m_time) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer, o.m_name, o.m_time);
     }
 
     bool operator!=(const Start& o)
@@ -311,30 +309,46 @@ public:
     std::string m_share_id;
     std::string m_access;
     std::string m_peer;
+    std::string m_name;
+    std::string m_time;
 };
 
-
-class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
-{
-};
-
-
-class Go: public MessageImpl<Go, MType::GO>
+class Go: public MessageImpl<Go, MType::START>
 {
 public:
+    Go(
+        const std::string& software,
+        const int protocol,
+        const std::vector<std::string>& features,
+        const std::string& id,
+        const std::string& access,
+        const std::string& peer,
+        const std::string& name,
+        const std::string& time 
+    ):
+          m_software(software)
+        , m_protocol(protocol)
+        , m_share_id(id)
+        , m_access(access)
+        , m_peer(peer)
+        , m_name(name)
+        , m_time(time)
+    {}
+
     Go():
-          m_peer{}
-        , m_access{MAccess::UNKNOWN}
+          m_software()
+        , m_protocol()
+        , m_share_id()
+        , m_access()
+        , m_peer()
+        , m_name()
+        , m_time()
     {}
 
-    Go(const std::string& peer, MAccess access):
-          m_peer{peer}
-        , m_access{access}
-    {}
-
-    bool operator==(const Go& other)
+    bool operator==(const Go& o)
     {
-        return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
+        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer, m_name, m_time) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer, o.m_name, o.m_time);
     }
 
     bool operator!=(const Go& o)
@@ -342,44 +356,22 @@ public:
         return ! (*this == o);
     }
 
-
+    std::string m_software;
+    int m_protocol = 0;
+    std::vector<std::string> m_features;
+    std::string m_share_id;
+    std::string m_access;
     std::string m_peer;
-    MAccess m_access = MAccess::UNKNOWN;
-};
-
-
-class Identity: public MessageImpl<Identity, MType::IDENTITY>
-{
-public:
-    Identity():
-        m_name()
-        , m_time()
-    {}
-
-    Identity(const std::string& name, const std::string& time):
-        m_name(name)
-        , m_time(time)
-    {}
-
     std::string m_name;
     std::string m_time;
 };
 
 
-class Keys: public MessageImpl<Keys, MType::KEYS>
-{
-public:
-    MAccess m_access = MAccess::UNKNOWN;
-    std::string m_share_id;
-    std::string m_ro_psk;
-    std::string m_ro_rsa;
-    std::string m_rw_public_rsa;
-};
 
-
-class KeysAcknowledgment: public MessageImpl<KeysAcknowledgment, MType::KEYS_ACKNOWLEDGMENT>
+class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 {
 };
+
 
 
 class Manifest: public MessageImpl<Manifest, MType::MANIFEST>
@@ -394,13 +386,9 @@ public:
 class GetUpdates: public MessageImpl<GetUpdates, MType::GET_UPDATES>
 {
 public:
-    long long m_revision = 0;
+    std::map<std::string, u64>& since;
 };
 
-
-class Current: public MessageImpl<Current, MType::CURRENT>
-{
-};
 
 class Get: public MessageImpl<Get, MType::GET>
 {
@@ -443,17 +431,6 @@ class FileModified: public MessageImpl<FileModified, MType::FILE_DATA>
 
 class Update: public MessageImpl<Update, MType::UPDATE>
 {
-public:
-    long long m_revision = 0;
-    MFile m_file;
-};
-
-class Move: public MessageImpl<Move, MType::MOVE>
-{
-public:
-    long long m_revision = 0;
-    std::string m_source;
-    MFile m_destination;
 };
 
 
