@@ -240,21 +240,23 @@ void Protocol::do_get(const std::string& checksum)
 {
     // get list of files that match this checksum from the share
     const auto mfiles = share().get_mfiles_by_content(checksum);
+    #if 0
     vector<string> paths;
     // some might have been changed now, send only paths that are up to date
     transform(mfiles.begin(), mfiles.end(), back_inserter(paths), [](const share::MFile& x) {
         return x.path;
     });
-    if (! paths.empty())
+    #endif
+    if (! mfiles.empty())
     {
-        msg::FileData filedata(move(paths));
+        msg::FileData filedata(checksum);
         assert(filedata.m_payload);
         send_msg(filedata);
-        send_file(share().fullpath(bfs::path(filedata.m_paths.front())));
+        send_file(share().fullpath(bfs::path(mfiles.front().path)));
     }
     else
     {
-        send_msg(msg::FileModified());
+        send_msg(msg::NoSuchFile(checksum));
     }
 }
 
