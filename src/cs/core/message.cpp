@@ -41,21 +41,14 @@ mtype_str_table_t mtype_str_table_init()
     res[SC(MType::UNKNOWN)] = "unknown";
     res[SC(MType::INTERNAL_SEND_START)] = "__internal_send_start";
     res[SC(MType::PING)] = "ping";
-    res[SC(MType::GREETING)] = "greeting";
     res[SC(MType::START)] = "start";
-    res[SC(MType::CANNOT_START)] = "cannot_start";
     res[SC(MType::GO)] = "go";
-    res[SC(MType::IDENTITY)] = "identity";
-    res[SC(MType::KEYS)] = "keys";
-    res[SC(MType::KEYS_ACKNOWLEDGMENT)] = "keys_acknowledgment";
-    res[SC(MType::MANIFEST)] = "manifest";
+    res[SC(MType::CANNOT_START)] = "cannot_start";
     res[SC(MType::GET_UPDATES)] = "get_updates";
-    res[SC(MType::CURRENT)] = "current";
     res[SC(MType::GET)] = "get";
     res[SC(MType::FILE_DATA)] = "file_data";
-    res[SC(MType::FILE_MODIFIED)] = "file_modified";
+    res[SC(MType::NO_SUCH_FILE)] = "no_such_file";
     res[SC(MType::UPDATE)] = "update";
-    res[SC(MType::MOVE)] = "move";
     return res;
 }
 } // end anon ns
@@ -78,35 +71,17 @@ MType mtype_from_string(const std::string& type)
     if (type == "ping")
         return MType::PING;
 
-    if (type == "greeting")
-        return MType::GREETING;
-
     if (type == "start")
         return MType::START;
-
-    if (type == "cannot_start")
-        return MType::CANNOT_START;
 
     if (type == "go")
         return MType::GO;
 
-    if (type == "identity")
-        return MType::IDENTITY;
-
-    if (type == "keys")
-        return MType::KEYS;
-
-    if (type == "keys_acknowledgment")
-        return MType::KEYS_ACKNOWLEDGMENT;
-
-    if (type == "manifest")
-        return MType::MANIFEST;
+    if (type == "cannot_start")
+        return MType::CANNOT_START;
 
     if (type == "get_updates")
         return MType::GET_UPDATES;
-
-    if (type == "current")
-        return MType::CURRENT;
 
     if (type == "get")
         return MType::GET;
@@ -114,41 +89,13 @@ MType mtype_from_string(const std::string& type)
     if (type == "file_data")
         return MType::FILE_DATA;
 
-    if (type == "file_modified")
-        return MType::FILE_MODIFIED;
+    if (type == "no_such_file")
+        return MType::NO_SUCH_FILE;
 
     if (type == "update")
         return MType::UPDATE;
 
-    if (type == "move")
-        return MType::MOVE;
-
     return MType::UNKNOWN;
-}
-
-std::string maccess_to_string(MAccess access)
-{
-    switch (access) {
-        case MAccess::READ_ONLY:
-            return "read_only";
-
-        case MAccess::READ_WRITE:
-            return "read_write";
-
-        default:
-            return "unknown";
-    }
-}
-
-MAccess maccess_from_string(const std::string& access)
-{
-    if (access == "read_only")
-            return MAccess::READ_ONLY;
-
-    if (access == "read_write")
-        return MAccess::READ_WRITE;
-
-    return MAccess::UNKNOWN;
 }
 
 

@@ -21,6 +21,7 @@
 #include "../utils.hpp"
 #include <string>
 #include <vector>
+#include <map>
 
 namespace cs
 {
@@ -37,32 +38,16 @@ enum class MType: unsigned
     INTERNAL_SEND_START,
 
     PING,
-    GREETING,
     START,
-    CANNOT_START,
     GO,
-    IDENTITY,
-    /// key content
-    KEYS,
-    /// response to keys
-    KEYS_ACKNOWLEDGMENT,
-    /// file listing
-    MANIFEST,
-    /// request for manifest
+    CANNOT_START,
     GET_UPDATES,
     /// response to GET_UPDATES when there are no updates
-    CURRENT,
-    /// request to retrieve contents of a file
     GET,
     /// response with contents of a file
     FILE_DATA,
-    /// response to GET when the file has been updated
-    FILE_MODIFIED,
-
-    /// notification of changed file
+    NO_SUCH_FILE,
     UPDATE,
-    /// notification of moved file
-    MOVE,
 
     /// Not a message, Maximum value of the enum used to create arrays
     MAX,
@@ -85,13 +70,14 @@ MAccess maccess_from_string(const std::string& access);
 
 struct MFile
 {
-    std::string m_path;
-    double m_utime;
-    long long m_size;
-    std::vector<int> m_mtime;
-    std::string m_mode;
-    std::string m_sha256;
-    bool m_deleted;
+    std::string checksum;
+    std::vector<std::string> paths;
+    std::string last_changed_by;
+    u64 last_changed_rev;
+    std::string mtime;
+    u64 size;
+    u32 mode;
+    bool deleted;
 };
 
 
@@ -99,21 +85,14 @@ struct MFile
 class Unknown;
 class InternalSendStart;
 class Ping;
-class Greeting;
 class Start;
-class CannotStart;
 class Go;
-class Identity;
-class Keys;
-class KeysAcknowledgment;
-class Manifest;
+class CannotStart;
 class GetUpdates;
-class Current;
 class Get;
 class FileData;
-class FileModified;
+class NoSuchFile;
 class Update;
-class Move;
 
 
 class ConstMessageVisitor
@@ -123,21 +102,14 @@ public:
     virtual void visit(const Unknown&) = 0;
     virtual void visit(const InternalSendStart&) = 0;
     virtual void visit(const Ping&) = 0;
-    virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
-    virtual void visit(const CannotStart&) = 0;
     virtual void visit(const Go&) = 0;
-    virtual void visit(const Identity&) = 0;
-    virtual void visit(const Keys&) = 0;
-    virtual void visit(const KeysAcknowledgment&) = 0;
-    virtual void visit(const Manifest&) = 0;
+    virtual void visit(const CannotStart&) = 0;
     virtual void visit(const GetUpdates&) = 0;
-    virtual void visit(const Current&) = 0;
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
-    virtual void visit(const FileModified&) = 0;
+    virtual void visit(const NoSuchFile&) = 0;
     virtual void visit(const Update&) = 0;
-    virtual void visit(const Move&) = 0;
 };
 
 
@@ -148,21 +120,14 @@ public:
     virtual void visit(Unknown&) = 0;
     virtual void visit(InternalSendStart&) = 0;
     virtual void visit(Ping&) = 0;
-    virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
-    virtual void visit(CannotStart&) = 0;
     virtual void visit(Go&) = 0;
-    virtual void visit(Identity&) = 0;
-    virtual void visit(Keys&) = 0;
-    virtual void visit(KeysAcknowledgment&) = 0;
-    virtual void visit(Manifest&) = 0;
+    virtual void visit(CannotStart&) = 0;
     virtual void visit(GetUpdates&) = 0;
-    virtual void visit(Current&) = 0;
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
-    virtual void visit(FileModified&) = 0;
+    virtual void visit(NoSuchFile&) = 0;
     virtual void visit(Update&) = 0;
-    virtual void visit(Move&) = 0;
 };
 
 
@@ -275,6 +240,7 @@ public:
     ):
           m_software(software)
         , m_protocol(protocol)
+        , m_features(features)
         , m_share_id(id)
         , m_access(access)
         , m_peer(peer)
@@ -285,6 +251,7 @@ public:
     Start():
           m_software()
         , m_protocol()
+        , m_features()
         , m_share_id()
         , m_access()
         , m_peer()
@@ -328,6 +295,7 @@ public:
     ):
           m_software(software)
         , m_protocol(protocol)
+        , m_features(features)
         , m_share_id(id)
         , m_access(access)
         , m_peer(peer)
@@ -338,6 +306,7 @@ public:
     Go():
           m_software()
         , m_protocol()
+        , m_features()
         , m_share_id()
         , m_access()
         , m_peer()
@@ -372,21 +341,20 @@ class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 {
 };
 
-
-
-class Manifest: public MessageImpl<Manifest, MType::MANIFEST>
-{
-public:
-    std::string m_peer;
-    long long m_revision = 0;
-    std::vector<MFile> m_files;
-};
-
-
 class GetUpdates: public MessageImpl<GetUpdates, MType::GET_UPDATES>
 {
 public:
-    std::map<std::string, u64>& since;
+    GetUpdates(const std::map<std::string, u64>& since):
+        m_since(since)
+    {
+    }
+
+    GetUpdates():
+        m_since()
+    {
+    }
+
+    std::map<std::string, u64> m_since;
 };
 
 
@@ -404,33 +372,69 @@ public:
     std::string m_checksum;
 };
 
+
+
 class FileData: public MessageImpl<FileData, MType::FILE_DATA>
 {
 public:
-    FileData(std::vector<std::string>&& paths):
-        m_paths(move(paths))
-        , m_range()
+    FileData(const std::string& checksum):
+        m_checksum(checksum)
     {
         m_payload = true;
     }
 
     FileData():
-        m_paths()
-        , m_range()
+        m_checksum()
     {
-        m_payload = true;
     }
-    std::vector<std::string> m_paths;
-    std::vector<long long> m_range;
+
+    std::string m_checksum;
 };
 
-class FileModified: public MessageImpl<FileModified, MType::FILE_DATA>
+class NoSuchFile: public MessageImpl<NoSuchFile, MType::NO_SUCH_FILE>
 {
+public:
+    NoSuchFile(const std::string& checksum):
+        m_checksum(checksum)
+    {
+    }
+    NoSuchFile():
+        m_checksum()
+    {}
+
+    std::string m_checksum;
 };
+
 
 
 class Update: public MessageImpl<Update, MType::UPDATE>
 {
+public:
+    Update():
+        m_revision()
+        , m_partial()
+        , m_files()
+    {}
+
+    Update(long long revision):
+        m_revision(revision)
+        , m_partial()
+        , m_files()
+    {}
+        
+
+    Update(long long revision, bool partial, const std::vector<MFile>& files):
+        m_revision(revision)
+        , m_partial(partial)
+        , m_files(files)
+    {
+    }
+
+    /// peer revision number sending this Update
+    u64 m_revision = 0;
+    /// indicates that there are more Update messages comming...
+    bool m_partial = false;
+    std::vector<MFile> m_files;
 };
 
 

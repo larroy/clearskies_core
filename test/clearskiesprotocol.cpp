@@ -165,7 +165,9 @@ BOOST_AUTO_TEST_CASE(server_test_01)
         vector<string>(),
         share_id,  // share id
         "read_write",
-        utils::bin_to_hex(utils::random_bytes(16))  // peer id
+        utils::bin_to_hex(utils::random_bytes(16)),
+        "name",
+        "time"
     });
     cs::core::share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);

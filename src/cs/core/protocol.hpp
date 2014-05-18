@@ -149,71 +149,43 @@ public:
     }
     void visit(const msg::InternalSendStart&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type InternalSendStart on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::Ping&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::Greeting&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type Ping on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::Start&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::CannotStart&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type Start on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::Go&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type Go on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const msg::Identity&) override
+    void visit(const msg::CannotStart&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::Keys&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::KeysAcknowledgment&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::Manifest&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type CannotStart on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::GetUpdates&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::Current&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type GetUpdates on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::Get&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type Get on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::FileData&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type FileData on state: " << static_cast<unsigned>(m_state)));
     }
-    void visit(const msg::FileModified&) override
+    void visit(const msg::NoSuchFile&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type NoSuchFile on state: " << static_cast<unsigned>(m_state)));
     }
     void visit(const msg::Update&) override
     {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
-    }
-    void visit(const msg::Move&) override
-    {
-        throw ProtocolError(fs("Can't handle message type Unknown on state: " << static_cast<unsigned>(m_state)));
+        throw ProtocolError(fs("Can't handle message type Update on state: " << static_cast<unsigned>(m_state)));
     }
 
     State m_state;
