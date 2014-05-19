@@ -280,7 +280,7 @@ public:
     std::string m_time;
 };
 
-class Go: public MessageImpl<Go, MType::START>
+class Go: public MessageImpl<Go, MType::GO>
 {
 public:
     Go(

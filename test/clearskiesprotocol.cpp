@@ -145,6 +145,16 @@ public:
         m_payload_end = true;
     }
 
+    Message* msg(size_t pos)
+    {
+        return m_messages_payload.at(pos).first.get();
+    }
+
+    const std::string& payload(size_t pos)
+    {
+        return m_messages_payload.at(pos).second;
+    }
+
     std::string m_name;
     std::string m_id;
     vector<pair<unique_ptr<Message>, string>> m_messages_payload;
@@ -178,8 +188,8 @@ BOOST_AUTO_TEST_CASE(server_test_01)
     });
     //cs::core::share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
-    BOOST_CHECK(dynamic_cast<Go*>(peer.m_messages_payload.at(0).first.get()));
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
+    BOOST_CHECK(dynamic_cast<Go*>(peer.msg(0)));
     peer.m_messages_payload.clear();
 }
 
@@ -233,13 +243,13 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     peer.send(Get(manifest[0].checksum));
     peer.read_from(server);
 
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 3u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
 
 
-    FileData* file_data = 0;
-    BOOST_CHECK_NO_THROW(file_data = &dynamic_cast<FileData&>(*peer.m_messages_payload.at(2).first));
+    const FileData* file_data = 0;
+    BOOST_CHECK_NO_THROW(file_data = dynamic_cast<const FileData*>(peer.msg(1)));
     BOOST_CHECK_EQUAL(file_data->m_payload, true);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 38u);
+    BOOST_CHECK_EQUAL(peer.payload(1).size(), 38u);
     //BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second, cs::utils::read_file(share.fullpath(file_data->m_paths.at(0))));
     //BOOST_CHECK_EQUAL(file_data->m_paths.size(), 3u);
 
