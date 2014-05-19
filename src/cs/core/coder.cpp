@@ -68,95 +68,41 @@ void decode(const jsoncons::json& json, Ping& msg)
     msg.m_timeout = json["timeout"].as_int();
 }
 
-void decode(const jsoncons::json& json, Greeting& msg)
-{
-    msg.m_software = json["software"].as_string();
-    msg.m_protocol = json["protocol"].as_vector<int>();
-    msg.m_features = json["features"].as_vector<string>();
-}
-
 void decode(const jsoncons::json& json, Start& msg)
 {
-
     msg.m_software = json["software"].as_string();
     msg.m_protocol = json["protocol"].as_int();
     msg.m_features = json["features"].as_vector<string>();
     msg.m_share_id = json["id"].as_string();
     msg.m_access = json["access"].as_string();
     msg.m_peer = json["peer"].as_string();
+    msg.m_name = json["name"].as_string();
+    msg.m_time = json["time"].as_string();
+}
+
+void decode(const jsoncons::json& json, Go& msg)
+{
+    msg.m_software = json["software"].as_string();
+    msg.m_protocol = json["protocol"].as_int();
+    msg.m_features = json["features"].as_vector<string>();
+    msg.m_share_id = json["id"].as_string();
+    msg.m_access = json["access"].as_string();
+    msg.m_peer = json["peer"].as_string();
+    msg.m_name = json["name"].as_string();
+    msg.m_time = json["time"].as_string();
 }
 
 void decode(const jsoncons::json& json, CannotStart& msg)
 {
 }
 
-void decode(const jsoncons::json& json, Go& msg)
-{
-    msg.m_peer = json["peer"].as_string();
-    msg.m_access = maccess_from_string(json["access"].as_string());
-}
-
-void decode(const jsoncons::json& json, Identity& msg)
-{
-    msg.m_name = json["name"].as_string();
-    msg.m_time = json["time"].as_string();
-}
-
-void decode(const jsoncons::json& json, Keys& msg)
-{
-    msg.m_access = maccess_from_string(json["access"].as_string());
-    msg.m_share_id = json["share_id"].as_string();
-
-    auto ro = json["read_only"];
-    msg.m_ro_psk = ro["psk"].as_string();
-    msg.m_ro_rsa = ro["rsa"].as_string();
-
-    auto rw = json["read_write"];
-    msg.m_rw_public_rsa = rw["public_rsa"].as_string();
-}
-
-void decode(const jsoncons::json& json, KeysAcknowledgment& msg)
-{
-}
-
-void decode(const jsoncons::json& json, Manifest& msg)
-{
-    msg.m_peer = json["peer"].as_string();
-    msg.m_revision = json["revision"].as_longlong();
-
-    // Read json file objects as MFiles
-    for(size_t i = 0; i < json["files"].size(); i++) {
-        auto j_file = json["files"][i];
-
-        MFile file;
-        file.m_path = j_file["path"].as_string();
-        file.m_utime = j_file["utime"].as_double();
-
-        if (j_file.has_member("deleted")) {
-            file.m_deleted = j_file["deleted"].as_bool();
-        } else {
-            file.m_deleted = false;
-        }
-
-        if (!file.m_deleted) {
-            file.m_size = j_file["size"].as_longlong();
-            file.m_mtime = j_file["mtime"].as_vector<int>();
-            file.m_mode = j_file["mode"].as_string();
-            file.m_sha256 = j_file["sha256"].as_string();
-        }
-
-        msg.m_files.push_back(file);
-    }
-}
-
 void decode(const jsoncons::json& json, GetUpdates& msg)
 {
-    msg.m_revision = json["revision"].as_longlong();
+    auto since = json["since"];
+    for (auto i = since.begin_members(); i != since.end_members(); ++i)
+        msg.m_since.insert(make_pair(i->first, i->second.as_ulonglong()));
 }
 
-void decode(const jsoncons::json& json, Current& msg)
-{
-}
 
 void decode(const jsoncons::json& json, Get& msg)
 {
@@ -165,53 +111,38 @@ void decode(const jsoncons::json& json, Get& msg)
 
 void decode(const jsoncons::json& json, FileData& msg)
 {
-    msg.m_paths = json["paths"].as_vector<string>();
-    msg.m_range = json["range"].as_vector<long long>();
+    msg.m_checksum = json["checksum"].as_string();
 }
 
-void decode(const jsoncons::json& json, FileModified& msg)
+void decode(const jsoncons::json& json, NoSuchFile& msg)
 {
+    msg.m_checksum = json["checksum"].as_string();
 }
 
 void decode(const jsoncons::json& json, Update& msg)
 {
-    msg.m_revision = json["revision"].as_longlong();
+    msg.m_revision = json["revision"].as_ulonglong();
+    msg.m_partial = json.has_member("partial") && json["partial"].as_bool() == true;
 
-    // Read json file object as an MFile
-    auto j_file = json["file"];
+    auto files = json["files"];
+    for (auto i = files.begin_elements(); i != files.end_elements(); ++i)
+    {
+        const auto& file = *i;
+        MFile mfile;
+        auto paths = file["paths"];
+        for (auto pi = paths.begin_elements(); pi != paths.end_elements(); ++pi)
+            mfile.paths.emplace_back(pi->as_string());
 
-    msg.m_file.m_path = j_file["path"].as_string();
-    msg.m_file.m_utime = j_file["utime"].as_double();
+        if (mfile.paths.empty())
+            throw std::runtime_error("mfile paths is empty");
 
-    if (j_file.has_member("deleted")) {
-        msg.m_file.m_deleted = j_file["deleted"].as_bool();
-    } else {
-        msg.m_file.m_deleted = false;
+        mfile.last_changed_by = file["last_changed_by"].as_string();
+        mfile.last_changed_rev = file["last_changed_rev"].as_ulonglong();
+        mfile.mtime = file["mtime"].as_string();
+        mfile.size = file["size"].as_ulonglong();
+        mfile.mode = file["size"].as_ulong();
+        mfile.deleted = file.has_member("deleted") && file["deleted"].as_bool() == true;
     }
-
-    if (!msg.m_file.m_deleted) {
-        msg.m_file.m_size = j_file["size"].as_longlong();
-        msg.m_file.m_mtime = j_file["mtime"].as_vector<int>();
-        msg.m_file.m_mode = j_file["mode"].as_string();
-        msg.m_file.m_sha256 = j_file["sha256"].as_string();
-    }
-}
-
-void decode(const jsoncons::json& json, Move& msg)
-{
-    msg.m_revision = json["revision"].as_longlong();
-    msg.m_source = json["source"].as_string();
-
-    // Read json file object as an MFile
-    auto j_file = json["destination"];
-
-    msg.m_destination.m_path = j_file["path"].as_string();
-    msg.m_destination.m_utime = j_file["utime"].as_double();
-    msg.m_destination.m_size = j_file["size"].as_longlong();
-    msg.m_destination.m_mtime = j_file["mtime"].as_vector<int>();
-    msg.m_destination.m_mode = j_file["mode"].as_string();
-    msg.m_destination.m_sha256 = j_file["sha256"].as_string();
-    msg.m_destination.m_deleted = false;
 }
 
 
@@ -243,25 +174,6 @@ void encode(const Ping& msg, jsoncons::json& json)
     json["timeout"] = msg.m_timeout;
 }
 
-template<class It>
-jsoncons::json to_array(It begin, It end)
-{
-    auto result = jsoncons::json::make_array();
-    for (auto i = begin; i != end; ++i)
-        result.add(jsoncons::json(*i));
-    return result;
-}
-
-void encode(const Greeting& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["software"] = msg.m_software;
-    //json["protocol"] = to_array(msg.m_protocol.begin(), msg.m_protocol.end());
-    json["protocol"] = jsoncons::json(msg.m_protocol.begin(), msg.m_protocol.end());
-    json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
-}
-
 void encode(const Start& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
@@ -272,6 +184,22 @@ void encode(const Start& msg, jsoncons::json& json)
     json["id"] = msg.m_share_id;
     json["access"] = msg.m_access;
     json["peer"] = msg.m_peer;
+    json["name"] = msg.m_name;
+    json["time"] = msg.m_time;
+}
+
+void encode(const Go& msg, jsoncons::json& json)
+{
+    using namespace jsoncons;
+    encode_type(msg, json);
+    json["software"] = msg.m_software;
+    json["protocol"] = msg.m_protocol;
+    json["features"] = jsoncons::json(msg.m_features.begin(), msg.m_features.end());
+    json["id"] = msg.m_share_id;
+    json["access"] = msg.m_access;
+    json["peer"] = msg.m_peer;
+    json["name"] = msg.m_name;
+    json["time"] = msg.m_time;
 }
 
 void encode(const CannotStart& msg, jsoncons::json& json)
@@ -279,82 +207,13 @@ void encode(const CannotStart& msg, jsoncons::json& json)
     encode_type(msg, json);
 }
 
-void encode(const Go& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["peer"] = msg.m_peer;
-    json["access"] = maccess_to_string(msg.m_access);
-}
-
-void encode(const Identity& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["name"] = msg.m_name;
-    json["time"] = msg.m_time;
-}
-
-void encode(const Keys& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["access"] = maccess_to_string(msg.m_access);
-    json["share_id"] = msg.m_share_id;
-
-    jsoncons::json ro;
-    ro["psk"] = msg.m_ro_psk;
-    ro["rsa"] = msg.m_ro_rsa;
-    json["read_only"] = ro;
-
-    jsoncons::json rw;
-    rw["public_rsa"] = msg.m_rw_public_rsa;
-    json["read_write"] = rw;
-}
-
-void encode(const KeysAcknowledgment& msg, jsoncons::json& json)
-{
-    assert(0);
-}
-
-void encode(const Manifest& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["peer"] = msg.m_peer;
-    json["revision"] = msg.m_revision;
-
-    std::vector<jsoncons::json> j_files;
-    for (MFile file: msg.m_files) {
-        jsoncons::json j_file;
-        j_file["path"] = file.m_path;
-        j_file["utime"] = file.m_utime;
-
-        if (!file.m_deleted) {
-            j_file["size"] = file.m_size;
-            j_file["mtime"] = jsoncons::json(file.m_mtime.begin(), file.m_mtime.end());
-            j_file["mode"] = file.m_mode;
-            j_file["sha256"] = file.m_sha256;
-        } else {
-            j_file["deleted"] = file.m_deleted;
-        }
-
-        j_files.push_back(j_file);
-    }
-
-    json["files"] = jsoncons::json(j_files.begin(), j_files.end());
-}
-
 void encode(const GetUpdates& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
-    json["revision"] = msg.m_revision;
-}
-
-void encode(const Current& msg, jsoncons::json& json)
-{
-    assert(0);
+    json["since"] = json::an_object;
+    for (const auto& x: msg.m_since)
+        json["since"][x.first] = x.second;
 }
 
 void encode(const Get& msg, jsoncons::json& json)
@@ -368,56 +227,38 @@ void encode(const FileData& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
-    json["paths"] = jsoncons::json(msg.m_paths.begin(), msg.m_paths.end());
-    json["range"] = jsoncons::json(msg.m_range.begin(), msg.m_range.end());
+    json["checksum"] = msg.m_checksum;
 }
 
-void encode(const FileModified& msg, jsoncons::json& json)
+void encode(const NoSuchFile& msg, jsoncons::json& json)
 {
     using namespace jsoncons;
     encode_type(msg, json);
+    json["checksum"] = msg.m_checksum;
 }
 
 
-void encode(const Update& msg, jsoncons::json& json)
+void encode(const Update& msg, jsoncons::json& jmsg)
 {
     using namespace jsoncons;
-    encode_type(msg, json);
-    json["revision"] = msg.m_revision;
-
-    jsoncons::json j_file;
-    j_file["path"] = msg.m_file.m_path;
-    j_file["utime"] = msg.m_file.m_utime;
-
-    if (!msg.m_file.m_deleted) {
-        j_file["size"] = msg.m_file.m_size;
-        j_file["mtime"] = jsoncons::json(msg.m_file.m_mtime.begin(), msg.m_file.m_mtime.end());
-        j_file["mode"] = msg.m_file.m_mode;
-        j_file["sha256"] = msg.m_file.m_sha256;
-    } else {
-        j_file["deleted"] = msg.m_file.m_deleted;
+    encode_type(msg, jmsg);
+    jmsg["revision"] = msg.m_revision;
+    jmsg["partial"] = msg.m_partial;
+    jmsg["files"] = json::make_array();
+    for (const auto& mfile: msg.m_files)
+    {
+        json file;
+        file["checksum"] = mfile.checksum;
+        file["paths"] = json(mfile.paths.begin(), mfile.paths.end());
+        file["last_changed_by"] = mfile.last_changed_by;
+        file["last_changed_rev"] = mfile.last_changed_rev;
+        file["mtime"] = mfile.mtime;
+        file["size"] = mfile.size;
+        file["mode"] = mfile.mode;
+        file["deleted"] = mfile.deleted;
+        jmsg["files"].add(move(file));
     }
-
-    json["file"] = j_file;
 }
-
-void encode(const Move& msg, jsoncons::json& json)
-{
-    using namespace jsoncons;
-    encode_type(msg, json);
-    json["revision"] = msg.m_revision;
-
-    jsoncons::json j_file;
-    j_file["path"] = msg.m_destination.m_path;
-    j_file["utime"] = msg.m_destination.m_utime;
-    j_file["size"] = msg.m_destination.m_size;
-    j_file["mtime"] = jsoncons::json(msg.m_destination.m_mtime.begin(), msg.m_destination.m_mtime.end());
-    j_file["mode"] = msg.m_destination.m_mode;
-    j_file["sha256"] = msg.m_destination.m_sha256;
-
-    json["file"] = j_file;
-}
-
 
 class JSONCoder: public CoderImpl, public ConstMessageVisitor
 {
@@ -439,21 +280,14 @@ protected:
     void visit(const Unknown&) override;
     void visit(const InternalSendStart&) override;
     void visit(const Ping&) override;
-    void visit(const Greeting&) override;
     void visit(const Start&) override;
     void visit(const CannotStart&) override;
     void visit(const Go&) override;
-    void visit(const Identity&) override;
-    void visit(const Keys&) override;
-    void visit(const KeysAcknowledgment&) override;
-    void visit(const Manifest&) override;
     void visit(const GetUpdates&) override;
-    void visit(const Current&) override;
     void visit(const Get&) override;
     void visit(const FileData&) override;
-    void visit(const FileModified&) override;
+    void visit(const NoSuchFile&) override;
     void visit(const Update&) override;
-    void visit(const Move&) override;
 
 private:
     std::string m_encoded_msg;
@@ -488,25 +322,9 @@ try
         break;
     }
 
-    case MType::GREETING:
-    {
-        auto xmsg = make_unique<Greeting>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
     case MType::START:
     {
         auto xmsg = make_unique<Start>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    case MType::CANNOT_START:
-    {
-        auto xmsg = make_unique<CannotStart>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -520,33 +338,9 @@ try
         break;
     }
 
-    case MType::IDENTITY:
+    case MType::CANNOT_START:
     {
-        auto xmsg = make_unique<Identity>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    case MType::KEYS:
-    {
-        auto xmsg = make_unique<Keys>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    case MType::KEYS_ACKNOWLEDGMENT:
-    {
-        auto xmsg = make_unique<KeysAcknowledgment>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    case MType::MANIFEST:
-    {
-        auto xmsg = make_unique<Manifest>();
+        auto xmsg = make_unique<CannotStart>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -555,14 +349,6 @@ try
     case MType::GET_UPDATES:
     {
         auto xmsg = make_unique<GetUpdates>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
-
-    case MType::CURRENT:
-    {
-        auto xmsg = make_unique<Current>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -584,9 +370,9 @@ try
         break;
     }
 
-    case MType::FILE_MODIFIED:
+    case MType::NO_SUCH_FILE:
     {
-        auto xmsg = make_unique<FileModified>();
+        auto xmsg = make_unique<NoSuchFile>();
         decode(json, *xmsg);
         msg = move(xmsg);
         break;
@@ -600,13 +386,6 @@ try
         break;
     }
 
-    case MType::MOVE:
-    {
-        auto xmsg = make_unique<Move>();
-        decode(json, *xmsg);
-        msg = move(xmsg);
-        break;
-    }
 
     // Add additional message types here
 
@@ -711,11 +490,6 @@ void JSONCoder::visit(const Ping& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const Greeting& x)
-{
-    ENCXX;
-}
-
 void JSONCoder::visit(const Start& x)
 {
     ENCXX;
@@ -731,32 +505,9 @@ void JSONCoder::visit(const Go& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const Identity& x)
-{
-    ENCXX;
-}
 
-void JSONCoder::visit(const Keys& x)
-{
-    ENCXX;
-}
-
-void JSONCoder::visit(const KeysAcknowledgment& x)
-{
-    ENCXX;
-}
-
-void JSONCoder::visit(const Manifest& x)
-{
-    ENCXX;
-}
 
 void JSONCoder::visit(const GetUpdates& x)
-{
-    ENCXX;
-}
-
-void JSONCoder::visit(const Current& x)
 {
     ENCXX;
 }
@@ -771,17 +522,12 @@ void JSONCoder::visit(const FileData& x)
     ENCXX;
 }
 
-void JSONCoder::visit(const FileModified& x)
+void JSONCoder::visit(const NoSuchFile& x)
 {
     ENCXX;
 }
 
 void JSONCoder::visit(const Update& x)
-{
-    ENCXX;
-}
-
-void JSONCoder::visit(const Move& x)
 {
     ENCXX;
 }

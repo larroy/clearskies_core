@@ -23,7 +23,7 @@ using namespace std;
 using namespace cs::core;
 using namespace cs::core::msg;
 
-
+#if 0
 BOOST_AUTO_TEST_CASE(MessageTest_type_keys) {
     Coder coder;
 
@@ -121,3 +121,4 @@ BOOST_AUTO_TEST_CASE(MessageTest_type_manifest) {
         BOOST_CHECK(msg->m_files[i].m_sha256 == out_msg->m_files[i].m_sha256);
     }
 }
+#endif

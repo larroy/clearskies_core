@@ -38,6 +38,13 @@ using namespace cs::core::msg;
 class CSServer: public Server
 {
 public:
+    CSServer():
+        m_out_buff()
+    {
+       m_server_info.m_name = "CS test server"; 
+       m_server_info.m_protocol = 1;
+    }
+
     Connection& add_connection(const std::string& name)
     {
         auto res = m_connections.emplace(name, make_unique<Connection>(m_server_info, m_shares));
@@ -138,6 +145,16 @@ public:
         m_payload_end = true;
     }
 
+    Message* msg(size_t pos)
+    {
+        return m_messages_payload.at(pos).first.get();
+    }
+
+    const std::string& payload(size_t pos)
+    {
+        return m_messages_payload.at(pos).second;
+    }
+
     std::string m_name;
     std::string m_id;
     vector<pair<unique_ptr<Message>, string>> m_messages_payload;
@@ -165,20 +182,14 @@ BOOST_AUTO_TEST_CASE(server_test_01)
         vector<string>(),
         share_id,  // share id
         "read_write",
-        utils::bin_to_hex(utils::random_bytes(16))  // peer id
+        utils::bin_to_hex(utils::random_bytes(16)),
+        "name",
+        "time"
     });
-    cs::core::share::Share& tmpshare = server.share(share_id);
+    //cs::core::share::Share& tmpshare = server.share(share_id);
     peer.read_from(server);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
-    BOOST_CHECK(dynamic_cast<Go&>(*peer.m_messages_payload.at(0).first) == Go(tmpshare.m_peer_id, MAccess::READ_WRITE));
-    Identity* identity_msg = 0;
-    BOOST_CHECK_NO_THROW(identity_msg = &dynamic_cast<Identity&>(*peer.m_messages_payload.at(1).first));
-    BOOST_CHECK_EQUAL(identity_msg->m_name, server.m_server_info.m_name);
-    BOOST_CHECK(identity_msg->m_time <= utils::isotime(std::time(nullptr)));
-
-    peer.send(Identity{peer.m_name, utils::isotime(std::time(nullptr))});
-
-
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 1u);
+    BOOST_CHECK(dynamic_cast<Go*>(peer.msg(0)));
     peer.m_messages_payload.clear();
 }
 
@@ -201,8 +212,7 @@ void server_test_01_create_tree(const bfs::path& path)
 Peer init_peer(const std::string& name, CSServer& server, const std::string& share_id)
 {
     Peer peer(name, server);
-    peer.send(Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)) });
-    peer.send(Identity{peer.m_name, utils::isotime(std::time(nullptr))});
+    peer.send(Start{"CS_CORE v0.1", 1, vector<string>(), share_id, "read_write", utils::bin_to_hex(utils::random_bytes(16)), "name", "time"});
     return peer;
 }
 
@@ -233,18 +243,14 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     peer.send(Get(manifest[0].checksum));
     peer.read_from(server);
 
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 3u);
+    BOOST_CHECK_EQUAL(peer.m_messages_payload.size(), 2u);
 
 
-    FileData* file_data = 0;
-    BOOST_CHECK_NO_THROW(file_data = &dynamic_cast<FileData&>(*peer.m_messages_payload.at(2).first));
+    const FileData* file_data = 0;
+    BOOST_CHECK_NO_THROW(file_data = dynamic_cast<const FileData*>(peer.msg(1)));
     BOOST_CHECK_EQUAL(file_data->m_payload, true);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second.size(), 38u);
-    BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second, cs::utils::read_file(share.fullpath(file_data->m_paths.at(0))));
-    BOOST_CHECK_EQUAL(file_data->m_paths.size(), 3u);
-
-    // FIXME: get by content
-    //peer.send()
+    BOOST_CHECK_EQUAL(peer.payload(1).size(), 38u);
+    BOOST_CHECK_EQUAL(peer.payload(1), cs::utils::read_file(share.fullpath(manifest[0].path)));
 }
 
 

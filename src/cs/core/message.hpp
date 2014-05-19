@@ -21,6 +21,7 @@
 #include "../utils.hpp"
 #include <string>
 #include <vector>
+#include <map>
 
 namespace cs
 {
@@ -37,32 +38,16 @@ enum class MType: unsigned
     INTERNAL_SEND_START,
 
     PING,
-    GREETING,
     START,
-    CANNOT_START,
     GO,
-    IDENTITY,
-    /// key content
-    KEYS,
-    /// response to keys
-    KEYS_ACKNOWLEDGMENT,
-    /// file listing
-    MANIFEST,
-    /// request for manifest
+    CANNOT_START,
     GET_UPDATES,
     /// response to GET_UPDATES when there are no updates
-    CURRENT,
-    /// request to retrieve contents of a file
     GET,
     /// response with contents of a file
     FILE_DATA,
-    /// response to GET when the file has been updated
-    FILE_MODIFIED,
-
-    /// notification of changed file
+    NO_SUCH_FILE,
     UPDATE,
-    /// notification of moved file
-    MOVE,
 
     /// Not a message, Maximum value of the enum used to create arrays
     MAX,
@@ -85,13 +70,14 @@ MAccess maccess_from_string(const std::string& access);
 
 struct MFile
 {
-    std::string m_path;
-    double m_utime;
-    long long m_size;
-    std::vector<int> m_mtime;
-    std::string m_mode;
-    std::string m_sha256;
-    bool m_deleted;
+    std::string checksum;
+    std::vector<std::string> paths;
+    std::string last_changed_by;
+    u64 last_changed_rev;
+    std::string mtime;
+    u64 size;
+    u32 mode;
+    bool deleted;
 };
 
 
@@ -99,21 +85,14 @@ struct MFile
 class Unknown;
 class InternalSendStart;
 class Ping;
-class Greeting;
 class Start;
-class CannotStart;
 class Go;
-class Identity;
-class Keys;
-class KeysAcknowledgment;
-class Manifest;
+class CannotStart;
 class GetUpdates;
-class Current;
 class Get;
 class FileData;
-class FileModified;
+class NoSuchFile;
 class Update;
-class Move;
 
 
 class ConstMessageVisitor
@@ -123,21 +102,14 @@ public:
     virtual void visit(const Unknown&) = 0;
     virtual void visit(const InternalSendStart&) = 0;
     virtual void visit(const Ping&) = 0;
-    virtual void visit(const Greeting&) = 0;
     virtual void visit(const Start&) = 0;
-    virtual void visit(const CannotStart&) = 0;
     virtual void visit(const Go&) = 0;
-    virtual void visit(const Identity&) = 0;
-    virtual void visit(const Keys&) = 0;
-    virtual void visit(const KeysAcknowledgment&) = 0;
-    virtual void visit(const Manifest&) = 0;
+    virtual void visit(const CannotStart&) = 0;
     virtual void visit(const GetUpdates&) = 0;
-    virtual void visit(const Current&) = 0;
     virtual void visit(const Get&) = 0;
     virtual void visit(const FileData&) = 0;
-    virtual void visit(const FileModified&) = 0;
+    virtual void visit(const NoSuchFile&) = 0;
     virtual void visit(const Update&) = 0;
-    virtual void visit(const Move&) = 0;
 };
 
 
@@ -148,21 +120,14 @@ public:
     virtual void visit(Unknown&) = 0;
     virtual void visit(InternalSendStart&) = 0;
     virtual void visit(Ping&) = 0;
-    virtual void visit(Greeting&) = 0;
     virtual void visit(Start&) = 0;
-    virtual void visit(CannotStart&) = 0;
     virtual void visit(Go&) = 0;
-    virtual void visit(Identity&) = 0;
-    virtual void visit(Keys&) = 0;
-    virtual void visit(KeysAcknowledgment&) = 0;
-    virtual void visit(Manifest&) = 0;
+    virtual void visit(CannotStart&) = 0;
     virtual void visit(GetUpdates&) = 0;
-    virtual void visit(Current&) = 0;
     virtual void visit(Get&) = 0;
     virtual void visit(FileData&) = 0;
-    virtual void visit(FileModified&) = 0;
+    virtual void visit(NoSuchFile&) = 0;
     virtual void visit(Update&) = 0;
-    virtual void visit(Move&) = 0;
 };
 
 
@@ -260,44 +225,44 @@ public:
 };
 
 
-class Greeting: public MessageImpl<Greeting, MType::GREETING>
-{
-public:
-    std::string m_software;
-    std::vector<int> m_protocol;
-    std::vector<std::string> m_features;
-};
-
-
 class Start: public MessageImpl<Start, MType::START>
 {
 public:
-    Start(const std::string& software,
+    Start(
+        const std::string& software,
         const int protocol,
         const std::vector<std::string>& features,
         const std::string& id,
         const std::string& access,
-        const std::string& peer
+        const std::string& peer,
+        const std::string& name,
+        const std::string& time 
     ):
           m_software(software)
         , m_protocol(protocol)
+        , m_features(features)
         , m_share_id(id)
         , m_access(access)
         , m_peer(peer)
+        , m_name(name)
+        , m_time(time)
     {}
 
     Start():
           m_software()
         , m_protocol()
+        , m_features()
         , m_share_id()
         , m_access()
         , m_peer()
+        , m_name()
+        , m_time()
     {}
 
     bool operator==(const Start& o)
     {
-        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer) ==
-            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer);
+        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer, m_name, m_time) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer, o.m_name, o.m_time);
     }
 
     bool operator!=(const Start& o)
@@ -311,30 +276,48 @@ public:
     std::string m_share_id;
     std::string m_access;
     std::string m_peer;
+    std::string m_name;
+    std::string m_time;
 };
-
-
-class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
-{
-};
-
 
 class Go: public MessageImpl<Go, MType::GO>
 {
 public:
+    Go(
+        const std::string& software,
+        const int protocol,
+        const std::vector<std::string>& features,
+        const std::string& id,
+        const std::string& access,
+        const std::string& peer,
+        const std::string& name,
+        const std::string& time 
+    ):
+          m_software(software)
+        , m_protocol(protocol)
+        , m_features(features)
+        , m_share_id(id)
+        , m_access(access)
+        , m_peer(peer)
+        , m_name(name)
+        , m_time(time)
+    {}
+
     Go():
-          m_peer{}
-        , m_access{MAccess::UNKNOWN}
+          m_software()
+        , m_protocol()
+        , m_features()
+        , m_share_id()
+        , m_access()
+        , m_peer()
+        , m_name()
+        , m_time()
     {}
 
-    Go(const std::string& peer, MAccess access):
-          m_peer{peer}
-        , m_access{access}
-    {}
-
-    bool operator==(const Go& other)
+    bool operator==(const Go& o)
     {
-        return std::tie(m_peer, m_access) == std::tie(other.m_peer, other.m_access);
+        return std::tie(m_software, m_protocol, m_features, m_share_id, m_access, m_peer, m_name, m_time) ==
+            std::tie(o.m_software, o.m_protocol, o.m_features, o.m_share_id, o.m_access, o.m_peer, o.m_name, o.m_time);
     }
 
     bool operator!=(const Go& o)
@@ -342,65 +325,38 @@ public:
         return ! (*this == o);
     }
 
-
+    std::string m_software;
+    int m_protocol = 0;
+    std::vector<std::string> m_features;
+    std::string m_share_id;
+    std::string m_access;
     std::string m_peer;
-    MAccess m_access = MAccess::UNKNOWN;
-};
-
-
-class Identity: public MessageImpl<Identity, MType::IDENTITY>
-{
-public:
-    Identity():
-        m_name()
-        , m_time()
-    {}
-
-    Identity(const std::string& name, const std::string& time):
-        m_name(name)
-        , m_time(time)
-    {}
-
     std::string m_name;
     std::string m_time;
 };
 
 
-class Keys: public MessageImpl<Keys, MType::KEYS>
-{
-public:
-    MAccess m_access = MAccess::UNKNOWN;
-    std::string m_share_id;
-    std::string m_ro_psk;
-    std::string m_ro_rsa;
-    std::string m_rw_public_rsa;
-};
 
-
-class KeysAcknowledgment: public MessageImpl<KeysAcknowledgment, MType::KEYS_ACKNOWLEDGMENT>
+class CannotStart: public MessageImpl<CannotStart, MType::CANNOT_START>
 {
 };
-
-
-class Manifest: public MessageImpl<Manifest, MType::MANIFEST>
-{
-public:
-    std::string m_peer;
-    long long m_revision = 0;
-    std::vector<MFile> m_files;
-};
-
 
 class GetUpdates: public MessageImpl<GetUpdates, MType::GET_UPDATES>
 {
 public:
-    long long m_revision = 0;
+    GetUpdates(const std::map<std::string, u64>& since):
+        m_since(since)
+    {
+    }
+
+    GetUpdates():
+        m_since()
+    {
+    }
+
+    std::map<std::string, u64> m_since;
 };
 
-
-class Current: public MessageImpl<Current, MType::CURRENT>
-{
-};
 
 class Get: public MessageImpl<Get, MType::GET>
 {
@@ -416,44 +372,69 @@ public:
     std::string m_checksum;
 };
 
+
+
 class FileData: public MessageImpl<FileData, MType::FILE_DATA>
 {
 public:
-    FileData(std::vector<std::string>&& paths):
-        m_paths(move(paths))
-        , m_range()
+    FileData(const std::string& checksum):
+        m_checksum(checksum)
     {
         m_payload = true;
     }
 
     FileData():
-        m_paths()
-        , m_range()
+        m_checksum()
     {
-        m_payload = true;
     }
-    std::vector<std::string> m_paths;
-    std::vector<long long> m_range;
+
+    std::string m_checksum;
 };
 
-class FileModified: public MessageImpl<FileModified, MType::FILE_DATA>
+class NoSuchFile: public MessageImpl<NoSuchFile, MType::NO_SUCH_FILE>
 {
+public:
+    NoSuchFile(const std::string& checksum):
+        m_checksum(checksum)
+    {
+    }
+    NoSuchFile():
+        m_checksum()
+    {}
+
+    std::string m_checksum;
 };
+
 
 
 class Update: public MessageImpl<Update, MType::UPDATE>
 {
 public:
-    long long m_revision = 0;
-    MFile m_file;
-};
+    Update():
+        m_revision()
+        , m_partial()
+        , m_files()
+    {}
 
-class Move: public MessageImpl<Move, MType::MOVE>
-{
-public:
-    long long m_revision = 0;
-    std::string m_source;
-    MFile m_destination;
+    Update(long long revision):
+        m_revision(revision)
+        , m_partial()
+        , m_files()
+    {}
+        
+
+    Update(long long revision, bool partial, const std::vector<MFile>& files):
+        m_revision(revision)
+        , m_partial(partial)
+        , m_files(files)
+    {
+    }
+
+    /// peer revision number sending this Update
+    u64 m_revision = 0;
+    /// indicates that there are more Update messages comming...
+    bool m_partial = false;
+    std::vector<MFile> m_files;
 };
 
 
