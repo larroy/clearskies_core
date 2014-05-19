@@ -250,11 +250,7 @@ BOOST_AUTO_TEST_CASE(cs_send_file)
     BOOST_CHECK_NO_THROW(file_data = dynamic_cast<const FileData*>(peer.msg(1)));
     BOOST_CHECK_EQUAL(file_data->m_payload, true);
     BOOST_CHECK_EQUAL(peer.payload(1).size(), 38u);
-    //BOOST_CHECK_EQUAL(peer.m_messages_payload.at(2).second, cs::utils::read_file(share.fullpath(file_data->m_paths.at(0))));
-    //BOOST_CHECK_EQUAL(file_data->m_paths.size(), 3u);
-
-    // FIXME: get by content
-    //peer.send()
+    BOOST_CHECK_EQUAL(peer.payload(1), cs::utils::read_file(share.fullpath(manifest[0].path)));
 }
 
 
