@@ -1,5 +1,3 @@
-* Implement CS protocol and test
-* Create tests for two instances of protocol talking to each other
-* Implement file scanner
-* Create a minimal daemon with libuv
+* Finish CS protocol and test
 * Review handling of exceptions out of protocol etc.
+* Chop the update messages
