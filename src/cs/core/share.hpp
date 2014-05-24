@@ -153,6 +153,9 @@ public:
 
     ~FrozenManifest();
 
+    FrozenManifest(FrozenManifest&&) = delete;
+    FrozenManifest& operator=(FrozenManifest&&) = delete;
+
     FrozenManifestIterator begin()
     {
         return FrozenManifestIterator(*this);
@@ -345,9 +348,9 @@ public:
      * With the current implementation there can't be multiple instances of this class, since it
      * creates a temporary table.
      */
-    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
+    std::unique_ptr<FrozenManifest> get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
     {
-        return FrozenManifest(peer_id, *this, since);
+        return std::make_unique<FrozenManifest>(peer_id, *this, since);
     }
 
     /**

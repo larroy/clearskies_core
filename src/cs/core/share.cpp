@@ -750,7 +750,7 @@ void Share::scan_found(MFile& scan_file)
 }
 
 
-std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& checksum) 
+std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& checksum)
 {
     std::vector<MFile_updated> result;
     m_get_mfiles_by_content_q.reset();
@@ -765,7 +765,7 @@ std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& chec
     return result;
 }
 
-std::vector<MFile> Share::get_mfiles_by_content(const std::string& checksum) 
+std::vector<MFile> Share::get_mfiles_by_content(const std::string& checksum)
 {
     vector<MFile> result;
     const auto mfiles = get_mfiles_by_content2(checksum);

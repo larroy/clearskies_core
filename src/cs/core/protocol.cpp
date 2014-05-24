@@ -130,8 +130,25 @@ public:
 
     void visit(const msg::GetUpdates& msg) override
     {
+        r_protocol.do_get_updates(msg.m_since);
     }
 };
+
+class MessageHandler_GET_UPDATES: public MessageHandler
+{
+public:
+    MessageHandler_GET_UPDATES(State state, Protocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
+    // No messages are allowed while sending partial updates
+    // After the transfer is finished we go back to CONNECTED in Protocol::handle_empty_output_buff
+
+    // FIXME: handle UPDATE msg ?
+
+};
+
+
 
 
 class MessageHandler_GET: public MessageHandler
@@ -247,7 +264,9 @@ void Protocol::handle_msg(char const* msg_encoded, size_t msg_sz, char const* si
     unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];
     assert(handler);
     msg->accept(*handler);
+    /********* m_next_state *****/
     m_state = handler->next_state();
+    /**************/
 }
 
 void Protocol::handle_payload(const char* data, size_t len)
@@ -290,15 +309,19 @@ bool Protocol::do_get(const std::string& checksum)
     }
 }
 
+void Protocol::do_get_updates(const std::map<std::string, u64>& since)
+{
+    auto& share = this->share(); 
+    share.get_updates(m_peerinfo.m_name, since);
+}
+
 share::Share& Protocol::share(const std::string& share)
 {
     if (! share.empty())
         m_share = share;
     auto shr_i = r_shares.find(m_share);
     if (shr_i != r_shares.end())
-    {
         return shr_i->second;
-    }
     throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
 }
 

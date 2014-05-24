@@ -99,7 +99,8 @@ enum State: unsigned
     WAIT4_GO,
     WAIT4_IDENTITY,
     CONNECTED,
-    GET,
+    GET, // A file being transmitted
+    GET_UPDATES, // update messages being sent (partial flag on)
     ////
     MAX,
 };
@@ -251,6 +252,7 @@ public:
 
     /// action for MType::GET, @return true on success
     bool do_get(const std::string& checksum);
+    void do_get_updates(const std::map<std::string, u64>& since);
 
     /**
      * @returns the current selected @param[in] share or @throws ShareNotFoundError, this can happen if the
@@ -277,6 +279,10 @@ public:
     static const size_t s_txfile_block_sz = 65536;
     /// pointer to an open input stream for the file that is being sent if set
     std::unique_ptr<bfs::ifstream> m_txfile_is;
+    
+    /// pointer to a FrozenManifest being sent in chunks
+    std::unique_ptr<share::FrozenManifest> m_frozen_manifest;
+
     /// pointer to an open output stream for the file that is being recieved if set
     std::unique_ptr<bfs::ofstream> m_rxfile_os;
 
