@@ -46,6 +46,8 @@
  *           Go
  *        <----------  
  *
+ *        ---- CONNECTED -----
+ *
  *          GetUpdates(since: {A:1, B:2, C:3})
  *        ---------->  
  *
@@ -247,8 +249,8 @@ public:
     // message actions, note that the handlers / visitors logic control that these actions are triggered on the
     // appropiate states only
 
-    /// action for MType::GET
-    void do_get(const std::string& checksum);
+    /// action for MType::GET, @return true on success
+    bool do_get(const std::string& checksum);
 
     /**
      * @returns the current selected @param[in] share or @throws ShareNotFoundError, this can happen if the
