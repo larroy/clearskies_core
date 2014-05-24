@@ -47,12 +47,15 @@ public:
     try
     {
         share::Share& share = r_protocol.share(msg.m_share_id);
-        r_protocol.m_peer = msg.m_peer;
-        r_protocol.m_access = msg.m_access;
-        r_protocol.m_features = msg.m_features;
-        r_protocol.m_software = msg.m_software;
-        const ServerInfo& si = r_protocol.r_server_info;
-        r_protocol.send_msg(msg::Go(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
+
+        r_protocol.m_peerinfo.m_peer = msg.m_peer;
+        r_protocol.m_peerinfo.m_name = msg.m_name;
+        // TODO: access
+        r_protocol.m_peerinfo.m_features = msg.m_features;
+        r_protocol.m_peerinfo.m_software = msg.m_software;
+
+        const ServerInfo& si = r_protocol.r_serverinfo;
+        r_protocol.send_msg(msg::Go(si.m_software, si.m_protocol, si.m_features, r_protocol.m_share, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = CONNECTED;
     }
     catch (...)
@@ -64,9 +67,8 @@ public:
     void visit(const msg::InternalSendStart& msg) override
     {
         share::Share& share = r_protocol.share(msg.m_share_id);
-        UNUSED(share);
         // FIXME access, peer discovery
-        const ServerInfo& si = r_protocol.r_server_info;
+        const ServerInfo& si = r_protocol.r_serverinfo;
         r_protocol.send_msg(msg::Start(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
         m_next_state = WAIT4_GO;
     }
@@ -84,8 +86,15 @@ public:
 
     void visit(const msg::Go& msg) override
     {
-        r_protocol.m_peer = msg.m_peer;
-        // FIXME
+        r_protocol.m_peerinfo.m_peer = msg.m_peer;
+        r_protocol.m_peerinfo.m_name = msg.m_name;
+        r_protocol.m_peerinfo.m_features = msg.m_features;
+        r_protocol.m_peerinfo.m_software = msg.m_software;
+        // FIXME access
+
+        if (r_protocol.m_share != msg.m_share_id)
+            throw std::runtime_error("Share id doesn't match in WAIT4_GO / msg::Go");
+
         m_next_state = CONNECTED;
     }
 };
@@ -135,13 +144,10 @@ public:
  * ctor, sets message handlers.
  */
 Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
-      r_server_info(server_info)
+      r_serverinfo(server_info)
     , r_shares(shares)
+    , m_peerinfo()
     , m_share()
-    , m_peer()
-    , m_access()
-    , m_features()
-    , m_software()
     , m_state(State::INITIAL)
     , m_state_trans_table()
     , m_txfile_is()

@@ -20,6 +20,7 @@
 #include "../config.hpp"
 #include "message.hpp"
 #include "serverinfo.hpp"
+#include "peerinfo.hpp"
 #include "share.hpp"
 #include "coder.hpp"
 #include "../utils.hpp"
@@ -250,7 +251,7 @@ public:
     void do_get(const std::string& checksum);
 
     /**
-     * @returns the current selected @param[in] share or throws ShareNotFoundError, this can happen if the
+     * @returns the current selected @param[in] share or @throws ShareNotFoundError, this can happen if the
      * share was detached and can't be found anymore, in this case users of this class should close
      * the connection to clients.
      *
@@ -258,17 +259,12 @@ public:
      */
     share::Share& share(const std::string& share = std::string());
 
-    const ServerInfo& r_server_info;
+    const ServerInfo& r_serverinfo;
     /// a reference to the shares
     std::map<std::string, share::Share>& r_shares;
+    PeerInfo m_peerinfo;
     /// selected share name
     std::string m_share;
-    /// peer id of the connected peer
-    std::string m_peer;
-    /// @sa msg::Start
-    std::string m_access;
-    std::vector<std::string> m_features;
-    std::string m_software;
 
     /// current protocol state
     State m_state;

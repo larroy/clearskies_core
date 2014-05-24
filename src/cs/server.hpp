@@ -39,7 +39,7 @@ class Connection
 {
 public:
     Connection(
-        const ServerInfo& server_info,
+        const core::ServerInfo& server_info,
         std::map<std::string, core::share::Share>& shares
     ):
           m_protocol(server_info, shares)
@@ -98,7 +98,7 @@ protected:
     std::map<std::string, std::unique_ptr<Connection>> m_connections;
 
 public:
-    ServerInfo m_server_info;
+    core::ServerInfo m_server_info;
 
 };
 
