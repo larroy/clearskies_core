@@ -187,6 +187,7 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
     , m_state(State::INITIAL)
     , m_state_trans_table()
     , m_txfile_is()
+    , m_frozen_manifest()
     , m_rxfile_os()
     , m_coder()
     , m_handle_send_msg()
@@ -312,7 +313,7 @@ bool Protocol::do_get(const std::string& checksum)
 void Protocol::do_get_updates(const std::map<std::string, u64>& since)
 {
     auto& share = this->share(); 
-    share.get_updates(m_peerinfo.m_name, since);
+    m_frozen_manifest = share.get_updates(m_peerinfo.m_name, since);
 }
 
 share::Share& Protocol::share(const std::string& share)
