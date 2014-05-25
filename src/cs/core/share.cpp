@@ -784,6 +784,11 @@ bool Share::was_updated(const MFile& file)
     return file.mtime != mtime;
 }
 
+void Share::remote_update(const msg::MFile& file)
+{
+    // FIXME
+}
+
 bfs::path get_tail(const bfs::path& path, size_t tail)
 {
     auto pi = path.begin();

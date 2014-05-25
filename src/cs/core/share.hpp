@@ -20,6 +20,8 @@
 #include "../config.hpp"
 #include "../boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
+#include "message.hpp"
+
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
 #include <map>
@@ -370,6 +372,10 @@ public:
         scan();
         while(scan_step()) {};
     }
+
+    /// process a remote update for a given file
+    void remote_update(const msg::MFile&);
+
 
     /// path to the share
     std::string m_path;

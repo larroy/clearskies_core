@@ -253,6 +253,11 @@ public:
     /// action for MType::GET, @return true on success
     bool do_get(const std::string& checksum);
     void do_get_updates(const std::map<std::string, u64>& since);
+    void do_update(const std::vector<msg::MFile>& files);
+
+
+    // callbacks for connecting to @sa cs::core::share::Share
+    // FIXME
 
     /**
      * @returns the current selected @param[in] share or @throws ShareNotFoundError, this can happen if the
@@ -281,7 +286,7 @@ public:
     std::unique_ptr<bfs::ifstream> m_txfile_is;
     
     /// pointer to a FrozenManifest being sent in chunks
-    std::unique_ptr<share::FrozenManifest> m_frozen_manifest;
+    //std::unique_ptr<share::FrozenManifest> m_frozen_manifest;
 
     /// pointer to an open output stream for the file that is being recieved if set
     std::unique_ptr<bfs::ofstream> m_rxfile_os;

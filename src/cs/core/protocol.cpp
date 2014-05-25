@@ -122,15 +122,20 @@ public:
             /***********/
             m_next_state = GET;
             /***********/
-        else
-            /***********/
-            m_next_state = CONNECTED;
-            /***********/
     }
 
     void visit(const msg::GetUpdates& msg) override
     {
         r_protocol.do_get_updates(msg.m_since);
+    }
+
+    void visit(const msg::Update& msg) override
+    {
+        r_protocol.do_update(msg.m_files);
+        if (msg.m_partial)
+            /***********/
+            m_next_state = GET_UPDATES;
+            /***********/
     }
 };
 
@@ -144,8 +149,14 @@ public:
     // No messages are allowed while sending partial updates
     // After the transfer is finished we go back to CONNECTED in Protocol::handle_empty_output_buff
 
-    // FIXME: handle UPDATE msg ?
-
+    void visit(const msg::Update& msg) override
+    {
+        r_protocol.do_update(msg.m_files);
+        if (! msg.m_partial)
+            /***********/
+            m_next_state = CONNECTED;
+            /***********/
+    }
 };
 
 
@@ -187,7 +198,7 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
     , m_state(State::INITIAL)
     , m_state_trans_table()
     , m_txfile_is()
-    , m_frozen_manifest()
+    //, m_frozen_manifest()
     , m_rxfile_os()
     , m_coder()
     , m_handle_send_msg()
@@ -275,8 +286,7 @@ void Protocol::handle_payload(const char* data, size_t len)
     if (m_rxfile_os)
         m_rxfile_os->write(data, len);
     else
-        // FIXME handle unexpected payload
-        assert(0);
+        throw std::runtime_error("handle_payload unexpected payload, a file transfer is not in progress");
 }
 
 void Protocol::handle_payload_end()
@@ -313,7 +323,18 @@ bool Protocol::do_get(const std::string& checksum)
 void Protocol::do_get_updates(const std::map<std::string, u64>& since)
 {
     auto& share = this->share(); 
-    m_frozen_manifest = share.get_updates(m_peerinfo.m_name, since);
+    auto frozen_manifest = share.get_updates(m_peerinfo.m_name, since);
+    msg::Update update(share.m_revision);
+    for (const auto& mfile: *frozen_manifest)
+        update.m_files.emplace_back(mfile);
+
+    send_msg(update);
+}
+
+void Protocol::do_update(const std::vector<msg::MFile>& files)
+{
+    auto& share = this->share();
+    for_each(files.begin(), files.end(), bind(&share::Share::remote_update, &share, placeholders::_1));
 }
 
 share::Share& Protocol::share(const std::string& share)
