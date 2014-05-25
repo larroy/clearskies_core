@@ -41,15 +41,15 @@
 /* Active is the peer that opens the connection
  *
  * Active    Start       Passive
- *        ---------->  
+ *        ---------->
  *
  *           Go
- *        <----------  
+ *        <----------
  *
  *        ---- CONNECTED -----
  *
  *          GetUpdates(since: {A:1, B:2, C:3})
- *        ---------->  
+ *        ---------->
  *
  *          Update({
  *              revision,
@@ -67,9 +67,9 @@
  *          )
  *        <--------
  *
- *         Get({checksum}) 
+ *         Get({checksum})
  *
- *        ---------->  
+ *        ---------->
  *
  *         FileData(
  *              {
@@ -83,7 +83,7 @@
  *        ....
  *
  *        Update
- *        ---------->  
+ *        ---------->
  */
 
 namespace cs
@@ -223,7 +223,7 @@ public:
     /**
      * open the given file and set m_txfile_is so payload chunks are read and queued to be sent each time
      * handle_empty_output_buff is called when the output buffers are empty
-     * 
+     *
      * Warning: Caller is responsible for the security of this function and permissions to access the given
      * path
      *
@@ -246,6 +246,10 @@ public:
     void handle_msg(char const* msg_encoded, size_t msg_sz, char const* signature, size_t signature_sz, bool payload);
     void handle_payload(const char* data, size_t len);
     void handle_payload_end();
+
+    /// callback for files updated in the share @sa cs::core::share::Share::m_handle_update
+    // FIXME connect to share
+    void handle_update(const std::vector<msg::MFile>&);
 
     // message actions, note that the handlers / visitors logic control that these actions are triggered on the
     // appropiate states only
@@ -284,7 +288,7 @@ public:
     static const size_t s_txfile_block_sz = 65536;
     /// pointer to an open input stream for the file that is being sent if set
     std::unique_ptr<bfs::ifstream> m_txfile_is;
-    
+
     /// pointer to a FrozenManifest being sent in chunks
     //std::unique_ptr<share::FrozenManifest> m_frozen_manifest;
 
@@ -293,8 +297,14 @@ public:
 
     /// encodes messages into bytes
     msg::Coder m_coder;
+
+    /// what to do when a message is sent
     handle_send_msg_t m_handle_send_msg;
+    /// what to do when a chunk is sent
     handle_send_payload_chunk_t m_handle_send_payload_chunk;
+
+    /// queued updates to be sent to the peer, as noticed by the Share fs scan
+    std::deque<msg::MFile> m_peding_updates;
 };
 
 void connect(ProtocolState&, Protocol&);

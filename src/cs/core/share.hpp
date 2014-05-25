@@ -445,6 +445,10 @@ public:
     /// private keys 256bytes
     std::string m_pkc_rw;
     std::string m_pkc_ro;
+
+    typedef std::function<void(const std::vector<MFile>&)> handle_update_t;
+    /// when there are files updated, all the callbacks here are called
+    std::deque<handle_update_t> m_handle_update;
 };
 
 /// returns a path with the last tail number of components

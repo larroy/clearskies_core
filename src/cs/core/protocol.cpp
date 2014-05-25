@@ -294,6 +294,12 @@ void Protocol::handle_payload_end()
     m_rxfile_os.reset();
 }
 
+
+void Protocol::handle_update(const std::vector<msg::MFile>& files)
+{
+    // FIXME
+}
+
 bool Protocol::do_get(const std::string& checksum)
 {
     // get list of files that match this checksum from the share
