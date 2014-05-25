@@ -47,13 +47,18 @@ public:
     try
     {
         share::Share& share = r_protocol.share(msg.m_share_id);
-        r_protocol.m_peer = msg.m_peer;
-        r_protocol.m_access = msg.m_access;
-        r_protocol.m_features = msg.m_features;
-        r_protocol.m_software = msg.m_software;
-        const ServerInfo& si = r_protocol.r_server_info;
-        r_protocol.send_msg(msg::Go(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
+
+        r_protocol.m_peerinfo.m_peer = msg.m_peer;
+        r_protocol.m_peerinfo.m_name = msg.m_name;
+        // TODO: access
+        r_protocol.m_peerinfo.m_features = msg.m_features;
+        r_protocol.m_peerinfo.m_software = msg.m_software;
+
+        const ServerInfo& si = r_protocol.r_serverinfo;
+        r_protocol.send_msg(msg::Go(si.m_software, si.m_protocol, si.m_features, r_protocol.m_share, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
+        /***********/
         m_next_state = CONNECTED;
+        /***********/
     }
     catch (...)
     {
@@ -64,11 +69,12 @@ public:
     void visit(const msg::InternalSendStart& msg) override
     {
         share::Share& share = r_protocol.share(msg.m_share_id);
-        UNUSED(share);
         // FIXME access, peer discovery
-        const ServerInfo& si = r_protocol.r_server_info;
+        const ServerInfo& si = r_protocol.r_serverinfo;
         r_protocol.send_msg(msg::Start(si.m_software, si.m_protocol, si.m_features, msg.m_share_id, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
+        /***********/
         m_next_state = WAIT4_GO;
+        /***********/
     }
 
 };
@@ -84,9 +90,18 @@ public:
 
     void visit(const msg::Go& msg) override
     {
-        r_protocol.m_peer = msg.m_peer;
-        // FIXME
+        r_protocol.m_peerinfo.m_peer = msg.m_peer;
+        r_protocol.m_peerinfo.m_name = msg.m_name;
+        r_protocol.m_peerinfo.m_features = msg.m_features;
+        r_protocol.m_peerinfo.m_software = msg.m_software;
+        // FIXME access
+
+        if (r_protocol.m_share != msg.m_share_id)
+            throw std::runtime_error("Share id doesn't match in WAIT4_GO / msg::Go");
+
+        /***********/
         m_next_state = CONNECTED;
+        /***********/
     }
 };
 
@@ -102,10 +117,49 @@ public:
 
     void visit(const msg::Get& msg) override
     {
-        r_protocol.do_get(msg.m_checksum);
-        m_next_state = GET;
+        const bool ok = r_protocol.do_get(msg.m_checksum);
+        if (ok)
+            /***********/
+            m_next_state = GET;
+            /***********/
+    }
+
+    void visit(const msg::GetUpdates& msg) override
+    {
+        r_protocol.do_get_updates(msg.m_since);
+    }
+
+    void visit(const msg::Update& msg) override
+    {
+        r_protocol.do_update(msg.m_files);
+        if (msg.m_partial)
+            /***********/
+            m_next_state = GET_UPDATES;
+            /***********/
     }
 };
+
+class MessageHandler_GET_UPDATES: public MessageHandler
+{
+public:
+    MessageHandler_GET_UPDATES(State state, Protocol& protocol):
+        MessageHandler{state, protocol}
+    {
+    }
+    // No messages are allowed while sending partial updates
+    // After the transfer is finished we go back to CONNECTED in Protocol::handle_empty_output_buff
+
+    void visit(const msg::Update& msg) override
+    {
+        r_protocol.do_update(msg.m_files);
+        if (! msg.m_partial)
+            /***********/
+            m_next_state = CONNECTED;
+            /***********/
+    }
+};
+
+
 
 
 class MessageHandler_GET: public MessageHandler
@@ -115,6 +169,8 @@ public:
         MessageHandler{state, protocol}
     {
     }
+    // No messages are allowed while sending data, TODO new mtype to abort?
+    // After the transfer is finished we go back to CONNECTED in Protocol::handle_empty_output_buff
 
 };
 
@@ -135,16 +191,14 @@ public:
  * ctor, sets message handlers.
  */
 Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::Share>& shares):
-      r_server_info(server_info)
+      r_serverinfo(server_info)
     , r_shares(shares)
+    , m_peerinfo()
     , m_share()
-    , m_peer()
-    , m_access()
-    , m_features()
-    , m_software()
     , m_state(State::INITIAL)
     , m_state_trans_table()
     , m_txfile_is()
+    //, m_frozen_manifest()
     , m_rxfile_os()
     , m_coder()
     , m_handle_send_msg()
@@ -162,6 +216,7 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
 
 void Protocol::send_msg(const msg::Message& m)
 {
+    assert(! m_txfile_is); // we are not sending data
     m_handle_send_msg(m_coder.encode_msg(m), m.m_payload);
 }
 
@@ -207,7 +262,9 @@ void Protocol::handle_empty_output_buff()
                 m_handle_send_payload_chunk(string());
             m_txfile_is.reset();
             assert(m_state == GET);
+            /*****************/
             m_state = CONNECTED;
+            /*****************/
         }
     }
 }
@@ -219,7 +276,9 @@ void Protocol::handle_msg(char const* msg_encoded, size_t msg_sz, char const* si
     unique_ptr<MessageHandler>& handler = m_state_trans_table[m_state];
     assert(handler);
     msg->accept(*handler);
+    /********* m_next_state *****/
     m_state = handler->next_state();
+    /**************/
 }
 
 void Protocol::handle_payload(const char* data, size_t len)
@@ -227,8 +286,7 @@ void Protocol::handle_payload(const char* data, size_t len)
     if (m_rxfile_os)
         m_rxfile_os->write(data, len);
     else
-        // FIXME handle unexpected payload
-        assert(0);
+        throw std::runtime_error("handle_payload unexpected payload, a file transfer is not in progress");
 }
 
 void Protocol::handle_payload_end()
@@ -236,7 +294,13 @@ void Protocol::handle_payload_end()
     m_rxfile_os.reset();
 }
 
-void Protocol::do_get(const std::string& checksum)
+
+void Protocol::handle_update(const std::vector<msg::MFile>& files)
+{
+    // FIXME
+}
+
+bool Protocol::do_get(const std::string& checksum)
 {
     // get list of files that match this checksum from the share
     const auto mfiles = share().get_mfiles_by_content(checksum);
@@ -253,11 +317,32 @@ void Protocol::do_get(const std::string& checksum)
         assert(filedata.m_payload);
         send_msg(filedata);
         send_file(share().fullpath(bfs::path(mfiles.front().path)));
+        return true;
     }
     else
     {
         send_msg(msg::NoSuchFile(checksum));
+        return false;
     }
+}
+
+void Protocol::do_get_updates(const std::map<std::string, u64>& since)
+{
+    auto& share = this->share(); 
+    auto frozen_manifest = share.get_updates(m_peerinfo.m_name, since);
+    msg::Update update(share.m_revision);
+    for (const auto& mfile: *frozen_manifest)
+        update.m_files.emplace_back(move(mfile.to_msg_mfile()));
+
+    // FIXME, what if it's too large?
+    update.m_partial = false;
+    send_msg(update);
+}
+
+void Protocol::do_update(const std::vector<msg::MFile>& files)
+{
+    auto& share = this->share();
+    for_each(files.begin(), files.end(), bind(&share::Share::remote_update, &share, placeholders::_1));
 }
 
 share::Share& Protocol::share(const std::string& share)
@@ -266,9 +351,7 @@ share::Share& Protocol::share(const std::string& share)
         m_share = share;
     auto shr_i = r_shares.find(m_share);
     if (shr_i != r_shares.end())
-    {
         return shr_i->second;
-    }
     throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
 }
 

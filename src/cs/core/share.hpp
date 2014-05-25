@@ -20,6 +20,8 @@
 #include "../config.hpp"
 #include "../boost_fs_fwd.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
+#include "message.hpp"
+
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
 #include <map>
@@ -77,6 +79,11 @@ struct MFile
 
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
     void was_deleted(const std::string& peer_id, u64 share_revision);
+
+    msg::MFile to_msg_mfile() const
+    {
+        return msg::MFile(checksum, path, last_changed_by, last_changed_rev, mtime, size, mode, deleted);
+    }
 
     std::string path;
     std::string mtime;
@@ -152,6 +159,9 @@ public:
     FrozenManifest(const std::string& peer_id, Share& share, const std::map<std::string, u64>& since);
 
     ~FrozenManifest();
+
+    FrozenManifest(FrozenManifest&&) = delete;
+    FrozenManifest& operator=(FrozenManifest&&) = delete;
 
     FrozenManifestIterator begin()
     {
@@ -345,9 +355,9 @@ public:
      * With the current implementation there can't be multiple instances of this class, since it
      * creates a temporary table.
      */
-    FrozenManifest get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
+    std::unique_ptr<FrozenManifest> get_updates(const std::string& peer_id, const std::map<std::string, u64>& since = std::map<std::string, u64>())
     {
-        return FrozenManifest(peer_id, *this, since);
+        return std::make_unique<FrozenManifest>(peer_id, *this, since);
     }
 
     /**
@@ -367,6 +377,10 @@ public:
         scan();
         while(scan_step()) {};
     }
+
+    /// process a remote update for a given file
+    void remote_update(const msg::MFile&);
+
 
     /// path to the share
     std::string m_path;
@@ -431,6 +445,10 @@ public:
     /// private keys 256bytes
     std::string m_pkc_rw;
     std::string m_pkc_ro;
+
+    typedef std::function<void(const std::vector<MFile>&)> handle_update_t;
+    /// when there are files updated, all the callbacks here are called
+    std::deque<handle_update_t> m_handle_update;
 };
 
 /// returns a path with the last tail number of components

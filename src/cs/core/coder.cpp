@@ -128,20 +128,16 @@ void decode(const jsoncons::json& json, Update& msg)
     for (auto i = files.begin_elements(); i != files.end_elements(); ++i)
     {
         const auto& file = *i;
-        MFile mfile;
-        auto paths = file["paths"];
-        for (auto pi = paths.begin_elements(); pi != paths.end_elements(); ++pi)
-            mfile.paths.emplace_back(pi->as_string());
-
-        if (mfile.paths.empty())
-            throw std::runtime_error("mfile paths is empty");
-
-        mfile.last_changed_by = file["last_changed_by"].as_string();
-        mfile.last_changed_rev = file["last_changed_rev"].as_ulonglong();
-        mfile.mtime = file["mtime"].as_string();
-        mfile.size = file["size"].as_ulonglong();
-        mfile.mode = file["size"].as_ulong();
-        mfile.deleted = file.has_member("deleted") && file["deleted"].as_bool() == true;
+        msg.m_files.emplace_back(
+            file["checksum"].as_string(),
+            file["path"].as_string(),
+            file["last_changed_by"].as_string(),
+            static_cast<u64>(file["last_changed_rev"].as_ulonglong()),
+            file["mtime"].as_string(),
+            static_cast<u64>(file["size"].as_ulonglong()),
+            file.has_member("deleted") && file["deleted"].as_bool() == true,
+            static_cast<u16>(file["mode"].as_ulong())
+        );
     }
 }
 
@@ -249,13 +245,13 @@ void encode(const Update& msg, jsoncons::json& jmsg)
     {
         json file;
         file["checksum"] = mfile.checksum;
-        file["paths"] = json(mfile.paths.begin(), mfile.paths.end());
+        file["path"] = mfile.path;
         file["last_changed_by"] = mfile.last_changed_by;
         file["last_changed_rev"] = mfile.last_changed_rev;
         file["mtime"] = mfile.mtime;
         file["size"] = mfile.size;
-        file["mode"] = mfile.mode;
         file["deleted"] = mfile.deleted;
+        file["mode"] = mfile.mode;
         jmsg["files"].add(move(file));
     }
 }

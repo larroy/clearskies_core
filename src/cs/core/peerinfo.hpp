@@ -25,19 +25,22 @@ namespace core
 {
 
 
-struct ServerInfo
+struct PeerInfo
 {
-    ServerInfo():
-        m_name()
+    PeerInfo():
+        m_peer()
+        , m_name()
         , m_software()
         , m_protocol()
         , m_features()
+        , m_timediff()
     {}
-
+    std::string m_peer;
     std::string m_name;
     std::string m_software;
     i32 m_protocol;
     std::vector<std::string> m_features;
+    i64 m_timediff;
 };
 
 

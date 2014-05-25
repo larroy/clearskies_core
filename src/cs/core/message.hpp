@@ -70,14 +70,43 @@ MAccess maccess_from_string(const std::string& access);
 
 struct MFile
 {
+    MFile():
+        checksum()
+        , path()
+        , last_changed_by()
+        , mtime()
+        , size()
+        , deleted()
+        , mode()
+    {}
+
+    MFile(const std::string& checksum,
+        const std::string& path,
+        const std::string& last_changed_by,
+        const u64 last_changed_rev,
+        const std::string& mtime,
+        const u64 size,
+        const bool deleted,
+        const u16 mode)
+    :
+        checksum(checksum)
+        , path(path)
+        , last_changed_by(last_changed_by)
+        , last_changed_rev(last_changed_rev)
+        , mtime(mtime)
+        , size(size)
+        , deleted(deleted)
+        , mode(mode)
+    {}
+
     std::string checksum;
-    std::vector<std::string> paths;
+    std::string path;
     std::string last_changed_by;
     u64 last_changed_rev;
     std::string mtime;
     u64 size;
-    u32 mode;
     bool deleted;
+    u16 mode;
 };
 
 

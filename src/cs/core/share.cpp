@@ -750,7 +750,7 @@ void Share::scan_found(MFile& scan_file)
 }
 
 
-std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& checksum) 
+std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& checksum)
 {
     std::vector<MFile_updated> result;
     m_get_mfiles_by_content_q.reset();
@@ -765,7 +765,7 @@ std::vector<MFile_updated> Share::get_mfiles_by_content2(const std::string& chec
     return result;
 }
 
-std::vector<MFile> Share::get_mfiles_by_content(const std::string& checksum) 
+std::vector<MFile> Share::get_mfiles_by_content(const std::string& checksum)
 {
     vector<MFile> result;
     const auto mfiles = get_mfiles_by_content2(checksum);
@@ -782,6 +782,11 @@ bool Share::was_updated(const MFile& file)
     bfs::path abspath = fullpath(file.path);
     const string mtime = utils::isotime(bfs::last_write_time(abspath));
     return file.mtime != mtime;
+}
+
+void Share::remote_update(const msg::MFile& file)
+{
+    // FIXME
 }
 
 bfs::path get_tail(const bfs::path& path, size_t tail)

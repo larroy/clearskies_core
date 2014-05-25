@@ -233,8 +233,8 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
             manifest.emplace_back(file);
 
         vector<MFile> frozen_manifest;
-        FrozenManifest fm = share.get_updates("peer_01");
-        for (const auto& file: fm)
+        auto fm = share.get_updates("peer_01");
+        for (const auto& file: *fm)
             frozen_manifest.emplace_back(file);
         BOOST_CHECK(manifest == frozen_manifest);
 
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         BOOST_CHECK(manifest != manifest_2);
 
         vector<MFile> frozen_manifest_2;
-        for (const auto& file: fm)
+        for (const auto& file: *fm)
             frozen_manifest_2.emplace_back(file);
 
         BOOST_CHECK(manifest == frozen_manifest);
@@ -260,9 +260,9 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
         BOOST_CHECK_THROW(share.get_updates("peer_01"), std::runtime_error);
 
         // it should be able to freeze for another peer
-        FrozenManifest fm_02 = share.get_updates("peer_02");
+        auto fm_02 = share.get_updates("peer_02");
         vector<MFile> frozen_manifest_p02;
-        for (const auto& file: fm_02)
+        for (const auto& file: *fm_02)
             frozen_manifest_p02.emplace_back(file);
 
         // it should have the changes in manifest 2
@@ -273,12 +273,13 @@ BOOST_AUTO_TEST_CASE(FrozenManifest_test_0)
     vector<MFile> manifest;
     for (const auto& file: share)
         manifest.emplace_back(file);
-    FrozenManifest fm = share.get_updates("peer_01");
+    auto fm = share.get_updates("peer_01");
     vector<MFile> frozen_manifest;
-    for (const auto& file: fm)
+    for (const auto& file: *fm)
         frozen_manifest.emplace_back(file);
 
     BOOST_CHECK(manifest == frozen_manifest);
+
 }
 
 

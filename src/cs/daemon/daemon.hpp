@@ -32,7 +32,7 @@ class TCPConnection: public server::Connection
 {
 public:
     TCPConnection(
-        const ServerInfo& server_info,
+        const core::ServerInfo& server_info,
         std::map<std::string, core::share::Share>& shares,
         uvpp::loop& loop
     ):

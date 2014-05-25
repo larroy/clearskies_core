@@ -20,6 +20,7 @@
 #include "../config.hpp"
 #include "message.hpp"
 #include "serverinfo.hpp"
+#include "peerinfo.hpp"
 #include "share.hpp"
 #include "coder.hpp"
 #include "../utils.hpp"
@@ -40,15 +41,17 @@
 /* Active is the peer that opens the connection
  *
  * Active    Start       Passive
- *        ---------->  
+ *        ---------->
  *
  *           Go
- *        <----------  
+ *        <----------
+ *
+ *        ---- CONNECTED -----
  *
  *          GetUpdates(since: {A:1, B:2, C:3})
- *        ---------->  
+ *        ---------->
  *
- *          Updates({
+ *          Update({
  *              revision,
  *              partial,
  *              values:
@@ -64,9 +67,9 @@
  *          )
  *        <--------
  *
- *         Get({checksum}) 
+ *         Get({checksum})
  *
- *        ---------->  
+ *        ---------->
  *
  *         FileData(
  *              {
@@ -79,8 +82,8 @@
  *
  *        ....
  *
- *        Updates
- *        ---------->  
+ *        Update
+ *        ---------->
  */
 
 namespace cs
@@ -96,7 +99,8 @@ enum State: unsigned
     WAIT4_GO,
     WAIT4_IDENTITY,
     CONNECTED,
-    GET,
+    GET, // A file being transmitted
+    GET_UPDATES, // update messages being sent (partial flag on)
     ////
     MAX,
 };
@@ -219,7 +223,7 @@ public:
     /**
      * open the given file and set m_txfile_is so payload chunks are read and queued to be sent each time
      * handle_empty_output_buff is called when the output buffers are empty
-     * 
+     *
      * Warning: Caller is responsible for the security of this function and permissions to access the given
      * path
      *
@@ -243,14 +247,24 @@ public:
     void handle_payload(const char* data, size_t len);
     void handle_payload_end();
 
+    /// callback for files updated in the share @sa cs::core::share::Share::m_handle_update
+    // FIXME connect to share
+    void handle_update(const std::vector<msg::MFile>&);
+
     // message actions, note that the handlers / visitors logic control that these actions are triggered on the
     // appropiate states only
 
-    /// action for MType::GET
-    void do_get(const std::string& checksum);
+    /// action for MType::GET, @return true on success
+    bool do_get(const std::string& checksum);
+    void do_get_updates(const std::map<std::string, u64>& since);
+    void do_update(const std::vector<msg::MFile>& files);
+
+
+    // callbacks for connecting to @sa cs::core::share::Share
+    // FIXME
 
     /**
-     * @returns the current selected @param[in] share or throws ShareNotFoundError, this can happen if the
+     * @returns the current selected @param[in] share or @throws ShareNotFoundError, this can happen if the
      * share was detached and can't be found anymore, in this case users of this class should close
      * the connection to clients.
      *
@@ -258,17 +272,12 @@ public:
      */
     share::Share& share(const std::string& share = std::string());
 
-    const ServerInfo& r_server_info;
+    const ServerInfo& r_serverinfo;
     /// a reference to the shares
     std::map<std::string, share::Share>& r_shares;
+    PeerInfo m_peerinfo;
     /// selected share name
     std::string m_share;
-    /// peer id of the connected peer
-    std::string m_peer;
-    /// @sa msg::Start
-    std::string m_access;
-    std::vector<std::string> m_features;
-    std::string m_software;
 
     /// current protocol state
     State m_state;
@@ -279,13 +288,23 @@ public:
     static const size_t s_txfile_block_sz = 65536;
     /// pointer to an open input stream for the file that is being sent if set
     std::unique_ptr<bfs::ifstream> m_txfile_is;
+
+    /// pointer to a FrozenManifest being sent in chunks
+    //std::unique_ptr<share::FrozenManifest> m_frozen_manifest;
+
     /// pointer to an open output stream for the file that is being recieved if set
     std::unique_ptr<bfs::ofstream> m_rxfile_os;
 
     /// encodes messages into bytes
     msg::Coder m_coder;
+
+    /// what to do when a message is sent
     handle_send_msg_t m_handle_send_msg;
+    /// what to do when a chunk is sent
     handle_send_payload_chunk_t m_handle_send_payload_chunk;
+
+    /// queued updates to be sent to the peer, as noticed by the Share fs scan
+    std::deque<msg::MFile> m_peding_updates;
 };
 
 void connect(ProtocolState&, Protocol&);
