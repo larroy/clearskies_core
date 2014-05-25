@@ -326,8 +326,10 @@ void Protocol::do_get_updates(const std::map<std::string, u64>& since)
     auto frozen_manifest = share.get_updates(m_peerinfo.m_name, since);
     msg::Update update(share.m_revision);
     for (const auto& mfile: *frozen_manifest)
-        update.m_files.emplace_back(mfile);
+        update.m_files.emplace_back(move(mfile.to_msg_mfile()));
 
+    // FIXME, what if it's too large?
+    update.m_partial = false;
     send_msg(update);
 }
 

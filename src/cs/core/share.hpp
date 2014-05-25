@@ -80,6 +80,11 @@ struct MFile
     /// mark file as deleted, @param share_rev is incremented @pre share_rev is != 0
     void was_deleted(const std::string& peer_id, u64 share_revision);
 
+    msg::MFile to_msg_mfile() const
+    {
+        return msg::MFile(checksum, path, last_changed_by, last_changed_rev, mtime, size, mode, deleted);
+    }
+
     std::string path;
     std::string mtime;
     u64 size;
