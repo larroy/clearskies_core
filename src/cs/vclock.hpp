@@ -52,6 +52,11 @@ public:
     /// @returns true if this clock is a descendant from @param other
     bool is_descendant(const Vclock& other) const;
 
+    bool is_ancestor(const Vclock& other) const
+    {
+        return other.is_descendant(*this);
+    }
+
     /**
      * access the version field at clock given by @param key, if key doesn't exists is assumed to
      * have value of 0
