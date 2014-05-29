@@ -247,10 +247,6 @@ public:
     void handle_payload(const char* data, size_t len);
     void handle_payload_end();
 
-    /// callback for files updated in the share @sa cs::core::share::Share::m_handle_update
-    // FIXME connect to share
-    void handle_update(const std::vector<msg::MFile>&);
-
     // message actions, note that the handlers / visitors logic control that these actions are triggered on the
     // appropiate states only
 
@@ -271,6 +267,10 @@ public:
      * If no share is specified, it returns the current share
      */
     share::Share& share(const std::string& share = std::string());
+    bool share_selected() const
+    {
+        return ! m_share.empty();
+    }
 
     const ServerInfo& r_serverinfo;
     /// a reference to the shares

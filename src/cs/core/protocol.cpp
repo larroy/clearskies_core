@@ -54,6 +54,7 @@ public:
         r_protocol.m_peerinfo.m_features = msg.m_features;
         r_protocol.m_peerinfo.m_software = msg.m_software;
 
+
         const ServerInfo& si = r_protocol.r_serverinfo;
         r_protocol.send_msg(msg::Go(si.m_software, si.m_protocol, si.m_features, r_protocol.m_share, "", share.m_peer_id, si.m_name, utils::isotime(std::time(nullptr))));
         /***********/
@@ -295,11 +296,6 @@ void Protocol::handle_payload_end()
 }
 
 
-void Protocol::handle_update(const std::vector<msg::MFile>& files)
-{
-    // FIXME
-}
-
 bool Protocol::do_get(const std::string& checksum)
 {
     // get list of files that match this checksum from the share
@@ -352,6 +348,7 @@ share::Share& Protocol::share(const std::string& share)
     auto shr_i = r_shares.find(m_share);
     if (shr_i != r_shares.end())
         return shr_i->second;
+    m_share.clear();
     throw ShareNotFoundError(boost::str(boost::format("Share %1% can't be found") % m_share));
 }
 
