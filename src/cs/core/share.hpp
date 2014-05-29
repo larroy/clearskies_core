@@ -378,8 +378,10 @@ public:
         while(scan_step()) {};
     }
 
-    /// process a remote update for a given file
-    void remote_update(const msg::MFile&);
+    /// process a remote update for a given file, @return true if the file needs to be retrieved
+    bool remote_update(const msg::MFile&);
+
+
 
 
     /// path to the share

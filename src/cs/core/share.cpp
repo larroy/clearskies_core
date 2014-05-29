@@ -336,44 +336,6 @@ void Share::initialize_tables()
         )
     )#").execute();
     sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_files_checksum ON files(checksum))#").execute();
-
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS files_vclock (
-        path TEXT NOT NULL,
-        key TEXT NOT NULL,
-        value INTEGER DEFAULT 0,
-        FOREIGN KEY(path) REFERENCES files(path)
-        )
-    )#").execute();
-    sqlite3pp::command(m_db, R"#(CREATE UNIQUE INDEX IF NOT EXISTS i_files_vlock_path ON files_vclock(path))#").execute();
-
-
-    //
-    // PEER FILES
-    //
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files (
-        path TEXT NOT NULL,
-        peer TEXT NOT NULL,
-        tmp_path TEXT DEFAULT '',
-        mtime TEXT,
-        size INTEGER,
-        mode INTEGER,
-        checksum TEXT,
-        deleted INTEGER DEFAULT 0
-        )
-    )#").execute();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_path ON peer_files(path))#").execute();
-
-    sqlite3pp::command(m_db, R"#(CREATE TABLE IF NOT EXISTS peer_files_vclock (
-        path TEXT NOT NULL,
-        peer TEXT NOT NULL,
-        key TEXT NOT NULL,
-        value INTEGER DEFAULT 0,
-        FOREIGN KEY(path) REFERENCES peer_files(path)
-        )
-    )#").execute();
-    sqlite3pp::command(m_db, R"#(CREATE INDEX IF NOT EXISTS i_peer_files_vlock_path ON peer_files_vclock(path))#").execute();
-
-
 }
 
 
@@ -784,9 +746,11 @@ bool Share::was_updated(const MFile& file)
     return file.mtime != mtime;
 }
 
-void Share::remote_update(const msg::MFile& file)
+bool Share::remote_update(const msg::MFile& file)
 {
+    // compare clocks and take action
     // FIXME
+    return false;
 }
 
 bfs::path get_tail(const bfs::path& path, size_t tail)
