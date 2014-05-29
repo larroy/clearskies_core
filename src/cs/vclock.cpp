@@ -19,13 +19,40 @@
 #include "config.hpp"
 #include <limits>
 #include <unordered_set>
-
+#include "jsoncons/json.hpp"
 
 using namespace std;
+
+namespace
+{
+std::string json_2_str(const jsoncons::json& json)
+{
+    ostringstream json_os;
+    jsoncons::json_serializer serializer(json_os, false); // no indent
+    json.to_stream(serializer);
+    return json_os.str();
+}
+}
 
 namespace cs
 {
 
+Vclock vclock_from_json(const std::string& s)
+{
+    Vclock result;
+    const auto json = jsoncons::json::parse_string(s);
+    for (auto i = json.begin_members(); i != json.end_members(); ++i)
+        result.increment(i->first, i->second.as_ulonglong());
+    return result;
+}
+
+std::string vclock_to_json(const Vclock& v)
+{
+    jsoncons::json json;
+    for (const auto& x: v.get_values())
+        json[x.first] = x.second;
+    return json_2_str(json);
+}
 
 /**
  * A vclock desc is descendant from parent when All values(desc)  >= values(parent)

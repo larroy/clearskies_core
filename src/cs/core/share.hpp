@@ -17,10 +17,11 @@
  */
 
 #pragma once
+#include "message.hpp"
 #include "../config.hpp"
 #include "../boost_fs_fwd.hpp"
+#include "../vclock.hpp"
 #include "sqlite3pp/sqlite3pp.hpp"
-#include "message.hpp"
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <array>
@@ -95,6 +96,7 @@ struct MFile
     std::string checksum;
     u64 last_changed_rev;
     std::string last_changed_by;
+    Vclock vclock;
     bool updated;
 };
 

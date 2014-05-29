@@ -17,6 +17,7 @@
  */
 #include "share.hpp"
 #include "../utils.hpp"
+#include "../vclock.hpp"
 #include <iostream>
 #include "boost/format.hpp"
 using namespace std;
@@ -48,7 +49,8 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     checksum = row.get<string>(7);
     last_changed_rev = row.get<u64>(8);
     last_changed_by = row.get<string>(9);
-    updated = row.get<bool>(10);
+    vclock = vclock_from_json(row.get<string>(10));
+    updated = row.get<bool>(11);
 }
 
 void MFile::was_deleted(const std::string& peer_id, u64 revision)
@@ -332,6 +334,7 @@ void Share::initialize_tables()
         checksum TEXT DEFAULT '',
         last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
+        vclock TEXT DEFAULT '', /* vclock in json */
         updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
         )
     )#").execute();
@@ -341,7 +344,7 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, vclock, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     m_update_mfile_q.prepare(R"#(UPDATE files SET
         mtime = ?,
         size = ?,
@@ -352,25 +355,12 @@ void Share::initialize_statements()
         checksum = ?,
         last_changed_rev = ?,
         last_changed_by = ?,
+        vclock = ?,
         updated = ?
     WHERE path = ?
     )#");
 
-    m_select_not_scan_found_q.prepare(R"#(SELECT
-        path,
-        mtime,
-        size,
-        mode,
-        scan_found,
-        deleted,
-        to_checksum,
-        checksum,
-        last_changed_rev,
-        last_changed_by,
-        updated
-    FROM
-        files
-    WHERE scan_found = 0 ORDER BY path)#");
+    m_select_not_scan_found_q.prepare(R"#(SELECT * FROM files WHERE scan_found = 0 ORDER BY path)#");
     m_update_scan_found_false_q.prepare("UPDATE files SET scan_found = 0");
     m_cksum_select_q.prepare("SELECT * FROM files WHERE to_checksum != 0 ORDER BY path");
 

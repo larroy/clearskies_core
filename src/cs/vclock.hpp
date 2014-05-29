@@ -26,7 +26,6 @@
 namespace cs
 {
 
-class VclockImpl;
 
 /**
  * A Vclock is descendant of another when changes are a consequence of another, thus the changes are
@@ -64,7 +63,7 @@ public:
      */
     u64 operator[](const std::string& key) const;
 
-    std::map<std::string, u64> get_values() const
+    const std::map<std::string, u64>& get_values() const
     {
         return m_clk;
     }
@@ -76,6 +75,10 @@ public:
 private:
     std::map<std::string, u64> m_clk;
 };
+
+
+Vclock vclock_from_json(const std::string&);
+std::string vclock_to_json(const Vclock&);
 
 } // end ns
 
