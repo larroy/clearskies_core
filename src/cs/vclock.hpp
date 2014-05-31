@@ -72,6 +72,11 @@ public:
     /// increment clock @param key by @param val
     void increment(const std::string& key, u64 val = 1);
 
+    bool operator==(const Vclock& o) const
+    {
+        return std::tie(m_clk) == std::tie(o.m_clk);
+    }
+
 private:
     std::map<std::string, u64> m_clk;
 };

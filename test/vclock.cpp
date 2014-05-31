@@ -20,7 +20,7 @@
 using namespace cs;
 using namespace std;
 
-BOOST_AUTO_TEST_CASE(vlock_test_01)
+BOOST_AUTO_TEST_CASE(vclock_test_01)
 {
     Vclock paren;
     Vclock desc;
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(vlock_test_01)
     BOOST_CHECK(desc.is_descendant(paren));
 }
 
-BOOST_AUTO_TEST_CASE(vlock_test_02)
+BOOST_AUTO_TEST_CASE(vclock_test_02)
 {
     Vclock paren;
     Vclock desc;
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(vlock_test_02)
     BOOST_CHECK(desc.is_descendant(paren));
 }
 
-BOOST_AUTO_TEST_CASE(vlock_test_03)
+BOOST_AUTO_TEST_CASE(vclock_test_03)
 {
     Vclock paren;
     Vclock desc;
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(vlock_test_03)
 
 }
 
-BOOST_AUTO_TEST_CASE(vlock_values)
+BOOST_AUTO_TEST_CASE(vclock_values)
 {
     Vclock x;
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(vlock_values)
     BOOST_CHECK_EQUAL(values["C"], 2u);
 }
 
-BOOST_AUTO_TEST_CASE(vlock_construction)
+BOOST_AUTO_TEST_CASE(vclock_construction)
 {
     map<string, u64> vs;
     vs["A"] = 5;
@@ -106,4 +106,18 @@ BOOST_AUTO_TEST_CASE(vlock_construction)
     BOOST_CHECK_EQUAL(x["A"], 5);
     BOOST_CHECK_EQUAL(x["B"], 3);
     BOOST_CHECK(x.get_values() == vs);
+}
+
+BOOST_AUTO_TEST_CASE(vclock_json_1)
+{
+    Vclock x;
+
+    x.increment("A");
+    x.increment("B");
+    x.increment("C", 2u);
+
+    const string s = vclock_to_json(x);
+    Vclock x_ = vclock_from_json(s);
+    BOOST_CHECK(x_ == x);
+
 }
