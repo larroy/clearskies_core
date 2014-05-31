@@ -64,6 +64,7 @@ void MFile::was_deleted(const std::string& peer_id, u64 revision)
     checksum.clear();
     last_changed_rev = revision;
     last_changed_by = peer_id;
+    vclock.increment(peer_id);
     updated = true;
 }
 
@@ -455,7 +456,8 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(8, f.checksum);
     m_insert_mfile_q.bind(9, f.last_changed_rev);
     m_insert_mfile_q.bind(10, f.last_changed_by);
-    m_insert_mfile_q.bind(11, f.updated);
+    m_insert_mfile_q.bind(11, f.vclock.json());
+    m_insert_mfile_q.bind(12, f.updated);
     m_insert_mfile_q.execute();
 }
 
@@ -472,8 +474,9 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(7, f.checksum);
     m_update_mfile_q.bind(8, f.last_changed_rev);
     m_update_mfile_q.bind(9, f.last_changed_by);
-    m_update_mfile_q.bind(10, f.updated);
-    m_update_mfile_q.bind(11, f.path);
+    m_update_mfile_q.bind(10, f.vclock.json());
+    m_update_mfile_q.bind(11, f.updated);
+    m_update_mfile_q.bind(12, f.path);
     m_update_mfile_q.execute();
     assert(m_db->changes() == 1);
 }
@@ -680,6 +683,7 @@ void Share::scan_found(MFile& scan_file)
             mfile->last_changed_rev = m_revision;
             ++m_revision;
             mfile->last_changed_by = m_peer_id;
+            mfile->vclock.increment(m_peer_id);
             if (! mfile->to_checksum)
                 // after checksum updated is set to true, but we are not checksumming, just
                 // attributes were changed.

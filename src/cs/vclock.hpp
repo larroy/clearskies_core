@@ -26,6 +26,10 @@
 namespace cs
 {
 
+class Vclock;
+
+Vclock vclock_from_json(const std::string&);
+std::string vclock_to_json(const Vclock&);
 
 /**
  * A Vclock is descendant of another when changes are a consequence of another, thus the changes are
@@ -77,13 +81,16 @@ public:
         return std::tie(m_clk) == std::tie(o.m_clk);
     }
 
+    std::string json() const
+    {
+        return vclock_to_json(*this);
+    }
+
 private:
     std::map<std::string, u64> m_clk;
 };
 
 
-Vclock vclock_from_json(const std::string&);
-std::string vclock_to_json(const Vclock&);
 
 } // end ns
 
