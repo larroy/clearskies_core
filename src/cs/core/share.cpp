@@ -428,7 +428,7 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(8, f.checksum);
     m_insert_mfile_q.bind(9, f.last_changed_rev);
     m_insert_mfile_q.bind(10, f.last_changed_by);
-    const string json = f.vclock.json(); // need the object to live till execute, a temporary would live only to the expression
+    const string& json = f.vclock.json(); // need the object to live till execute, a temporary would live only to the expression
     m_insert_mfile_q.bind(11, json);
     m_insert_mfile_q.bind(12, f.updated);
     m_insert_mfile_q.execute();
@@ -447,7 +447,7 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(7, f.checksum);
     m_update_mfile_q.bind(8, f.last_changed_rev);
     m_update_mfile_q.bind(9, f.last_changed_by);
-    const string json = f.vclock.json();
+    const string& json = f.vclock.json();
     m_update_mfile_q.bind(10, json);
     m_update_mfile_q.bind(11, f.updated);
     m_update_mfile_q.bind(12, f.path);
