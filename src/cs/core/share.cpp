@@ -82,21 +82,7 @@ FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest, 
 
 FrozenManifestIterator::FrozenManifestIterator(FrozenManifest& frozen_manifest):
     r_frozen_manifest(frozen_manifest)
-    , m_query_str(boost::str(boost::format(R"#(
-        SELECT
-            path
-            , mtime
-            , size
-            , mode
-            , scan_found
-            , deleted
-            , to_checksum
-            , checksum
-            , last_changed_rev
-            , last_changed_by
-            , updated
-        FROM %1% ORDER BY path
-    )#") % r_frozen_manifest.m_table))
+    , m_query_str(boost::str(boost::format(R"#(SELECT * FROM %1% ORDER BY path)#") % r_frozen_manifest.m_table))
     , m_query(make_unique<sqlite3pp::query>(r_frozen_manifest.r_share.m_db, m_query_str.c_str()))
     , m_query_it(m_query->begin())
     , m_file()
@@ -210,21 +196,7 @@ Share::Share_iterator::Share_iterator():
 {}
 
 Share::Share_iterator::Share_iterator(Share& share):
-    m_query(make_unique<sqlite3pp::query>(share.m_db, R"#(
-        SELECT
-            path
-            , mtime
-            , size
-            , mode
-            , scan_found
-            , deleted
-            , to_checksum
-            , checksum
-            , last_changed_rev
-            , last_changed_by
-            , updated
-        FROM files ORDER BY path
-    )#"))
+    m_query(make_unique<sqlite3pp::query>(share.m_db, R"#(SELECT * FROM files ORDER BY path)#"))
     , m_query_it(m_query->begin())
     , m_file()
     , m_file_set()
@@ -456,7 +428,8 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(8, f.checksum);
     m_insert_mfile_q.bind(9, f.last_changed_rev);
     m_insert_mfile_q.bind(10, f.last_changed_by);
-    m_insert_mfile_q.bind(11, f.vclock.json());
+    const string json = f.vclock.json(); // need the object to live till execute, a temporary would live only to the expression
+    m_insert_mfile_q.bind(11, json);
     m_insert_mfile_q.bind(12, f.updated);
     m_insert_mfile_q.execute();
 }
@@ -474,7 +447,8 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(7, f.checksum);
     m_update_mfile_q.bind(8, f.last_changed_rev);
     m_update_mfile_q.bind(9, f.last_changed_by);
-    m_update_mfile_q.bind(10, f.vclock.json());
+    const string json = f.vclock.json();
+    m_update_mfile_q.bind(10, json);
     m_update_mfile_q.bind(11, f.updated);
     m_update_mfile_q.bind(12, f.path);
     m_update_mfile_q.execute();
