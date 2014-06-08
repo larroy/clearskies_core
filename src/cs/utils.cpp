@@ -58,8 +58,11 @@ std::string isotime(std::time_t time)
 
 std::time_t isotime_from_str(const std::string& stime)
 {
-    assert(false); // FIXME
-    return 0;
+    tm tm_;
+    bzero(&tm_, sizeof(tm));
+    const char* s = stime.c_str();
+    strptime(s, "%FT%TZ", &tm_);
+    return mktime(&tm_);
 }
 
 std::string bin_to_hex(const void* b, size_t sz)

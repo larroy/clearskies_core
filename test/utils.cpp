@@ -27,6 +27,7 @@ using namespace cs::utils;
 BOOST_AUTO_TEST_CASE(isotime_test)
 {
     BOOST_CHECK_EQUAL(isotime(1391732661), "2014-02-07T00:24:21Z");
+    BOOST_CHECK_EQUAL(isotime_from_str("2014-02-07T00:24:21Z"), 1391732661);
 }
 
 
