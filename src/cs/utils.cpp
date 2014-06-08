@@ -22,6 +22,7 @@
 #include <cstring>
 #include "boost/format.hpp"
 
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 using namespace std;
 
@@ -46,23 +47,51 @@ namespace utils
 {
 
 
+namespace {
+
+int64_t ptime_to_64(const boost::posix_time::ptime& pt)
+{
+  using namespace boost::posix_time;
+  static ptime epoch(boost::gregorian::date(1970, 1, 1));
+  time_duration diff(pt - epoch);
+  return (diff.ticks() / diff.ticks_per_second());
+}
+
+}
+
 std::string isotime(std::time_t time)
 {
+#if 0
     auto tm_ = make_unique<tm>();
     string result(sizeof("YYYY-MM-DDThh:mm:ss.sZ"), 0);
     size_t wrote = strftime(&result[0], result.size(), "%FT%TZ", xgmtime_r(&time, tm_.get()));
     assert(wrote > 0);
     result.resize(wrote);
     return result;
+#endif
+    using namespace boost::posix_time;
+    return to_iso_string(from_time_t(time)) + "Z";
 }
 
 std::time_t isotime_from_str(const std::string& stime)
 {
+#if 0
     tm tm_;
     bzero(&tm_, sizeof(tm));
     const char* s = stime.c_str();
     strptime(s, "%FT%TZ", &tm_);
     return mktime(&tm_);
+    // it's one hour off... 
+#endif
+    using namespace boost::posix_time;
+    string s = stime;
+    if (! s.empty())
+    {
+        s.erase(s.size() - 1);
+        return ptime_to_64(from_iso_string(stime));
+    }
+    else
+        throw std::runtime_error("Bad time string: " + stime);
 }
 
 std::string bin_to_hex(const void* b, size_t sz)
