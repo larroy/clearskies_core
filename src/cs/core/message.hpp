@@ -71,42 +71,48 @@ MAccess maccess_from_string(const std::string& access);
 struct MFile
 {
     MFile():
-        checksum()
-        , path()
-        , last_changed_by()
+        path()
         , mtime()
         , size()
-        , deleted()
         , mode()
+        , checksum()
+        , last_changed_by()
+        , last_changed_rev()
+        , deleted()
+        , vclock()
     {}
 
-    MFile(const std::string& checksum,
+    MFile(
         const std::string& path,
-        const std::string& last_changed_by,
-        const u64 last_changed_rev,
         const std::string& mtime,
         const u64 size,
+        const u16 mode,
+        const std::string& checksum,
+        const std::string& last_changed_by,
+        const u64 last_changed_rev,
         const bool deleted,
-        const u16 mode)
-    :
-        checksum(checksum)
-        , path(path)
-        , last_changed_by(last_changed_by)
-        , last_changed_rev(last_changed_rev)
+        const std::string& vclock
+    ):
+          path(path)
         , mtime(mtime)
         , size(size)
-        , deleted(deleted)
         , mode(mode)
+        , checksum(checksum)
+        , last_changed_by(last_changed_by)
+        , last_changed_rev(last_changed_rev)
+        , deleted(deleted)
+        , vclock(vclock)
     {}
 
-    std::string checksum;
     std::string path;
-    std::string last_changed_by;
-    u64 last_changed_rev;
     std::string mtime;
     u64 size;
-    bool deleted;
     u16 mode;
+    std::string checksum;
+    std::string last_changed_by;
+    u64 last_changed_rev;
+    bool deleted;
+    std::string vclock;
 };
 
 

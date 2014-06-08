@@ -66,6 +66,7 @@ struct MFile
         , checksum()
         , last_changed_rev()
         , last_changed_by()
+        , vclock()
         , updated()
     {}
 
@@ -83,7 +84,7 @@ struct MFile
 
     msg::MFile to_msg_mfile() const
     {
-        return msg::MFile(checksum, path, last_changed_by, last_changed_rev, mtime, size, mode, deleted);
+        return msg::MFile(path, mtime, size, mode, checksum, last_changed_by, last_changed_rev, deleted, vclock_to_json(vclock));
     }
 
     std::string path;

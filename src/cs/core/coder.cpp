@@ -129,14 +129,15 @@ void decode(const jsoncons::json& json, Update& msg)
     {
         const auto& file = *i;
         msg.m_files.emplace_back(
-            file["checksum"].as_string(),
             file["path"].as_string(),
-            file["last_changed_by"].as_string(),
-            static_cast<u64>(file["last_changed_rev"].as_ulonglong()),
             file["mtime"].as_string(),
             static_cast<u64>(file["size"].as_ulonglong()),
+            static_cast<u16>(file["mode"].as_ulong()),
+            file["checksum"].as_string(),
+            file["last_changed_by"].as_string(),
+            static_cast<u64>(file["last_changed_rev"].as_ulonglong()),
             file.has_member("deleted") && file["deleted"].as_bool() == true,
-            static_cast<u16>(file["mode"].as_ulong())
+            file["vclock"].as_string()
         );
     }
 }
@@ -244,14 +245,16 @@ void encode(const Update& msg, jsoncons::json& jmsg)
     for (const auto& mfile: msg.m_files)
     {
         json file;
-        file["checksum"] = mfile.checksum;
         file["path"] = mfile.path;
-        file["last_changed_by"] = mfile.last_changed_by;
-        file["last_changed_rev"] = mfile.last_changed_rev;
         file["mtime"] = mfile.mtime;
         file["size"] = mfile.size;
-        file["deleted"] = mfile.deleted;
         file["mode"] = mfile.mode;
+        file["checksum"] = mfile.checksum;
+        file["last_changed_by"] = mfile.last_changed_by;
+        file["last_changed_rev"] = mfile.last_changed_rev;
+        file["deleted"] = mfile.deleted;
+        file["vclock"] = mfile.vclock;
+
         jmsg["files"].add(move(file));
     }
 }
