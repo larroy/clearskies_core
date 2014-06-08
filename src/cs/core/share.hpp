@@ -60,20 +60,37 @@ struct MFile
         , mtime()
         , size()
         , mode()
-        , scan_found()
         , deleted()
-        , to_checksum()
         , checksum()
         , last_changed_rev()
         , last_changed_by()
         , vclock()
+        , scan_found()
+        , to_checksum()
         , updated()
     {}
 
+    MFile(const msg::MFile& m):
+        path(m.path)
+        , mtime(m.mtime)
+        , size(m.size)
+        , mode(m.mode)
+        , deleted(m.deleted)
+        , checksum(m.checksum)
+        , last_changed_rev(m.last_changed_rev)
+        , last_changed_by(m.last_changed_by)
+        , vclock(vclock_from_json(m.vclock))
+        , scan_found()
+        , to_checksum()
+        , updated()
+    {}
+
+
+
     bool operator==(const MFile& o) const
     {
-        return std::tie(path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, updated) ==
-            std::tie(o.path, o.mtime, o.size, o.mode, o.scan_found, o.deleted, o.to_checksum, o.checksum, o.last_changed_rev, o.last_changed_by, o.updated);
+        return std::tie(path, mtime, size, mode, deleted, checksum, last_changed_rev, last_changed_by, vclock, scan_found, to_checksum, updated) ==
+            std::tie(o.path, o.mtime, o.size, o.mode,  o.deleted, o.checksum, o.last_changed_rev, o.last_changed_by, o.vclock, o.scan_found, o.to_checksum, o.updated);
 
     }
 
@@ -91,13 +108,13 @@ struct MFile
     std::string mtime;
     u64 size;
     u16 mode;
-    bool scan_found;
     bool deleted;
-    bool to_checksum;
     std::string checksum;
     u64 last_changed_rev;
     std::string last_changed_by;
     Vclock vclock;
+    bool scan_found;
+    bool to_checksum;
     bool updated;
 };
 

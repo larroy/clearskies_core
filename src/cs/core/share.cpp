@@ -43,13 +43,13 @@ void MFile::from_row(const sqlite3pp::query::rows& row)
     mtime = row.get<string>(1);
     size = row.get<u64>(2);
     mode = row.get<int>(3);
-    scan_found = row.get<bool>(4);
-    deleted = row.get<bool>(5);
-    to_checksum = row.get<bool>(6);
-    checksum = row.get<string>(7);
-    last_changed_rev = row.get<u64>(8);
-    last_changed_by = row.get<string>(9);
-    vclock = vclock_from_json(row.get<string>(10));
+    deleted = row.get<bool>(4);
+    checksum = row.get<string>(5);
+    last_changed_rev = row.get<u64>(6);
+    last_changed_by = row.get<string>(7);
+    vclock = vclock_from_json(row.get<string>(8));
+    scan_found = row.get<bool>(9);
+    to_checksum = row.get<bool>(10);
     updated = row.get<bool>(11);
 }
 
@@ -58,13 +58,13 @@ void MFile::was_deleted(const std::string& peer_id, u64 revision)
     // file disappeared
     size = 0;
     mode = 0;
-    scan_found = true;
     deleted = true;
-    to_checksum = false;
     checksum.clear();
     last_changed_rev = revision;
     last_changed_by = peer_id;
     vclock.increment(peer_id);
+    scan_found = true;
+    to_checksum = false;
     updated = true;
 }
 
@@ -301,13 +301,13 @@ void Share::initialize_tables()
         mtime TEXT,
         size INTEGER,
         mode INTEGER,
-        scan_found INTEGER DEFAULT 0, /* used to find deleted files, the scanner sets this to 1 when found on fs */
         deleted INTEGER DEFAULT 0,
-        to_checksum INTEGER DEFAULT 0,
         checksum TEXT DEFAULT '',
         last_changed_rev INTEGER DEFAULT 0, /* revision in which this file was changed */
         last_changed_by TEXT DEFAULT '', /* peer that changed this file last */
         vclock TEXT DEFAULT '', /* vclock in json */
+        scan_found INTEGER DEFAULT 0, /* used to find deleted files, the scanner sets this to 1 when found on fs */
+        to_checksum INTEGER DEFAULT 0,
         updated INTEGER DEFAULT 0 /* files that were updated, we will notify about these to other peers */
         )
     )#").execute();
@@ -317,18 +317,18 @@ void Share::initialize_tables()
 
 void Share::initialize_statements()
 {
-    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode, scan_found, deleted, to_checksum, checksum, last_changed_rev, last_changed_by, vclock, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+    m_insert_mfile_q.prepare("INSERT INTO files (path, mtime, size, mode,  deleted, checksum, last_changed_rev, last_changed_by, vclock, scan_found, to_checksum, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     m_update_mfile_q.prepare(R"#(UPDATE files SET
         mtime = ?,
         size = ?,
         mode = ?,
-        scan_found = ?,
         deleted = ?,
-        to_checksum = ?,
         checksum = ?,
         last_changed_rev = ?,
         last_changed_by = ?,
         vclock = ?,
+        scan_found = ?,
+        to_checksum = ?,
         updated = ?
     WHERE path = ?
     )#");
@@ -422,14 +422,14 @@ void Share::insert_mfile(const MFile& f)
     m_insert_mfile_q.bind(2, f.mtime);
     m_insert_mfile_q.bind(3, f.size);
     m_insert_mfile_q.bind(4, f.mode);
-    m_insert_mfile_q.bind(5, f.scan_found);
-    m_insert_mfile_q.bind(6, f.deleted);
-    m_insert_mfile_q.bind(7, f.to_checksum);
-    m_insert_mfile_q.bind(8, f.checksum);
-    m_insert_mfile_q.bind(9, f.last_changed_rev);
-    m_insert_mfile_q.bind(10, f.last_changed_by);
-    const string& json = f.vclock.json(); // need the object to live till execute, a temporary would live only to the expression
-    m_insert_mfile_q.bind(11, json);
+    m_insert_mfile_q.bind(5, f.deleted);
+    m_insert_mfile_q.bind(6, f.checksum);
+    m_insert_mfile_q.bind(7, f.last_changed_rev);
+    m_insert_mfile_q.bind(8, f.last_changed_by);
+    const string& vc_json = f.vclock.json(); // need the object to live till execute, a temporary would live only to the expression
+    m_insert_mfile_q.bind(9, vc_json);
+    m_insert_mfile_q.bind(10, f.scan_found);
+    m_insert_mfile_q.bind(11, f.to_checksum);
     m_insert_mfile_q.bind(12, f.updated);
     m_insert_mfile_q.execute();
 }
@@ -441,14 +441,14 @@ void Share::update_mfile(const MFile& f)
     m_update_mfile_q.bind(1, f.mtime);
     m_update_mfile_q.bind(2, f.size);
     m_update_mfile_q.bind(3, f.mode);
-    m_update_mfile_q.bind(4, f.scan_found);
-    m_update_mfile_q.bind(5, f.deleted);
-    m_update_mfile_q.bind(6, f.to_checksum);
-    m_update_mfile_q.bind(7, f.checksum);
-    m_update_mfile_q.bind(8, f.last_changed_rev);
-    m_update_mfile_q.bind(9, f.last_changed_by);
-    const string& json = f.vclock.json();
-    m_update_mfile_q.bind(10, json);
+    m_update_mfile_q.bind(4, f.deleted);
+    m_update_mfile_q.bind(5, f.checksum);
+    m_update_mfile_q.bind(6, f.last_changed_rev);
+    m_update_mfile_q.bind(7, f.last_changed_by);
+    const string& vc_json = f.vclock.json();
+    m_update_mfile_q.bind(8, vc_json);
+    m_update_mfile_q.bind(9, f.scan_found);
+    m_update_mfile_q.bind(10, f.to_checksum);
     m_update_mfile_q.bind(11, f.updated);
     m_update_mfile_q.bind(12, f.path);
     m_update_mfile_q.execute();
@@ -581,8 +581,8 @@ bool Share::fs_scan_step()
             f.mtime = utils::isotime(bfs::last_write_time(dentry.path()));
             f.size = bfs::file_size(dentry.path());
             f.mode = dentry.status().permissions();
-            f.scan_found = true;
             f.deleted = false;
+            f.scan_found = true;
             f.to_checksum = false;
             scan_found(f);
 
@@ -716,7 +716,6 @@ bool Share::was_updated(const MFile& file)
 
 bool Share::remote_update(const msg::MFile& file)
 {
-    // compare clocks and take action
     // FIXME
     return false;
 }
