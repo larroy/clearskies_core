@@ -96,5 +96,11 @@ void Vclock::increment(const std::string& key, u64 val)
     m_clk[key] += val;
 }
 
+void Vclock::merge(const Vclock& other)
+{
+    for (const auto& x: other.m_clk)
+        m_clk[x.first] = std::max(m_clk[x.first], x.second);
+}
+
 
 } // end ns

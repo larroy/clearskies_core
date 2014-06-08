@@ -27,6 +27,8 @@
 #include "../protocolstate.hpp"
 #include <array>
 #include <map>
+#include <unordered_map>
+#include <set>
 
 
 /*
@@ -304,7 +306,7 @@ public:
     handle_send_payload_chunk_t m_handle_send_payload_chunk;
 
     /// queued updates to be sent to the peer, as noticed by the Share fs scan
-    std::deque<msg::MFile> m_peding_updates;
+    std::unordered_map<std::string, std::set<msg::MFile>> m_to_get;
 };
 
 void connect(ProtocolState&, Protocol&);

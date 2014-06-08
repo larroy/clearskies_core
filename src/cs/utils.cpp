@@ -56,6 +56,12 @@ std::string isotime(std::time_t time)
     return result;
 }
 
+std::time_t isotime_from_str(const std::string& stime)
+{
+    assert(false); // FIXME
+    return 0;
+}
+
 std::string bin_to_hex(const void* b, size_t sz)
 {
     const u8* p = static_cast<const u8*>(b);

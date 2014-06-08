@@ -104,6 +104,20 @@ struct MFile
         , vclock(vclock)
     {}
 
+    bool operator==(const MFile& o) const
+    {
+        return std::tie(path, mtime, size, mode, deleted, checksum, last_changed_rev, last_changed_by, vclock) ==
+            std::tie(o.path, o.mtime, o.size, o.mode,  o.deleted, o.checksum, o.last_changed_rev, o.last_changed_by, o.vclock);
+
+    }
+
+    bool operator<(const MFile& o) const
+    {
+        return std::tie(path, mtime, size, mode, deleted, checksum, last_changed_rev, last_changed_by, vclock) < 
+            std::tie(o.path, o.mtime, o.size, o.mode,  o.deleted, o.checksum, o.last_changed_rev, o.last_changed_by, o.vclock);
+    }
+
+
     std::string path;
     std::string mtime;
     u64 size;

@@ -203,6 +203,8 @@ Protocol::Protocol(const ServerInfo& server_info, std::map<std::string, share::S
     , m_rxfile_os()
     , m_coder()
     , m_handle_send_msg()
+    , m_handle_send_payload_chunk()
+    , m_to_get()
 {
 #define SET_HANDLER(state, type) m_state_trans_table[(state)] = make_unique<type>(m_state, *this);
 
@@ -338,7 +340,9 @@ void Protocol::do_get_updates(const std::map<std::string, u64>& since)
 void Protocol::do_update(const std::vector<msg::MFile>& files)
 {
     auto& share = this->share();
-    for_each(files.begin(), files.end(), bind(&share::Share::remote_update, &share, placeholders::_1));
+    for (const auto& file: files)
+        if(share.remote_update(share::MFile(file)))
+            m_to_get[file.checksum].insert(file);
 }
 
 share::Share& Protocol::share(const std::string& share)

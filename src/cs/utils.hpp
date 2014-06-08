@@ -40,6 +40,7 @@ namespace utils
 
 /// @returns time in ISO 8601 format "YYYY-MM-DDThh:mm:ssZ"  (http://www.w4.org/TR/NOTE-datetime)
 std::string isotime(std::time_t);
+std::time_t isotime_from_str(const std::string&);
 
 std::string bin_to_hex(const void* b, size_t sz);
 inline std::string bin_to_hex(const std::string& s)

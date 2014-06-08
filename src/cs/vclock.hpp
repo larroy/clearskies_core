@@ -81,6 +81,8 @@ public:
         return std::tie(m_clk) == std::tie(o.m_clk);
     }
 
+    void merge(const Vclock& o);
+
     std::string json() const
     {
         return vclock_to_json(*this);

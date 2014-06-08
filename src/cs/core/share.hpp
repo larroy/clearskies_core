@@ -50,6 +50,13 @@ namespace core
 namespace share
 {
 
+enum class ConflictResolution: unsigned
+{
+    MANUAL = 0,
+    LAST_WRITE_WINS_MTIME,
+};
+
+
 class Share;
 
 
@@ -399,7 +406,7 @@ public:
     }
 
     /// process a remote update for a given file, @return true if the file needs to be retrieved
-    bool remote_update(const msg::MFile&);
+    bool remote_update(const MFile&);
 
 
 
@@ -468,6 +475,8 @@ public:
     std::string m_pkc_rw;
     std::string m_pkc_ro;
 
+
+    ConflictResolution m_resolution;
 };
 
 /// returns a path with the last tail number of components

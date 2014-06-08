@@ -247,6 +247,7 @@ Share::Share(const std::string& share_path, const std::string& dbpath):
     , m_psk_untrusted()
     , m_pkc_rw()
     , m_pkc_ro()
+    , m_resolution(ConflictResolution::MANUAL)
 {
     sha2::SHA256_Init(&m_cksum_ctx_sha256);
     bfs::path share_path_(share_path);
@@ -714,10 +715,36 @@ bool Share::was_updated(const MFile& file)
     return file.mtime != mtime;
 }
 
-bool Share::remote_update(const msg::MFile& file)
+bool Share::remote_update(const MFile& remote_file)
 {
-    // FIXME
-    return false;
+    unique_ptr<MFile> my_mfile = get_file_info(remote_file.path);
+    if (my_mfile) // found
+    {
+        if (remote_file.vclock.is_descendant(my_mfile->vclock))
+            // remote is newer
+            return true;
+        else if (my_mfile->vclock.is_descendant(remote_file.vclock))
+            // mine is newer
+            return false;
+        else
+        {
+            switch(m_resolution)
+            {
+                case ConflictResolution::MANUAL:
+                    return true;
+
+                case ConflictResolution::LAST_WRITE_WINS_MTIME:
+                {
+                    const u64 remote = utils::isotime_from_str(remote_file.mtime);
+                    const u64 mine = utils::isotime_from_str(my_mfile->mtime);
+                    return remote > mine;
+                }
+                default:
+                    assert(false);
+            }
+        }
+    }
+    return true;
 }
 
 bfs::path get_tail(const bfs::path& path, size_t tail)
