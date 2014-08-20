@@ -12,7 +12,7 @@ Open source, distributed data synchronization software using the clearskies prot
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
 
-* For a functioning syncrhonization client please go to https://github.com/syncthing
+* For a functioning synchronization client please go to https://github.com/syncthing
 
 
 # Contributing
