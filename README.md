@@ -9,6 +9,14 @@ Open source, distributed data synchronization software using the clearskies prot
 
 # Status of the project
 
+* This project is **abandoned**, but is left here as a reference, especially wrt uvpp, sqlitepp and
+  vector clock management, reasons follow:
+ - The protocol should be binary for efficiency.
+ - I would use FRP patterns to handle events instead of callbacks.
+ - In retrospective using the visitor pattern was a lot of boilerplate.
+ - There's [Syncthing](http://syncthing.net/) that while is programmed in go, covers most of my use cases.
+
+
 * Early stages of development, there's nothing here for users. Only if you are willing to help and
   contribute. **THIS SOFTWARE IS NOT YET FUNCTIONAL**
 
